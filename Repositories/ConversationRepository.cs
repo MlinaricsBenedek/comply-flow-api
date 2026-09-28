@@ -19,6 +19,13 @@ public class ConversationRepository : IConversationRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public Task<List<Conversation>> GetAllAsync(CancellationToken cancellationToken) =>
+        _dbContext.Conversations
+            .AsNoTracking()
+            .OrderByDescending(conversation => conversation.CreatedAt)
+            .ThenByDescending(conversation => conversation.Id)
+            .ToListAsync(cancellationToken);
+
     public Task<Conversation?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
         _dbContext.Conversations
             .AsNoTracking()

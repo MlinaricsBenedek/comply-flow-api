@@ -7,6 +7,7 @@ namespace comply_flow_api.Services;
 public interface IConversationService
 {
 	Task<ConversationResponse> CreateAsync(RequestConversation request, CancellationToken cancellationToken);
+	Task<IReadOnlyList<ConversationResponse>> GetAllAsync(CancellationToken cancellationToken);
 	Task<ConversationResponse?> GetByIdAsync(int id, CancellationToken cancellationToken);
 }
 
@@ -39,6 +40,13 @@ public class ConversationService : IConversationService
 		await _conversationRepository.AddAsync(conversation, cancellationToken);
 
 		return ToResponse(conversation);
+	}
+
+	public async Task<IReadOnlyList<ConversationResponse>> GetAllAsync(CancellationToken cancellationToken)
+	{
+		var conversations = await _conversationRepository.GetAllAsync(cancellationToken);
+
+		return conversations.Select(ToResponse).ToList();
 	}
 
 	public async Task<ConversationResponse?> GetByIdAsync(int id, CancellationToken cancellationToken)

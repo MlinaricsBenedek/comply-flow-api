@@ -15,6 +15,15 @@ namespace comply_flow_api.Controllers
             _conversationService = conversationService;
         }
 
+        [HttpGet("~/api/conversations")]
+        public async Task<ActionResult<IReadOnlyList<ConversationResponse>>> GetConversations(
+            CancellationToken cancellationToken)
+        {
+            var conversations = await _conversationService.GetAllAsync(cancellationToken);
+
+            return Ok(conversations);
+        }
+
         [HttpPost("conversation")]
         public async Task<ActionResult<ConversationResponse>> CreateConversation(
             RequestConversation request,
