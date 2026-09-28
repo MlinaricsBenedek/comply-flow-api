@@ -1,4 +1,6 @@
 using comply_flow_api.Data;
+using comply_flow_api.Repositories;
+using comply_flow_api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +12,8 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
+builder.Services.AddScoped<IConversationRepository, ConversationRepository>();
+builder.Services.AddScoped<IConversationService, ConversationService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
