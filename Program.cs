@@ -18,6 +18,7 @@ builder.Services.AddScoped<IProcessingRepository, ProcessingRepository>();
 builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 builder.Services.AddScoped<IProcessingService, ProcessingService>();
+builder.Services.AddScoped<ITextFileService, TextFileService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

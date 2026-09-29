@@ -8,13 +8,6 @@ namespace comply_flow_api.Controllers
     public class ProcessingController : ControllerBase
     {
 
-        [HttpPost("process")]
-        public IActionResult AddProcess(string processingId)
-        {
-            // Implementation for getting processing status
-            return Ok();
-        }
-
         [HttpGet("GetProcessingResult/{processingId}")]
         public IActionResult GetProcessingResult(string processingId)
         {
