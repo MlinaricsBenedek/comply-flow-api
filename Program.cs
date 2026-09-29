@@ -13,7 +13,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddScoped<IConversationRepository, ConversationRepository>();
+builder.Services.AddScoped<IConfigurationRepository, ConfigurationRepository>();
 builder.Services.AddScoped<IConversationService, ConversationService>();
+builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
