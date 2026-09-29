@@ -17,7 +17,7 @@ public class ConfigurationController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<ConfigurationResponse>>> GetConfigurations(
+    public async Task<ActionResult<IReadOnlyList<ConfigurationSummaryResponse>>> GetConfigurations(
         CancellationToken cancellationToken)
     {
         var configurations = await _configurationService.GetAllAsync(cancellationToken);
@@ -35,12 +35,12 @@ public class ConfigurationController : ControllerBase
         return configuration is null ? NotFound() : Ok(configuration);
     }
 
-    [HttpPost]
-    public async Task<ActionResult<ConfigurationResponse>> CreateConfiguration(
-        RequestConfiguration request,
+    [HttpPost("template")]
+    public async Task<ActionResult<ConfigurationResponse>> CreateTemplateConfiguration(
+        RequestTemplateConfiguration request,
         CancellationToken cancellationToken)
     {
-        var configuration = await _configurationService.CreateAsync(request, cancellationToken);
+        var configuration = await _configurationService.CreateTemplateAsync(request, cancellationToken);
 
         return CreatedAtAction(
             nameof(GetConfigurationById),
@@ -48,31 +48,16 @@ public class ConfigurationController : ControllerBase
             configuration);
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> UpdateConfiguration(
-        int id,
-        RequestConfiguration request,
+    [HttpPost("llm")]
+    public async Task<ActionResult<ConfigurationResponse>> CreateLlmConfiguration(
+        RequestLlmConfiguration request,
         CancellationToken cancellationToken)
     {
-        var updated = await _configurationService.UpdateAsync(id, request, cancellationToken);
+        var configuration = await _configurationService.CreateLlmAsync(request, cancellationToken);
 
-        return updated ? NoContent() : NotFound();
-    }
-
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> DeleteConfiguration(int id, CancellationToken cancellationToken)
-    {
-        var result = await _configurationService.DeleteAsync(id, cancellationToken);
-
-        return result switch
-        {
-            ConfigurationDeleteResult.Deleted => NoContent(),
-            ConfigurationDeleteResult.NotFound => NotFound(),
-            ConfigurationDeleteResult.InUse => Conflict(new
-            {
-                message = "Configuration cannot be deleted while it is referenced by a processing."
-            }),
-            _ => StatusCode(StatusCodes.Status500InternalServerError)
-        };
+        return CreatedAtAction(
+            nameof(GetConfigurationById),
+            new { id = configuration.Id },
+            configuration);
     }
 }

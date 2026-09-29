@@ -27,6 +27,10 @@ public class Configuration
     [Column(TypeName = "varchar(50)")]
     public string? TemplateVersion { get; set; }
 
+    [StringLength(50)]
+    [Column(TypeName = "varchar(50)")]
+    public string? PromptVersion { get; set; }
+
     [StringLength(100)]
     [Column(TypeName = "varchar(100)")]
     public string? ModelName { get; set; }

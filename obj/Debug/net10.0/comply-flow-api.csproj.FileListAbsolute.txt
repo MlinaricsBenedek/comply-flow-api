@@ -167,3 +167,11 @@ C:\Users\mlina\OneDrive\Desktop\comply-flow-api\bin\Debug\net10.0\runtimes\win-a
 C:\Users\mlina\OneDrive\Desktop\comply-flow-api\bin\Debug\net10.0\runtimes\win-x64\native\msalruntime.dll
 C:\Users\mlina\OneDrive\Desktop\comply-flow-api\bin\Debug\net10.0\runtimes\win-x86\native\msalruntime_x86.dll
 C:\Users\mlina\OneDrive\Desktop\comply-flow-api\obj\Debug\net10.0\comply-flow-api.sourcelink.json
+C:\Users\mlina\AppData\Local\Temp\comply-flow-api-buildcheck\appsettings.Development.json
+C:\Users\mlina\AppData\Local\Temp\comply-flow-api-buildcheck\appsettings.json
+C:\Users\mlina\AppData\Local\Temp\comply-flow-api-buildcheck\comply-flow-api.staticwebassets.endpoints.json
+C:\Users\mlina\AppData\Local\Temp\comply-flow-api-buildcheck\comply-flow-api.exe
+C:\Users\mlina\AppData\Local\Temp\comply-flow-api-buildcheck\comply-flow-api.deps.json
+C:\Users\mlina\AppData\Local\Temp\comply-flow-api-buildcheck\comply-flow-api.runtimeconfig.json
+C:\Users\mlina\AppData\Local\Temp\comply-flow-api-buildcheck\comply-flow-api.dll
+C:\Users\mlina\AppData\Local\Temp\comply-flow-api-buildcheck\comply-flow-api.pdb

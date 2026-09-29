@@ -31,33 +31,4 @@ public class ConfigurationRepository : IConfigurationRepository
             .AsNoTracking()
             .SingleOrDefaultAsync(configuration => configuration.Id == id, cancellationToken);
 
-    public async Task UpdateAsync(Configuration configuration, CancellationToken cancellationToken)
-    {
-        _dbContext.Configurations.Update(configuration);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task<ConfigurationDeleteResult> DeleteAsync(int id, CancellationToken cancellationToken)
-    {
-        var configuration = await _dbContext.Configurations
-            .SingleOrDefaultAsync(configuration => configuration.Id == id, cancellationToken);
-
-        if (configuration is null)
-        {
-            return ConfigurationDeleteResult.NotFound;
-        }
-
-        var isInUse = await _dbContext.Processings
-            .AnyAsync(processing => processing.ConfigurationId == id, cancellationToken);
-
-        if (isInUse)
-        {
-            return ConfigurationDeleteResult.InUse;
-        }
-
-        _dbContext.Configurations.Remove(configuration);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        return ConfigurationDeleteResult.Deleted;
-    }
 }
