@@ -23,7 +23,25 @@ public class TextFileService : ITextFileService
         ReadTxtFilesAsync(_promptDirectory, cancellationToken);
 
     public Task<string> GetBusinessRulesAsync(CancellationToken cancellationToken = default) =>
-        ReadTxtFilesAsync(_businessRulesDirectory, cancellationToken);
+        ReadBusinessRulesAsync(_businessRulesDirectory, cancellationToken);
+
+    private static async Task<string> ReadBusinessRulesAsync(
+        string directory,
+        CancellationToken cancellationToken)
+    {
+        if (!Directory.Exists(directory))
+        {
+            throw new DirectoryNotFoundException($"Business rules directory was not found: {directory}");
+        }
+
+        var filePath = Path.Combine(directory, "Rules.JSON");
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"Business rules file was not found: {filePath}");
+        }
+
+        return await File.ReadAllTextAsync(filePath, cancellationToken);
+    }
 
     private static async Task<string> ReadTxtFilesAsync(
         string directory,

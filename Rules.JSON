@@ -1,0 +1,869 @@
+[{ 
+  "ruleSetVersion": "1.0",
+  "rules": [
+    {
+      "id": "POSTA-001",
+      "name": "OC31 TC51/TC52 gépi kitöltés, sornyomtatásos bizonylat",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "31"
+          },
+          {
+            "field": "transactionCode",
+            "operator": "in",
+            "value": ["51", "52"]
+          },
+          {
+            "field": "dataDeliveryType",
+            "operator": "equals",
+            "value": "PrintedDocument"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 188,
+          "percentagePerMille": 7.9,
+          "minimumFtPerItem": 246
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2021-01-01"
+    },
+
+    {
+      "id": "POSTA-002",
+      "name": "OC31 TC51/TC52 gépi kitöltés, adatállomány",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "31"
+          },
+          {
+            "field": "transactionCode",
+            "operator": "in",
+            "value": ["51", "52"]
+          },
+          {
+            "field": "dataDeliveryType",
+            "operator": "equals",
+            "value": "DataFile"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 144,
+          "percentagePerMille": 6.7,
+          "minimumFtPerItem": 207
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2021-01-01"
+    },
+
+    {
+      "id": "POSTA-003",
+      "name": "OC31 TC53/TC54 gépi kitöltés, sornyomtatásos bizonylat",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "31"
+          },
+          {
+            "field": "transactionCode",
+            "operator": "in",
+            "value": ["53", "54"]
+          },
+          {
+            "field": "dataDeliveryType",
+            "operator": "equals",
+            "value": "PrintedDocument"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 211,
+          "percentagePerMille": 7.9,
+          "minimumFtPerItem": 246
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2021-01-01"
+    },
+
+    {
+      "id": "POSTA-004",
+      "name": "OC31 TC53/TC54 gépi kitöltés, adatállomány",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "31"
+          },
+          {
+            "field": "transactionCode",
+            "operator": "in",
+            "value": ["53", "54"]
+          },
+          {
+            "field": "dataDeliveryType",
+            "operator": "equals",
+            "value": "DataFile"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 180,
+          "percentagePerMille": 7.9,
+          "minimumFtPerItem": 246
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2021-01-01"
+    },
+
+    {
+      "id": "POSTA-005",
+      "name": "OC32 bármely tranzakciókód",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "32"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 180,
+          "percentagePerMille": 7.9,
+          "minimumFtPerItem": 246
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2021-01-01"
+    },
+
+    {
+      "id": "POSTA-006",
+      "name": "Elektronikus adatállomány és elektronikus kép",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "dataDeliveryType",
+            "operator": "equals",
+            "value": "ElectronicDataAndImage"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 188,
+          "percentagePerMille": 7.9,
+          "minimumFtPerItem": 246
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2021-01-01"
+    },
+
+    {
+      "id": "POSTA-007",
+      "name": "Postai kódos QR befizetés",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "paymentMethod",
+            "operator": "equals",
+            "value": "PostalCodeQR"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 144,
+          "percentagePerMille": 6.7,
+          "minimumFtPerItem": 207
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2021-01-01"
+    },
+
+    {
+      "id": "POSTA-008",
+      "name": "Hibakezelési pótdíj",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "errorHandlingRequired",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      "result": {
+        "decision": "AdditionalFee",
+        "fee": {
+          "fixedFtPerItem": 72
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2021-01-01"
+    },
+
+    {
+      "id": "POSTA-009",
+      "name": "Hibás tranzakció- és outputkód párosítás",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "invalidCodeCombination",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      "result": {
+        "decision": "InterpretationErrorFee",
+        "fee": {
+          "fixedFtPerItem": 190,
+          "percentagePerMille": 6.7,
+          "minimumFtPerItem": 227
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2021-01-01"
+    }, {
+      "id": "POSTA-010",
+      "name": "Kifizetésre nem került utalvány visszatelepítése",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "paymentNotCompleted",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      "result": {
+        "decision": "ReinstallationFee",
+        "fee": {
+          "fixedFtPerItem": 91
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2021-01-01"
+    }
+  ]
+},
+{
+  "ruleSetVersion": "2023-01-01",
+  "effectiveFrom": "2023-01-01",
+  "source": "Postai díjtájékoztató",
+  "rules": [
+    {
+      "id": "POSTA-2023-001",
+      "name": "OC31 TC51/TC52 sornyomtatásos bizonylat",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "31"
+          },
+          {
+            "field": "transactionCode",
+            "operator": "in",
+            "value": ["51", "52"]
+          },
+          {
+            "field": "dataDeliveryType",
+            "operator": "equals",
+            "value": "PrintedDocument"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 234,
+          "percentagePerMille": 9.8,
+          "minimumFtPerItem": 307
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-002",
+      "name": "OC31 TC51/TC52 adatállomány",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "31"
+          },
+          {
+            "field": "transactionCode",
+            "operator": "in",
+            "value": ["51", "52"]
+          },
+          {
+            "field": "dataDeliveryType",
+            "operator": "equals",
+            "value": "DataFile"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 180,
+          "percentagePerMille": 8.3,
+          "minimumFtPerItem": 258
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-003",
+      "name": "OC31 TC51/TC52 sornyomtatásos bizonylat - magasabb díjtétel",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "31"
+          },
+          {
+            "field": "transactionCode",
+            "operator": "in",
+            "value": ["53", "54"]
+          },
+          {
+            "field": "dataDeliveryType",
+            "operator": "equals",
+            "value": "PrintedDocument"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 263,
+          "percentagePerMille": 9.8,
+          "minimumFtPerItem": 307
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-004",
+      "name": "OC31 TC53/TC54 adatállomány",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "31"
+          },
+          {
+            "field": "transactionCode",
+            "operator": "in",
+            "value": ["53", "54"]
+          },
+          {
+            "field": "dataDeliveryType",
+            "operator": "equals",
+            "value": "DataFile"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 224,
+          "percentagePerMille": 9.8,
+          "minimumFtPerItem": 307
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-005",
+      "name": "OC32 elektronikus adat és kép",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "32"
+          },
+          {
+            "field": "dataDeliveryType",
+            "operator": "equals",
+            "value": "ElectronicDataAndImage"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 224,
+          "percentagePerMille": 9.8,
+          "minimumFtPerItem": 307
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-006",
+      "name": "OC23 képnyomtatás",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "23"
+          },
+          {
+            "field": "numericalCode",
+            "operator": "equals",
+            "value": false
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 234,
+          "percentagePerMille": 9.8,
+          "minimumFtPerItem": 307
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-007",
+      "name": "OC24 képnyomtatás",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "24"
+          },
+          {
+            "field": "numericalCode",
+            "operator": "equals",
+            "value": false
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 234,
+          "percentagePerMille": 9.8,
+          "minimumFtPerItem": 307
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-008",
+      "name": "OC22 kicsinyített bizonylatkép",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "22"
+          },
+          {
+            "field": "numericalCode",
+            "operator": "equals",
+            "value": false
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 234,
+          "percentagePerMille": 9.8,
+          "minimumFtPerItem": 307
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-009",
+      "name": "OC21 eredeti méretet közelítő bizonylatkép",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "21"
+          },
+          {
+            "field": "numericalCode",
+            "operator": "equals",
+            "value": false
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 234,
+          "percentagePerMille": 9.8,
+          "minimumFtPerItem": 307
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-010",
+      "name": "Postai QR kód - OC31 TC51",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "31"
+          },
+          {
+            "field": "transactionCode",
+            "operator": "equals",
+            "value": "51"
+          },
+          {
+            "field": "paymentMethod",
+            "operator": "equals",
+            "value": "PostalQrMobileApp"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 180,
+          "percentagePerMille": 8.3,
+          "minimumFtPerItem": 258
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-011",
+      "name": "Postai QR kód - OC31 TC52/TC53/TC54",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "31"
+          },
+          {
+            "field": "transactionCode",
+            "operator": "in",
+            "value": ["52", "53", "54"]
+          },
+          {
+            "field": "paymentMethod",
+            "operator": "equals",
+            "value": "PostalQrMobileApp"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 212,
+          "percentagePerMille": 9.8,
+          "minimumFtPerItem": 307
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-012",
+      "name": "Postai QR kód - OC32",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "32"
+          },
+          {
+            "field": "paymentMethod",
+            "operator": "equals",
+            "value": "PostalQrMobileApp"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 224,
+          "percentagePerMille": 9.8,
+          "minimumFtPerItem": 307
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-013",
+      "name": "Postai QR kód - OC21/TC55",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "paymentMethod",
+            "operator": "equals",
+            "value": "PostalQrMobileApp"
+          },
+          {
+            "field": "outputCode",
+            "operator": "equals",
+            "value": "21"
+          },
+          {
+            "field": "transactionCode",
+            "operator": "equals",
+            "value": "55"
+          }
+        ]
+      },
+      "result": {
+        "decision": "FeeApplicable",
+        "fee": {
+          "fixedFtPerItem": 234,
+          "percentagePerMille": 9.8,
+          "minimumFtPerItem": 307
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-014",
+      "name": "Hibakezelési pótdíj",
+      "conditions": {
+        "all": [
+          {
+            "field": "errorHandlingRequired",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      "result": {
+        "decision": "AdditionalFee",
+        "fee": {
+          "fixedFtPerItem": 90
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-015",
+      "name": "Értelmezési hiba - hibás tranzakció/output kód párosítás",
+      "conditions": {
+        "all": [
+          {
+            "field": "paymentType",
+            "operator": "equals",
+            "value": "CashTransferOrder"
+          },
+          {
+            "field": "invalidCodeCombination",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      "result": {
+        "decision": "InterpretationErrorFee",
+        "fee": {
+          "fixedFtPerItem": 236,
+          "percentagePerMille": 8.3,
+          "minimumFtPerItem": 282
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    },
+    {
+      "id": "POSTA-2023-016",
+      "name": "Kézbesíthetetlen kifizetési utalvány visszatelepítése",
+      "conditions": {
+        "all": [
+          {
+            "field": "undeliverablePaymentOrder",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      "result": {
+        "decision": "RelocationFee",
+        "fee": {
+          "fixedFtPerItem": 114
+        }
+      },
+      "source": "Postai díjtájékoztató",
+      "effectiveFrom": "2023-01-01"
+    }
+  ]
+}]

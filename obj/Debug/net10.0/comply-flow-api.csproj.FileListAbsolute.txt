@@ -175,3 +175,4 @@ C:\Users\mlina\AppData\Local\Temp\comply-flow-api-buildcheck\comply-flow-api.dep
 C:\Users\mlina\AppData\Local\Temp\comply-flow-api-buildcheck\comply-flow-api.runtimeconfig.json
 C:\Users\mlina\AppData\Local\Temp\comply-flow-api-buildcheck\comply-flow-api.dll
 C:\Users\mlina\AppData\Local\Temp\comply-flow-api-buildcheck\comply-flow-api.pdb
+C:\Users\mlina\OneDrive\Desktop\comply-flow-api\bin\Debug\net10.0\Rules.JSON
