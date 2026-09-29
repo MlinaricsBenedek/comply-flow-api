@@ -27,11 +27,10 @@ public class Message
     [Column(TypeName = "datetime")]
     public DateTime CreatedAt { get; set; }
 
-    [Required]
-    public int ProcessingId { get; set; }
+    public int? ProcessingId { get; set; }
 
     [ForeignKey(nameof(ProcessingId))]
-    public Processing Processing { get; set; } = null!;
+    public Processing? Processing { get; set; }
 
     public ICollection<Processing> InputForProcessings { get; set; } = new List<Processing>();
 }

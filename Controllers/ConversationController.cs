@@ -46,5 +46,35 @@ namespace comply_flow_api.Controllers
 
             return conversation is null ? NotFound() : Ok(conversation);
         }
+
+        [HttpPost("~/api/conversations/{conversationId:int}/messages")]
+        public async Task<IActionResult> CreateMessage(
+            int conversationId,
+            RequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _conversationService.CreateMessageAsync(
+                conversationId,
+                request,
+                cancellationToken);
+
+            return result.Status switch
+            {
+                MessageCreationStatus.Created => StatusCode(StatusCodes.Status201Created, result.Message),
+                MessageCreationStatus.ConversationNotFound => NotFound(new
+                {
+                    message = $"Conversation {conversationId} was not found."
+                }),
+                MessageCreationStatus.ConfigurationNotFound => NotFound(new
+                {
+                    message = $"Configuration {request.ConfigurationId} was not found."
+                }),
+                MessageCreationStatus.InvalidContent => BadRequest(new
+                {
+                    message = "Message content cannot be empty."
+                }),
+                _ => StatusCode(StatusCodes.Status500InternalServerError)
+            };
+        }
     }
 }
