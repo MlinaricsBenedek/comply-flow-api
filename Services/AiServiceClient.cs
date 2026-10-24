@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using comply_flow_api.Models;
 using Microsoft.Extensions.Options;
 
 namespace comply_flow_api.Services;
@@ -100,6 +101,7 @@ public sealed class AiServiceClient(
             payload.Message,
             payload.Facts,
             payload.Category,
+            MapCaseState(payload),
             payload.PartialSuccess,
             warnings);
     }
@@ -174,6 +176,21 @@ public sealed class AiServiceClient(
         return new InvalidOperationException($"The AI service '{endpoint}' failed. {details}");
     }
 
+    private static StructuredCaseState MapCaseState(AiPreprocessingApiResponse response)
+    {
+        var caseState = new StructuredCaseState
+        {
+            ["category"] = response.Category
+        };
+
+        foreach (var (name, values) in response.Facts!)
+        {
+            caseState[name] = values.Count == 1 ? values[0] : values;
+        }
+
+        return caseState;
+    }
+
     private static CancellationTokenSource CreateTimeoutTokenSource(
         CancellationToken cancellationToken,
         int timeoutSeconds)
@@ -209,6 +226,7 @@ public sealed record AiPreprocessingResult(
     string Message,
     Dictionary<string, List<string>> Facts,
     string? Category,
+    StructuredCaseState CaseState,
     bool PartialSuccess,
     IReadOnlyList<string> Warnings);
 

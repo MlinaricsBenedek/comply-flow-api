@@ -101,7 +101,7 @@ public class ProcessingService : IProcessingService
                     string.Join(", ", preprocessing.Warnings));
             }
 
-            var caseState = ToCaseState(preprocessing);
+            var caseState = preprocessing.CaseState;
             var evaluation = RuleEngine.Evaluate(caseState, ruleSet.Rules);
             var selectedRule = evaluation.SelectedRule?.Rule;
             var decision = selectedRule?.Result.Decision ?? "NoMatch";
@@ -217,21 +217,6 @@ public class ProcessingService : IProcessingService
                 processing.CreatedAt,
                 processing.StartedAt,
                 processing.FinishedAt);
-    }
-
-    private static StructuredCaseState ToCaseState(AiPreprocessingResult preprocessing)
-    {
-        var values = new StructuredCaseState
-        {
-            ["category"] = preprocessing.Category
-        };
-
-        foreach (var (key, factValues) in preprocessing.Facts)
-        {
-            values[key] = factValues.Count == 1 ? factValues[0] : factValues;
-        }
-
-        return values;
     }
 
     private static ResponsePlan CreateResponsePlan(Rule? selectedRule, string decision, string reason)
