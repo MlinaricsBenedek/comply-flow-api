@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -19,22 +20,21 @@ public sealed class AiServiceClient(
     HttpClient httpClient,
     IOptions<AiServiceOptions> options) : IAiServiceClient
 {
+    private static readonly JsonSerializerOptions ResponseJsonOptions =
+        new(JsonSerializerDefaults.Web);
+
     public async Task<IReadOnlyList<AiModelOption>> GetModelsAsync(
         CancellationToken cancellationToken)
     {
-        using var timeout = CreateTimeoutTokenSource(
-            cancellationToken,
-            options.Value.ModelsTimeoutSeconds);
-        using var httpResponse = await httpClient.GetAsync("models", timeout.Token);
-        httpResponse.EnsureSuccessStatusCode();
-        var response = await ReadResponseAsync<AiModelsApiResponse>(
-            httpResponse.Content,
+        var response = await SendAsync<AiModelsApiResponse>(
+            token => httpClient.GetAsync("models", token),
             "models",
-            timeout.Token);
+            options.Value.ModelsTimeoutSeconds,
+            cancellationToken);
 
         if (response is null)
         {
-            throw new InvalidDataException("The AI service returned no models response.");
+            throw InvalidResponse("models", "The response body is empty.");
         }
 
         if (!response.Success)
@@ -43,11 +43,11 @@ public sealed class AiServiceClient(
         }
 
         if (response.Models is not { Count: > 0 } models ||
-            models.Any(model => string.IsNullOrWhiteSpace(model.Name)) ||
+            models.Any(model => model is null || string.IsNullOrWhiteSpace(model.Name)) ||
             models.Select(model => model.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() != models.Count ||
             models.Count(model => model.IsDefault) > 1)
         {
-            throw new InvalidDataException("The AI service returned an invalid models list.");
+            throw InvalidResponse("models", "The response contains an invalid models list.");
         }
 
         return models;
@@ -57,22 +57,17 @@ public sealed class AiServiceClient(
         string message,
         CancellationToken cancellationToken)
     {
-        using var timeout = CreateTimeoutTokenSource(
-            cancellationToken,
-            options.Value.PreprocessingTimeoutSeconds);
-        using var response = await httpClient.PostAsJsonAsync(
+        var payload = await SendAsync<AiPreprocessingApiResponse>(
+            token => httpClient.PostAsJsonAsync(
+                "preprocessing",
+                new AiPreprocessingRequest(message),
+                token),
             "preprocessing",
-            new AiPreprocessingRequest(message),
-            timeout.Token);
-        response.EnsureSuccessStatusCode();
-
-        var payload = await ReadResponseAsync<AiPreprocessingApiResponse>(
-            response.Content,
-            "preprocessing",
-            timeout.Token);
+            options.Value.PreprocessingTimeoutSeconds,
+            cancellationToken);
         if (payload is null)
         {
-            throw new InvalidDataException("The AI service returned no preprocessing response.");
+            throw InvalidResponse("preprocessing", "The response body is empty.");
         }
 
         if (!payload.Success)
@@ -88,13 +83,13 @@ public sealed class AiServiceClient(
                 fact.Value is null ||
                 fact.Value.Any(string.IsNullOrWhiteSpace)))
         {
-            throw new InvalidDataException("The AI service returned an invalid preprocessing response.");
+            throw InvalidResponse("preprocessing", "Required fields are missing or invalid.");
         }
 
         var warnings = payload.Warnings ?? [];
         if (warnings.Any(string.IsNullOrWhiteSpace) || payload.PartialSuccess && warnings.Count == 0)
         {
-            throw new InvalidDataException("The AI service returned invalid preprocessing warnings.");
+            throw InvalidResponse("preprocessing", "The warning list is invalid.");
         }
 
         return new AiPreprocessingResult(
@@ -110,22 +105,14 @@ public sealed class AiServiceClient(
         AiGenerationRequest request,
         CancellationToken cancellationToken)
     {
-        using var timeout = CreateTimeoutTokenSource(
-            cancellationToken,
-            options.Value.GenerationTimeoutSeconds);
-        using var response = await httpClient.PostAsJsonAsync(
+        var payload = await SendAsync<AiGenerationApiResponse>(
+            token => httpClient.PostAsJsonAsync("generate", request, token),
             "generate",
-            request,
-            timeout.Token);
-        response.EnsureSuccessStatusCode();
-
-        var payload = await ReadResponseAsync<AiGenerationApiResponse>(
-            response.Content,
-            "generate",
-            timeout.Token);
+            options.Value.GenerationTimeoutSeconds,
+            cancellationToken);
         if (payload is null)
         {
-            throw new InvalidDataException("The AI service returned no generation response.");
+            throw InvalidResponse("generate", "The response body is empty.");
         }
 
         if (!payload.Success)
@@ -139,7 +126,7 @@ public sealed class AiServiceClient(
             string.IsNullOrWhiteSpace(payload.ModelId) ||
             payload.ModelParameters is null)
         {
-            throw new InvalidDataException("The AI service returned an invalid generation response.");
+            throw InvalidResponse("generate", "Required fields are missing or invalid.");
         }
 
         return new AiGenerationResult(
@@ -150,31 +137,110 @@ public sealed class AiServiceClient(
             payload.ModelParameters);
     }
 
-    private static async Task<T?> ReadResponseAsync<T>(
-        HttpContent content,
+    private async Task<T?> SendAsync<T>(
+        Func<CancellationToken, Task<HttpResponseMessage>> sendRequest,
         string endpoint,
+        int timeoutSeconds,
         CancellationToken cancellationToken)
     {
+        using var timeout = CreateTimeoutTokenSource(cancellationToken, timeoutSeconds);
         try
         {
-            return await content.ReadFromJsonAsync<T>(cancellationToken: cancellationToken);
+            using var response = await sendRequest(timeout.Token);
+            var body = await response.Content.ReadAsStringAsync(timeout.Token);
+            var responseCorrelationId = response.Headers.TryGetValues("x-correlation-id", out var values)
+                ? values.FirstOrDefault()
+                : null;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw CreateHttpError(endpoint, response.StatusCode, responseCorrelationId, body);
+            }
+
+            try
+            {
+                return JsonSerializer.Deserialize<T>(body, ResponseJsonOptions);
+            }
+            catch (JsonException exception)
+            {
+                throw InvalidResponse(endpoint, "The response body is not valid JSON.", exception);
+            }
         }
-        catch (JsonException exception)
+        catch (OperationCanceledException exception)
+            when (!cancellationToken.IsCancellationRequested && timeout.IsCancellationRequested)
         {
-            throw new InvalidDataException(
-                $"The AI service returned invalid JSON from '{endpoint}'.",
-                exception);
+            throw new AiServiceException(
+                AiServiceFailureKind.Timeout,
+                endpoint,
+                $"The AI service '{endpoint}' timed out after {timeoutSeconds} seconds.",
+                innerException: exception);
+        }
+        catch (HttpRequestException exception)
+        {
+            throw new AiServiceException(
+                AiServiceFailureKind.Unavailable,
+                endpoint,
+                $"The AI service '{endpoint}' is unavailable: {exception.Message}",
+                exception.StatusCode,
+                innerException: exception);
         }
     }
 
-    private static InvalidOperationException CreateServiceError(string endpoint, AiServiceError? error)
+    private static AiServiceException CreateServiceError(string endpoint, AiServiceError? error)
     {
         var details = error is null
             ? "The service reported an unsuccessful result."
-            : $"{error.Code}: {error.Message} (correlation ID: {error.CorrelationId ?? "unknown"})";
+            : $"{error.Code ?? "AI_ERROR"}: {error.Message ?? "No error message was provided."}";
 
-        return new InvalidOperationException($"The AI service '{endpoint}' failed. {details}");
+        return new AiServiceException(
+            AiServiceFailureKind.RemoteFailure,
+            endpoint,
+            $"The AI service '{endpoint}' failed. {details}",
+            correlationId: error?.CorrelationId);
     }
+
+    private static AiServiceException CreateHttpError(
+        string endpoint,
+        HttpStatusCode statusCode,
+        string? responseCorrelationId,
+        string body)
+    {
+        AiServiceError? error = null;
+        try
+        {
+            error = JsonSerializer.Deserialize<AiServiceErrorEnvelope>(body, ResponseJsonOptions)?.Error;
+        }
+        catch (JsonException)
+        {
+        }
+
+        var correlationId = error?.CorrelationId ?? responseCorrelationId;
+        var message = error?.Message ?? $"HTTP {(int)statusCode} ({statusCode}).";
+        var failureKind = statusCode is HttpStatusCode.RequestTimeout or HttpStatusCode.GatewayTimeout
+            ? AiServiceFailureKind.Timeout
+            : (int)statusCode >= 500
+                ? AiServiceFailureKind.Unavailable
+                : AiServiceFailureKind.HttpError;
+
+        return new AiServiceException(
+            failureKind,
+            endpoint,
+            $"The AI service '{endpoint}' returned HTTP {(int)statusCode}: {message}" +
+            (string.IsNullOrWhiteSpace(error?.Code) ? string.Empty : $" Code: {error.Code}.") +
+            (string.IsNullOrWhiteSpace(correlationId) ? string.Empty : $" Correlation ID: {correlationId}."),
+            statusCode,
+            correlationId);
+    }
+
+    private static AiServiceException InvalidResponse(
+        string endpoint,
+        string message,
+        Exception? innerException = null) =>
+        new(
+            AiServiceFailureKind.InvalidResponse,
+            endpoint,
+            $"The AI service '{endpoint}' returned an invalid response. {message}",
+            innerException: innerException);
 
     private static StructuredCaseState MapCaseState(AiPreprocessingApiResponse response)
     {
@@ -199,6 +265,38 @@ public sealed class AiServiceClient(
         timeout.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
         return timeout;
     }
+}
+
+public enum AiServiceFailureKind
+{
+    Unavailable,
+    Timeout,
+    HttpError,
+    RemoteFailure,
+    InvalidResponse
+}
+
+public sealed class AiServiceException : Exception
+{
+    public AiServiceException(
+        AiServiceFailureKind failureKind,
+        string endpoint,
+        string message,
+        HttpStatusCode? statusCode = null,
+        string? correlationId = null,
+        Exception? innerException = null)
+        : base(message, innerException)
+    {
+        FailureKind = failureKind;
+        Endpoint = endpoint;
+        StatusCode = statusCode;
+        CorrelationId = correlationId;
+    }
+
+    public AiServiceFailureKind FailureKind { get; }
+    public string Endpoint { get; }
+    public HttpStatusCode? StatusCode { get; }
+    public string? CorrelationId { get; }
 }
 
 public sealed record AiModelOption(
@@ -259,3 +357,6 @@ public sealed record AiServiceError(
     [property: JsonPropertyName("code")] string? Code,
     [property: JsonPropertyName("message")] string? Message,
     [property: JsonPropertyName("correlation_id")] string? CorrelationId);
+
+public sealed record AiServiceErrorEnvelope(
+    [property: JsonPropertyName("error")] AiServiceError? Error);

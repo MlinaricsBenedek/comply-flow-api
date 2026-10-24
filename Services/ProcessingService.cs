@@ -178,8 +178,11 @@ public class ProcessingService : IProcessingService
             var completionWasNotPersisted = processing.Status == ProcessingStatus.Completed;
             if (processing.Status == ProcessingStatus.Processing || completionWasNotPersisted)
             {
+                var errorType = exception is AiServiceException aiServiceException
+                    ? aiServiceException.FailureKind.ToString()
+                    : exception.GetType().Name;
                 processing.Fail(
-                    exception.GetType().Name,
+                    errorType,
                     exception.Message,
                     completionWasNotPersisted);
                 try
