@@ -226,9 +226,10 @@ public class ProcessingService : IProcessingService
     {
         var resultData = selectedRule?.Result.AdditionalData
             ?? new Dictionary<string, JsonElement>();
-        var requiredElements = resultData.TryGetValue("requiredElements", out var elements)
-            ? elements
-            : JsonSerializer.SerializeToElement(Array.Empty<string>());
+        var responseStructure = resultData
+            .Where(item => !string.Equals(item.Key, "requiredElements", StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(item => item.Key, item => item.Value);
+        var requiredElements = GetRequiredElements(resultData, responseStructure);
 
         var sources = selectedRule is null
             ? Array.Empty<string>()
@@ -241,12 +242,63 @@ public class ProcessingService : IProcessingService
         {
             Decision = decision,
             Reason = reason,
-            RequiredElementsJson = requiredElements.GetRawText(),
-            ResponseStructureJson = selectedRule is null
-                ? "{}"
-                : JsonSerializer.Serialize(selectedRule.Result),
+            RequiredElementsJson = JsonSerializer.Serialize(requiredElements),
+            ResponseStructureJson = JsonSerializer.Serialize(responseStructure),
             SourcesJson = JsonSerializer.Serialize(sources)
         };
+    }
+
+    private static IReadOnlyList<string> GetRequiredElements(
+        IReadOnlyDictionary<string, JsonElement> resultData,
+        IReadOnlyDictionary<string, JsonElement> responseStructure)
+    {
+        if (resultData.TryGetValue("requiredElements", out var explicitElements))
+        {
+            if (explicitElements.ValueKind != JsonValueKind.Array ||
+                explicitElements.EnumerateArray().Any(element => element.ValueKind != JsonValueKind.String))
+            {
+                throw new InvalidDataException("Rule requiredElements must be an array of strings.");
+            }
+
+            return explicitElements.EnumerateArray()
+                .Select(element => element.GetString()!)
+                .Where(element => !string.IsNullOrWhiteSpace(element))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        var requiredElements = new List<string>();
+        foreach (var (name, value) in responseStructure)
+        {
+            AddRequiredElementPaths(value, name, requiredElements);
+        }
+
+        return requiredElements;
+    }
+
+    private static void AddRequiredElementPaths(
+        JsonElement value,
+        string path,
+        ICollection<string> requiredElements)
+    {
+        if (value.ValueKind == JsonValueKind.Object)
+        {
+            var properties = value.EnumerateObject().ToArray();
+            if (properties.Length == 0)
+            {
+                requiredElements.Add(path);
+                return;
+            }
+
+            foreach (var property in properties)
+            {
+                AddRequiredElementPaths(property.Value, $"{path}.{property.Name}", requiredElements);
+            }
+
+            return;
+        }
+
+        requiredElements.Add(path);
     }
 
     private static string ResolveModelName(
