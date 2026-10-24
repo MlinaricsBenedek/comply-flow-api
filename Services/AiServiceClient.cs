@@ -8,8 +8,8 @@ namespace comply_flow_api.Services;
 public interface IAiServiceClient
 {
     Task<IReadOnlyList<AiModelOption>> GetModelsAsync(CancellationToken cancellationToken);
-    Task<AiPreprocessingResponse> PreprocessAsync(string message, CancellationToken cancellationToken);
-    Task<AiGenerationResponse> GenerateAsync(
+    Task<AiPreprocessingResult> PreprocessAsync(string message, CancellationToken cancellationToken);
+    Task<AiGenerationResult> GenerateAsync(
         AiGenerationRequest request,
         CancellationToken cancellationToken);
 }
@@ -24,20 +24,35 @@ public sealed class AiServiceClient(
         using var timeout = CreateTimeoutTokenSource(
             cancellationToken,
             options.Value.ModelsTimeoutSeconds);
-        var response = await httpClient.GetFromJsonAsync<AiModelsResponse>(
+        using var httpResponse = await httpClient.GetAsync("models", timeout.Token);
+        httpResponse.EnsureSuccessStatusCode();
+        var response = await ReadResponseAsync<AiModelsApiResponse>(
+            httpResponse.Content,
             "models",
             timeout.Token);
 
-        if (response is { Success: false })
+        if (response is null)
         {
-            throw new InvalidOperationException("The AI service could not return its available models.");
+            throw new InvalidDataException("The AI service returned no models response.");
         }
 
-        return response?.Models
-            ?? throw new InvalidOperationException("The AI service returned no models response.");
+        if (!response.Success)
+        {
+            throw CreateServiceError("models", response.Error);
+        }
+
+        if (response.Models is not { Count: > 0 } models ||
+            models.Any(model => string.IsNullOrWhiteSpace(model.Name)) ||
+            models.Select(model => model.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() != models.Count ||
+            models.Count(model => model.IsDefault) > 1)
+        {
+            throw new InvalidDataException("The AI service returned an invalid models list.");
+        }
+
+        return models;
     }
 
-    public async Task<AiPreprocessingResponse> PreprocessAsync(
+    public async Task<AiPreprocessingResult> PreprocessAsync(
         string message,
         CancellationToken cancellationToken)
     {
@@ -50,12 +65,46 @@ public sealed class AiServiceClient(
             timeout.Token);
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<AiPreprocessingResponse>(
-                cancellationToken: timeout.Token)
-            ?? throw new InvalidOperationException("The AI service returned no preprocessing response.");
+        var payload = await ReadResponseAsync<AiPreprocessingApiResponse>(
+            response.Content,
+            "preprocessing",
+            timeout.Token);
+        if (payload is null)
+        {
+            throw new InvalidDataException("The AI service returned no preprocessing response.");
+        }
+
+        if (!payload.Success)
+        {
+            throw CreateServiceError("preprocessing", payload.Error);
+        }
+
+        if (string.IsNullOrWhiteSpace(payload.Message) ||
+            payload.Facts is null ||
+            payload.Category is not null && string.IsNullOrWhiteSpace(payload.Category) ||
+            payload.Facts.Any(fact =>
+                string.IsNullOrWhiteSpace(fact.Key) ||
+                fact.Value is null ||
+                fact.Value.Any(string.IsNullOrWhiteSpace)))
+        {
+            throw new InvalidDataException("The AI service returned an invalid preprocessing response.");
+        }
+
+        var warnings = payload.Warnings ?? [];
+        if (warnings.Any(string.IsNullOrWhiteSpace) || payload.PartialSuccess && warnings.Count == 0)
+        {
+            throw new InvalidDataException("The AI service returned invalid preprocessing warnings.");
+        }
+
+        return new AiPreprocessingResult(
+            payload.Message,
+            payload.Facts,
+            payload.Category,
+            payload.PartialSuccess,
+            warnings);
     }
 
-    public async Task<AiGenerationResponse> GenerateAsync(
+    public async Task<AiGenerationResult> GenerateAsync(
         AiGenerationRequest request,
         CancellationToken cancellationToken)
     {
@@ -68,9 +117,61 @@ public sealed class AiServiceClient(
             timeout.Token);
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadFromJsonAsync<AiGenerationResponse>(
-                cancellationToken: timeout.Token)
-            ?? throw new InvalidOperationException("The AI service returned no generation response.");
+        var payload = await ReadResponseAsync<AiGenerationApiResponse>(
+            response.Content,
+            "generate",
+            timeout.Token);
+        if (payload is null)
+        {
+            throw new InvalidDataException("The AI service returned no generation response.");
+        }
+
+        if (!payload.Success)
+        {
+            throw CreateServiceError("generate", payload.Error);
+        }
+
+        if (string.IsNullOrWhiteSpace(payload.Response) ||
+            string.IsNullOrWhiteSpace(payload.PromptVersion) ||
+            string.IsNullOrWhiteSpace(payload.ModelName) ||
+            string.IsNullOrWhiteSpace(payload.ModelId) ||
+            payload.ModelParameters is null)
+        {
+            throw new InvalidDataException("The AI service returned an invalid generation response.");
+        }
+
+        return new AiGenerationResult(
+            payload.Response,
+            payload.PromptVersion,
+            payload.ModelName,
+            payload.ModelId,
+            payload.ModelParameters);
+    }
+
+    private static async Task<T?> ReadResponseAsync<T>(
+        HttpContent content,
+        string endpoint,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await content.ReadFromJsonAsync<T>(cancellationToken: cancellationToken);
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidDataException(
+                $"The AI service returned invalid JSON from '{endpoint}'.",
+                exception);
+        }
+    }
+
+    private static InvalidOperationException CreateServiceError(string endpoint, AiServiceError? error)
+    {
+        var details = error is null
+            ? "The service reported an unsuccessful result."
+            : $"{error.Code}: {error.Message} (correlation ID: {error.CorrelationId ?? "unknown"})";
+
+        return new InvalidOperationException($"The AI service '{endpoint}' failed. {details}");
     }
 
     private static CancellationTokenSource CreateTimeoutTokenSource(
@@ -87,18 +188,29 @@ public sealed record AiModelOption(
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("is_default")] bool IsDefault);
 
-public sealed record AiModelsResponse(
-    [property: JsonPropertyName("models")] IReadOnlyList<AiModelOption> Models,
-    [property: JsonPropertyName("success")] bool Success = true);
+public sealed record AiModelsApiResponse(
+    [property: JsonPropertyName("models")] List<AiModelOption>? Models,
+    [property: JsonPropertyName("success")] bool Success,
+    [property: JsonPropertyName("error")] AiServiceError? Error = null);
 
 public sealed record AiPreprocessingRequest(
     [property: JsonPropertyName("message")] string Message);
 
-public sealed record AiPreprocessingResponse(
-    [property: JsonPropertyName("message")] string Message,
-    [property: JsonPropertyName("facts")] Dictionary<string, List<string>> Facts,
+public sealed record AiPreprocessingApiResponse(
+    [property: JsonPropertyName("message")] string? Message,
+    [property: JsonPropertyName("facts")] Dictionary<string, List<string>>? Facts,
     [property: JsonPropertyName("category")] string? Category,
-    [property: JsonPropertyName("success")] bool Success = true);
+    [property: JsonPropertyName("success")] bool Success,
+    [property: JsonPropertyName("partial_success")] bool PartialSuccess = false,
+    [property: JsonPropertyName("warnings")] List<string>? Warnings = null,
+    [property: JsonPropertyName("error")] AiServiceError? Error = null);
+
+public sealed record AiPreprocessingResult(
+    string Message,
+    Dictionary<string, List<string>> Facts,
+    string? Category,
+    bool PartialSuccess,
+    IReadOnlyList<string> Warnings);
 
 public sealed record AiGenerationRequest(
     [property: JsonPropertyName("input_data")] Dictionary<string, object?> InputData,
@@ -109,10 +221,23 @@ public sealed record AiGenerationRequest(
     [property: JsonPropertyName("model_name")] string ModelName,
     [property: JsonPropertyName("model_parameters")] Dictionary<string, JsonElement>? ModelParameters);
 
-public sealed record AiGenerationResponse(
-    [property: JsonPropertyName("response")] string Response,
-    [property: JsonPropertyName("prompt_version")] string PromptVersion,
-    [property: JsonPropertyName("model_name")] string ModelName,
-    [property: JsonPropertyName("model_id")] string ModelId,
-    [property: JsonPropertyName("model_parameters")] Dictionary<string, JsonElement> ModelParameters,
-    [property: JsonPropertyName("success")] bool Success = true);
+public sealed record AiGenerationApiResponse(
+    [property: JsonPropertyName("response")] string? Response,
+    [property: JsonPropertyName("prompt_version")] string? PromptVersion,
+    [property: JsonPropertyName("model_name")] string? ModelName,
+    [property: JsonPropertyName("model_id")] string? ModelId,
+    [property: JsonPropertyName("model_parameters")] Dictionary<string, JsonElement>? ModelParameters,
+    [property: JsonPropertyName("success")] bool Success,
+    [property: JsonPropertyName("error")] AiServiceError? Error = null);
+
+public sealed record AiGenerationResult(
+    string Response,
+    string PromptVersion,
+    string ModelName,
+    string ModelId,
+    Dictionary<string, JsonElement> ModelParameters);
+
+public sealed record AiServiceError(
+    [property: JsonPropertyName("code")] string? Code,
+    [property: JsonPropertyName("message")] string? Message,
+    [property: JsonPropertyName("correlation_id")] string? CorrelationId);

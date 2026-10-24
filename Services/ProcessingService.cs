@@ -93,9 +93,12 @@ public class ProcessingService : IProcessingService
             var preprocessing = await _aiServiceClient.PreprocessAsync(
                 message.Content,
                 cancellationToken);
-            if (!preprocessing.Success)
+            if (preprocessing.PartialSuccess)
             {
-                throw new InvalidOperationException("The AI service could not preprocess the message.");
+                _logger.LogWarning(
+                    "Preprocessing for processing {ProcessingId} partially succeeded: {Warnings}",
+                    processing.Id,
+                    string.Join(", ", preprocessing.Warnings));
             }
 
             var caseState = ToCaseState(preprocessing);
@@ -153,10 +156,6 @@ public class ProcessingService : IProcessingService
                     modelName,
                     modelParameters),
                 cancellationToken);
-            if (!generation.Success)
-            {
-                throw new InvalidOperationException("The AI service could not generate a response.");
-            }
 
             processing.Response = new Response
             {
@@ -220,7 +219,7 @@ public class ProcessingService : IProcessingService
                 processing.FinishedAt);
     }
 
-    private static StructuredCaseState ToCaseState(AiPreprocessingResponse preprocessing)
+    private static StructuredCaseState ToCaseState(AiPreprocessingResult preprocessing)
     {
         var values = new StructuredCaseState
         {
