@@ -268,8 +268,10 @@ A RuleEngine képes feltételek és szabálycsoportok kiértékelésére, majd k
 
 ### 7.3 Processing API
 
-- GET /api/processing/GetProcessingResult/{processingId}
-  - Processing státusz, hiba és életciklus-időbélyegek lekérdezése
+- GET /api/processings/{processingId}
+  - Feldolgozási státusz, hiba és rendelkezésre álló preprocessing-, szabály-, terv-, válasz- és értékelési eredmények lekérdezése.
+  - Folyamatban lévő feldolgozásnál `202 Accepted` jelzi, hogy az eredmények még részlegesek vagy nem érhetők el.
+  - Befejezett vagy sikertelen feldolgozásnál `200 OK`; nem létező azonosítónál `404 Not Found`.
 
 ## 8. Adatbázis és kapcsolati modell
 

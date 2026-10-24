@@ -5,7 +5,7 @@ using comply_flow_api.Services;
 
 namespace comply_flow_api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api")]
     [ApiController]
     public class ProcessingController : ControllerBase
     {
@@ -16,13 +16,19 @@ namespace comply_flow_api.Controllers
             _processingService = processingService;
         }
 
-        [HttpGet("GetProcessingResult/{processingId:int}")]
-        public async Task<ActionResult<ProcessingStatusResponse>> GetProcessingResult(
+        [HttpGet("processings/{processingId:int}")]
+        [HttpGet("processing/GetProcessingResult/{processingId:int}")]
+        public async Task<ActionResult<ProcessingResultResponse>> GetProcessingResult(
             int processingId,
             CancellationToken cancellationToken)
         {
-            var processing = await _processingService.GetStatusAsync(processingId, cancellationToken);
-            return processing is null ? NotFound() : Ok(processing);
+            var processing = await _processingService.GetResultAsync(processingId, cancellationToken);
+            if (processing is null)
+            {
+                return NotFound();
+            }
+
+            return processing.IsFinished ? Ok(processing) : Accepted(processing);
         }
     }
 }

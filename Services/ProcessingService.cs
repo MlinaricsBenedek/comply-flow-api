@@ -12,7 +12,7 @@ public interface IProcessingService
         Message message,
         int configurationId,
         CancellationToken cancellationToken);
-    Task<ProcessingStatusResponse?> GetStatusAsync(int processingId, CancellationToken cancellationToken);
+    Task<ProcessingResultResponse?> GetResultAsync(int processingId, CancellationToken cancellationToken);
 }
 
 public enum ProcessingCreationStatus
@@ -216,22 +216,99 @@ public class ProcessingService : IProcessingService
         return new ProcessingCreationResult(ProcessingCreationStatus.Created, processing);
     }
 
-    public async Task<ProcessingStatusResponse?> GetStatusAsync(
+    public async Task<ProcessingResultResponse?> GetResultAsync(
         int processingId,
         CancellationToken cancellationToken)
     {
-        var processing = await _processingRepository.GetByIdAsync(processingId, cancellationToken);
-        return processing is null
+        var processing = await _processingRepository.GetResultByIdAsync(processingId, cancellationToken);
+        if (processing is null)
+        {
+            return null;
+        }
+
+        var evaluationResults = processing.EvaluationResults
+            .Select(result => new EvaluationResultResponse(
+                result.Metric,
+                result.Score,
+                result.Unit,
+                result.Comment))
+            .ToList();
+        var resultsAvailable =
+            processing.PreProcessing is not null ||
+            processing.Rules is not null ||
+            processing.ResponsePlan is not null ||
+            processing.Response is not null ||
+            evaluationResults.Count > 0;
+        var isFinished = processing.Status is ProcessingStatus.Completed or ProcessingStatus.Failed;
+        var availabilityMessage = GetAvailabilityMessage(
+            processing.Status,
+            resultsAvailable);
+        var results = resultsAvailable
+            ? new ProcessingArtifactsResponse(
+                processing.PreProcessing is null
+                    ? null
+                    : new PreProcessingResultResponse(
+                        processing.PreProcessing.CleanedText,
+                        processing.PreProcessing.CaseType,
+                        processing.PreProcessing.StructuredCaseStateJson),
+                processing.Rules is null
+                    ? null
+                    : new RuleDecisionResultResponse(
+                        processing.Rules.Decision,
+                        processing.Rules.Reason,
+                        processing.Rules.RuleSetVersion,
+                        processing.Rules.MatchedRules
+                            .Select(rule => new MatchedRuleResultResponse(rule.Matched, rule.Reason))
+                            .ToList()),
+                processing.ResponsePlan is null
+                    ? null
+                    : new ResponsePlanResultResponse(
+                        processing.ResponsePlan.Decision,
+                        processing.ResponsePlan.Reason,
+                        processing.ResponsePlan.RequiredElementsJson,
+                        processing.ResponsePlan.ResponseStructureJson,
+                        processing.ResponsePlan.SourcesJson),
+                processing.Response is null
+                    ? null
+                    : new GeneratedResponseResultResponse(
+                        processing.Response.ResponseText,
+                        processing.Response.GenerationMode,
+                        processing.Response.TemplateVersion,
+                        processing.Response.PromptVersion,
+                        processing.Response.ModelName,
+                        processing.Response.ProcessingTimeMs),
+                evaluationResults)
+            : null;
+
+        var error = processing.ErrorType is null && processing.ErrorMessage is null
             ? null
-            : new ProcessingStatusResponse(
-                processing.Id,
-                processing.Status.ToString(),
-                processing.ErrorType,
-                processing.ErrorMessage,
-                processing.CreatedAt,
-                processing.StartedAt,
-                processing.FinishedAt);
+            : new ProcessingErrorResponse(
+                processing.ErrorType ?? "ProcessingError",
+                processing.ErrorMessage ?? "The processing failed without an error message.");
+
+        return new ProcessingResultResponse(
+            processing.Id,
+            processing.Status.ToString(),
+            processing.CreatedAt,
+            processing.StartedAt,
+            processing.FinishedAt,
+            isFinished,
+            resultsAvailable,
+            availabilityMessage,
+            error,
+            results);
     }
+
+    private static string? GetAvailabilityMessage(ProcessingStatus status, bool resultsAvailable) =>
+        status switch
+        {
+            ProcessingStatus.Created => "Processing has not started; results are not available yet.",
+            ProcessingStatus.Processing when resultsAvailable => "Processing is still running; available results are partial.",
+            ProcessingStatus.Processing => "Processing is still running; results are not available yet.",
+            ProcessingStatus.Failed when resultsAvailable => "Processing failed; partial results are available.",
+            ProcessingStatus.Failed => "Processing failed before producing results.",
+            _ => null
+        };
 
     private static ResponsePlan CreateResponsePlan(Rule? selectedRule, string decision, string reason)
     {

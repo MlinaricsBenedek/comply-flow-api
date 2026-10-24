@@ -27,6 +27,18 @@ public class ProcessingRepository : IProcessingRepository
             .AsNoTracking()
             .SingleOrDefaultAsync(processing => processing.Id == id, cancellationToken);
 
+    public Task<Processing?> GetResultByIdAsync(int id, CancellationToken cancellationToken) =>
+        _dbContext.Processings
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(processing => processing.PreProcessing)
+            .Include(processing => processing.Rules)
+                .ThenInclude(rules => rules!.MatchedRules)
+            .Include(processing => processing.ResponsePlan)
+            .Include(processing => processing.Response)
+            .Include(processing => processing.EvaluationResults)
+            .SingleOrDefaultAsync(processing => processing.Id == id, cancellationToken);
+
     public async Task<bool> MarkFailedAsync(
         int processingId,
         string errorType,
