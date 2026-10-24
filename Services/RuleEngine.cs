@@ -16,10 +16,10 @@ public static class RuleEngine
 
         return condition.Operator.Trim().ToLowerInvariant() switch
         {
-            "equals" => EqualsValue(actual, expected),
-            "notequals" => NotEqualsValue(actual, expected),
-            "in" => InValues(actual, GetExpectedValues(condition.Value)),
-            "notin" => NotInValues(actual, GetExpectedValues(condition.Value)),
+            "equals" => AnyValueMatches(actual, value => EqualsValue(value, expected)),
+            "notequals" => !AnyValueMatches(actual, value => EqualsValue(value, expected)),
+            "in" => AnyValueMatches(actual, value => InValues(value, GetExpectedValues(condition.Value))),
+            "notin" => !AnyValueMatches(actual, value => InValues(value, GetExpectedValues(condition.Value))),
             "greaterthan" => GreaterThan(actual, expected),
             "greaterthanorequal" => GreaterThanOrEqual(actual, expected),
             "lessthan" => LessThan(actual, expected),
@@ -186,6 +186,16 @@ public static class RuleEngine
         var expectedDouble = Convert.ToDouble(expected, System.Globalization.CultureInfo.InvariantCulture);
         comparison = actualDouble.CompareTo(expectedDouble);
         return true;
+    }
+
+    private static bool AnyValueMatches(object? value, Func<object?, bool> predicate)
+    {
+        if (value is IEnumerable values and not string)
+        {
+            return values.Cast<object?>().Any(predicate);
+        }
+
+        return predicate(value);
     }
 
     private static bool IsNumeric(object value) => value is

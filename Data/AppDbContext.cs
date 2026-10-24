@@ -43,6 +43,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .OnDelete(DeleteBehavior.NoAction);
 
         modelBuilder.Entity<Processing>()
+            .Property(processing => processing.Status)
+            .HasConversion<string>()
+            .HasMaxLength(30)
+            .HasColumnType("varchar(30)");
+
+        modelBuilder.Entity<Processing>()
             .HasMany(processing => processing.Messages)
             .WithOne(message => message.Processing)
             .HasForeignKey(message => message.ProcessingId)

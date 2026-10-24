@@ -48,6 +48,33 @@ public sealed class Rule
 
     [JsonPropertyName("conditions")]
     public ConditionGroup Conditions { get; set; } = new();
+
+    [JsonPropertyName("result")]
+    public RuleOutcome Result { get; set; } = new();
+
+    [JsonPropertyName("source")]
+    public string? Source { get; set; }
+
+    [JsonPropertyName("effectiveFrom")]
+    public string? EffectiveFrom { get; set; }
+}
+
+public sealed class RuleSetDocument
+{
+    [JsonPropertyName("ruleSetVersion")]
+    public string RuleSetVersion { get; set; } = string.Empty;
+
+    [JsonPropertyName("rules")]
+    public List<Rule> Rules { get; set; } = [];
+}
+
+public sealed class RuleOutcome
+{
+    [JsonPropertyName("decision")]
+    public string Decision { get; set; } = string.Empty;
+
+    [JsonExtensionData]
+    public Dictionary<string, System.Text.Json.JsonElement> AdditionalData { get; set; } = [];
 }
 
 public sealed record RuleEvaluationResult(Rule Rule, bool IsMatched);

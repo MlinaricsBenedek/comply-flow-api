@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using comply_flow_api.Models.dtos.ProcessDtos;
+using comply_flow_api.Services;
 
 namespace comply_flow_api.Controllers
 {
@@ -7,12 +9,20 @@ namespace comply_flow_api.Controllers
     [ApiController]
     public class ProcessingController : ControllerBase
     {
+        private readonly IProcessingService _processingService;
 
-        [HttpGet("GetProcessingResult/{processingId}")]
-        public IActionResult GetProcessingResult(string processingId)
+        public ProcessingController(IProcessingService processingService)
         {
-            // Implementation for getting processing result
-            return Ok();
+            _processingService = processingService;
+        }
+
+        [HttpGet("GetProcessingResult/{processingId:int}")]
+        public async Task<ActionResult<ProcessingStatusResponse>> GetProcessingResult(
+            int processingId,
+            CancellationToken cancellationToken)
+        {
+            var processing = await _processingService.GetStatusAsync(processingId, cancellationToken);
+            return processing is null ? NotFound() : Ok(processing);
         }
     }
 }

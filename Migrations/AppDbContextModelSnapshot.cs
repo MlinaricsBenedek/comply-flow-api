@@ -236,8 +236,20 @@ namespace comply_flow_api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime");
 
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("varchar(max)");
+
+                    b.Property<string>("ErrorType")
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime?>("FinishedAt")
+                        .HasColumnType("datetime");
+
                     b.Property<int>("InputMessageId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime");
 
                     b.Property<string>("Status")
                         .IsRequired()
