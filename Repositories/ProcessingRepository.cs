@@ -26,4 +26,23 @@ public class ProcessingRepository : IProcessingRepository
         _dbContext.Processings
             .AsNoTracking()
             .SingleOrDefaultAsync(processing => processing.Id == id, cancellationToken);
+
+    public async Task<bool> MarkFailedAsync(
+        int processingId,
+        string errorType,
+        string errorMessage,
+        DateTime finishedAt,
+        CancellationToken cancellationToken)
+    {
+        var affectedRows = await _dbContext.Processings
+            .Where(processing => processing.Id == processingId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(processing => processing.Status, ProcessingStatus.Failed)
+                .SetProperty(processing => processing.ErrorType, errorType)
+                .SetProperty(processing => processing.ErrorMessage, errorMessage)
+                .SetProperty(processing => processing.FinishedAt, finishedAt),
+                cancellationToken);
+
+        return affectedRows == 1;
+    }
 }

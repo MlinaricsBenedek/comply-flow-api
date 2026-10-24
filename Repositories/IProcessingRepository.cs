@@ -6,5 +6,11 @@ public interface IProcessingRepository
 {
     Task AddAsync(Processing processing, CancellationToken cancellationToken);
     Task<Processing?> GetByIdAsync(int id, CancellationToken cancellationToken);
+    Task<bool> MarkFailedAsync(
+        int processingId,
+        string errorType,
+        string errorMessage,
+        DateTime finishedAt,
+        CancellationToken cancellationToken);
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }

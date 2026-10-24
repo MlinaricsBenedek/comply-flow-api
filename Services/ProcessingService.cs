@@ -187,7 +187,18 @@ public class ProcessingService : IProcessingService
                     completionWasNotPersisted);
                 try
                 {
-                    await _processingRepository.SaveChangesAsync(CancellationToken.None);
+                    var failureSaved = await _processingRepository.MarkFailedAsync(
+                        processing.Id,
+                        errorType,
+                        exception.Message,
+                        processing.FinishedAt!.Value,
+                        CancellationToken.None);
+                    if (!failureSaved)
+                    {
+                        _logger.LogWarning(
+                            "No processing row was updated to Failed for processing {ProcessingId}.",
+                            processing.Id);
+                    }
                 }
                 catch (Exception persistenceException)
                 {
