@@ -32,7 +32,13 @@ public sealed record RuleDecisionResultResponse(
     string RuleSetVersion,
     IReadOnlyList<MatchedRuleResultResponse> MatchedRules);
 
-public sealed record MatchedRuleResultResponse(bool Matched, string Reason);
+public sealed record MatchedRuleResultResponse(
+    bool Matched,
+    int PrioScore,
+    string ResultJson,
+    string? Source,
+    string? EffectiveFrom,
+    string Reason);
 
 public sealed record ResponsePlanResultResponse(
     string Decision,

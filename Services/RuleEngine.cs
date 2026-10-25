@@ -8,18 +8,25 @@ public static class RuleEngine
 {
     public static bool EvaluateCondition(Condition condition, StructuredCaseState caseState)
     {
-        ArgumentNullException.ThrowIfNull(condition);
         ArgumentNullException.ThrowIfNull(caseState);
 
-        var actual = GetFieldValue(caseState, condition.Field);
+        if (condition is null ||
+            string.IsNullOrWhiteSpace(condition.Field) ||
+            string.IsNullOrWhiteSpace(condition.Operator) ||
+            !caseState.TryGetValue(condition.Field, out var actualValue))
+        {
+            return false;
+        }
+
+        var actual = NormalizeJsonValue(actualValue);
         var expected = NormalizeJsonValue(condition.Value);
 
         return condition.Operator.Trim().ToLowerInvariant() switch
         {
-            "equals" => AnyValueMatches(actual, value => EqualsValue(value, expected)),
-            "notequals" => !AnyValueMatches(actual, value => EqualsValue(value, expected)),
-            "in" => AnyValueMatches(actual, value => InValues(value, GetExpectedValues(condition.Value))),
-            "notin" => !AnyValueMatches(actual, value => InValues(value, GetExpectedValues(condition.Value))),
+            "equals" => CompareEquality(actual, expected, negate: false),
+            "notequals" => CompareEquality(actual, expected, negate: true),
+            "in" => CompareMembership(actual, condition.Value, negate: false),
+            "notin" => CompareMembership(actual, condition.Value, negate: true),
             "greaterthan" => GreaterThan(actual, expected),
             "greaterthanorequal" => GreaterThanOrEqual(actual, expected),
             "lessthan" => LessThan(actual, expected),
@@ -33,9 +40,14 @@ public static class RuleEngine
         actual = NormalizeJsonValue(actual);
         expected = NormalizeJsonValue(expected);
 
+        if (!AreComparable(actual, expected))
+        {
+            return false;
+        }
+
         if (actual is null || expected is null)
         {
-            return actual is null && expected is null;
+            return true;
         }
 
         if (TryCompareNumbers(actual, expected, out var comparison))
@@ -47,13 +59,21 @@ public static class RuleEngine
     }
 
     public static bool NotEqualsValue(object? actual, object? expected) =>
-        !EqualsValue(actual, expected);
+        AreComparable(actual, expected) && !EqualsValue(actual, expected);
 
-    public static bool InValues(object? actual, IEnumerable<object?> expected) =>
-        expected.Any(value => EqualsValue(actual, value));
+    public static bool InValues(object? actual, IEnumerable<object?> expected)
+    {
+        ArgumentNullException.ThrowIfNull(expected);
+        return TryCompareMembership(actual, expected.Select(NormalizeJsonValue).ToArray(), out var matches)
+            && matches;
+    }
 
-    public static bool NotInValues(object? actual, IEnumerable<object?> expected) =>
-        !InValues(actual, expected);
+    public static bool NotInValues(object? actual, IEnumerable<object?> expected)
+    {
+        ArgumentNullException.ThrowIfNull(expected);
+        return TryCompareMembership(actual, expected.Select(NormalizeJsonValue).ToArray(), out var matches)
+            && !matches;
+    }
 
     public static bool GreaterThan(object? actual, object? expected) =>
         TryCompareNumbers(actual, expected, out var comparison) && comparison > 0;
@@ -102,7 +122,7 @@ public static class RuleEngine
     public static bool EvaluateRule(Rule rule, StructuredCaseState caseState)
     {
         ArgumentNullException.ThrowIfNull(rule);
-        return rule.Conditions is null || EvaluateConditionGroup(rule.Conditions, caseState);
+        return rule.Conditions is not null && EvaluateConditionGroup(rule.Conditions, caseState);
     }
 
     public static List<RuleEvaluationResult> EvaluateRules(
@@ -116,7 +136,7 @@ public static class RuleEngine
     public static RuleEvaluationResult? SelectRule(IEnumerable<RuleEvaluationResult> matchedRules) =>
         matchedRules
             .Where(result => result.IsMatched)
-            .OrderByDescending(result => result.Rule.Priority)
+            .OrderByDescending(result => result.Rule.PrioScore)
             .FirstOrDefault();
 
     public static RuleEngineResult Evaluate(
@@ -130,20 +150,133 @@ public static class RuleEngine
         return new RuleEngineResult(evaluations, matchedRules, selectedRule);
     }
 
-    private static IEnumerable<object?> GetExpectedValues(object? value)
+    private static bool CompareEquality(object? actual, object? expected, bool negate)
+    {
+        if (IsComplexJsonValue(expected))
+        {
+            return false;
+        }
+
+        var actualValues = GetValues(actual).ToList();
+        if (actualValues.Count == 0 ||
+            actualValues.Any(value => !AreComparable(value, expected)))
+        {
+            return false;
+        }
+
+        var anyEqual = actualValues.Any(value => EqualsValue(value, expected));
+        return negate ? !anyEqual : anyEqual;
+    }
+
+    private static bool CompareMembership(object? actual, object? expected, bool negate)
+    {
+        if (!TryGetExpectedValues(expected, out var expectedValues))
+        {
+            return false;
+        }
+
+        return TryCompareMembership(actual, expectedValues, out var matches)
+            && (negate ? !matches : matches);
+    }
+
+    private static bool TryCompareMembership(
+        object? actual,
+        IReadOnlyList<object?> expectedValues,
+        out bool anyMatch)
+    {
+        anyMatch = false;
+        if (expectedValues.Count == 0 || expectedValues.Any(IsComplexJsonValue))
+        {
+            return false;
+        }
+
+        var actualValues = GetValues(actual).ToList();
+        if (actualValues.Count == 0)
+        {
+            return false;
+        }
+
+        var comparisons = new List<bool>();
+        foreach (var actualValue in actualValues)
+        {
+            var comparableExpectedValues = expectedValues
+                .Where(value => AreComparable(actualValue, value))
+                .ToList();
+            if (comparableExpectedValues.Count == 0)
+            {
+                return false;
+            }
+
+            comparisons.Add(comparableExpectedValues.Any(value => EqualsValue(actualValue, value)));
+        }
+
+        anyMatch = comparisons.Any(matches => matches);
+        return true;
+    }
+
+    private static bool TryGetExpectedValues(object? value, out IReadOnlyList<object?> values)
     {
         if (value is JsonElement { ValueKind: JsonValueKind.Array } jsonArray)
         {
-            return jsonArray.EnumerateArray().Select(item => NormalizeJsonValue(item)).ToArray();
+            values = jsonArray.EnumerateArray()
+                .Select(item => NormalizeJsonValue(item))
+                .ToArray();
         }
-
-        if (value is IEnumerable values and not string)
+        else if (value is IEnumerable items and not string)
         {
-            return values.Cast<object?>().Select(NormalizeJsonValue).ToArray();
+            values = items.Cast<object?>()
+                .Select(NormalizeJsonValue)
+                .ToArray();
+        }
+        else
+        {
+            values = [];
+            return false;
         }
 
-        return [];
+        return values.Count > 0 && values.All(item => !IsComplexJsonValue(item));
     }
+
+    private static IEnumerable<object?> GetValues(object? value)
+    {
+        if (value is JsonElement { ValueKind: JsonValueKind.Array } jsonArray)
+        {
+            return jsonArray.EnumerateArray()
+                .Select(item => NormalizeJsonValue(item))
+                .ToArray();
+        }
+
+        if (value is IEnumerable items and not string)
+        {
+            return items.Cast<object?>()
+                .Select(NormalizeJsonValue)
+                .ToArray();
+        }
+
+        return [NormalizeJsonValue(value)];
+    }
+
+    private static bool AreComparable(object? actual, object? expected)
+    {
+        actual = NormalizeJsonValue(actual);
+        expected = NormalizeJsonValue(expected);
+
+        if (actual is null || expected is null)
+        {
+            return actual is null && expected is null;
+        }
+
+        if (IsNumeric(actual) && IsNumeric(expected))
+        {
+            return true;
+        }
+
+        return actual is string && expected is string ||
+            actual is bool && expected is bool;
+    }
+
+    private static bool IsComplexJsonValue(object? value) =>
+        value is JsonElement { ValueKind: JsonValueKind.Array or JsonValueKind.Object };
 
     private static object? NormalizeJsonValue(object? value)
     {
@@ -186,16 +319,6 @@ public static class RuleEngine
         var expectedDouble = Convert.ToDouble(expected, System.Globalization.CultureInfo.InvariantCulture);
         comparison = actualDouble.CompareTo(expectedDouble);
         return true;
-    }
-
-    private static bool AnyValueMatches(object? value, Func<object?, bool> predicate)
-    {
-        if (value is IEnumerable values and not string)
-        {
-            return values.Cast<object?>().Any(predicate);
-        }
-
-        return predicate(value);
     }
 
     private static bool IsNumeric(object value) => value is

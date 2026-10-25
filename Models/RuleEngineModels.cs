@@ -17,13 +17,13 @@ public sealed class StructuredCaseState : Dictionary<string, object?>
 public sealed class Condition
 {
     [JsonPropertyName("field")]
-    public string Field { get; set; } = string.Empty;
+    public required string Field { get; set; }
 
     [JsonPropertyName("operator")]
-    public string Operator { get; set; } = string.Empty;
+    public required string Operator { get; set; }
 
     [JsonPropertyName("value")]
-    public object? Value { get; set; }
+    public required object? Value { get; set; }
 }
 
 public sealed class ConditionGroup
@@ -38,19 +38,19 @@ public sealed class ConditionGroup
 public sealed class Rule
 {
     [JsonPropertyName("id")]
-    public string Id { get; set; } = string.Empty;
+    public required string Id { get; set; }
 
     [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
 
-    [JsonPropertyName("priority")]
-    public int Priority { get; set; }
+    [JsonPropertyName("prioScore")]
+    public int PrioScore { get; set; } = 0;
 
     [JsonPropertyName("conditions")]
-    public ConditionGroup Conditions { get; set; } = new();
+    public required ConditionGroup? Conditions { get; set; }
 
     [JsonPropertyName("result")]
-    public RuleOutcome Result { get; set; } = new();
+    public required RuleOutcome Result { get; set; }
 
     [JsonPropertyName("source")]
     public string? Source { get; set; }
@@ -62,16 +62,16 @@ public sealed class Rule
 public sealed class RuleSetDocument
 {
     [JsonPropertyName("ruleSetVersion")]
-    public string RuleSetVersion { get; set; } = string.Empty;
+    public required string RuleSetVersion { get; set; }
 
     [JsonPropertyName("rules")]
-    public List<Rule> Rules { get; set; } = [];
+    public required List<Rule> Rules { get; set; }
 }
 
 public sealed class RuleOutcome
 {
     [JsonPropertyName("decision")]
-    public string Decision { get; set; } = string.Empty;
+    public required string Decision { get; set; }
 
     [JsonExtensionData]
     public Dictionary<string, System.Text.Json.JsonElement> AdditionalData { get; set; } = [];

@@ -1,869 +1,166 @@
-[{ 
-  "ruleSetVersion": "1.0",
-  "rules": [
-    {
-      "id": "POSTA-001",
-      "name": "OC31 TC51/TC52 gépi kitöltés, sornyomtatásos bizonylat",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
+[
+  {
+    "ruleSetVersion": "1.0",
+    "rules": [
+      {
+        "id": "HU-REFUND-001",
+        "name": "Hungarian refund and defective-product guidance",
+        "prioScore": 100,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "REFUND"
+            }
+          ]
+        },
+        "result": {
+          "decision": "RefundAndWarrantyGuidance",
+          "requiredElements": [
+            "purchaseChannel",
+            "purchaseDate",
+            "productName",
+            "productPrice",
+            "defectDescription",
+            "requestedRemedy",
+            "repairHistory"
+          ],
+          "onlineWithdrawal": {
+            "scope": "Applies to qualifying distance/off-premises consumer contracts; statutory exceptions must be checked.",
+            "withdrawalPeriodDays": 14,
+            "withdrawalPeriodStarts": "For a sale of goods, from receipt; withdrawal may also be communicated before receipt.",
+            "refundDeadlineDaysAfterNotice": 14,
+            "refundMayBeWithheldUntilReturnOrProof": true,
+            "returnDeadlineDaysAfterNotice": 14,
+            "returnCost": "The consumer generally pays the direct return cost if the trader informed the consumer of this before the contract; the trader bears it if it agreed to do so or failed to provide the required cost information.",
+            "eligibilityCheck": "Ask whether the purchase was online/off-premises, when the goods were received, and whether an exception applies."
           },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "31"
+          "defectiveProductClaim": {
+            "automaticRefund": false,
+            "initialRemedies": [
+              "repair",
+              "replacement"
+            ],
+            "furtherRemedies": [
+              "price reduction",
+              "termination and refund"
+            ],
+            "furtherRemediesConditions": "Price reduction or termination/refund is available only when statutory conditions are met. Do not promise an automatic refund merely because a defect was reported.",
+            "mandatoryGuaranteeDuration": {
+              "scope": "Only goods listed in the annex to Hungarian Government Decree 151/2003, under the legal version applicable to the contract.",
+              "priceAtLeastHuf": 10000,
+              "priceUpToAndIncludingHuf": 250000,
+              "durationYears": 2,
+              "priceAboveHuf": 250000,
+              "durationAbovePriceYears": 3,
+              "warning": "Price alone does not establish that mandatory guarantee rules apply. Verify product category, contract date, and guarantee document. Statutory defect liability is a separate legal right."
+            },
+            "refundTiming": "The refund deadline depends on the legal basis. Decree 151/2003 sets an eight-day refund deadline in certain specific mandatory-guarantee cases; this is not a general deadline for every defective product."
           },
-          {
-            "field": "transactionCode",
-            "operator": "in",
-            "value": ["51", "52"]
+          "responseInstructions": "Answer in Hungarian. Distinguish online withdrawal from defect-related statutory liability/mandatory guarantee. Do not infer purchase channel, date, price, or number of repairs when not provided. Explain the applicable general time limits with their stated conditions and exceptions, then ask for missing facts. Do not calculate fees or promise a guaranteed refund; eligibility depends on the facts."
+        },
+        "source": "NJT 45/2014: https://njt.hu/jogszabaly/2014-45-20-22 (20, 23-25); 373/2021: https://njt.hu/jogszabaly/2021-373-20-22 (11-13); 151/2003: https://njt.hu/jogszabaly/2003-151-20-22 (2, 5)"
+      },
+      {
+        "id": "HU-CONSUMER-002",
+        "name": "Clarify other or ambiguous consumer issues",
+        "prioScore": -100,
+        "conditions": {},
+        "result": {
+          "decision": "ConsumerIssueClarification",
+          "requiredElements": [
+            "category",
+            "issueDescription",
+            "purchaseChannel",
+            "purchaseDate"
+          ],
+          "responseInstructions": "Answer in Hungarian and ask for the issue type and facts needed to assess it. Do not invent banking or postal data, deadlines, legal eligibility, or refund amounts. Do not charge a fee."
+        },
+        "source": "NJT 45/2014: https://njt.hu/jogszabaly/2014-45-20-22 (20, 23-25); 373/2021: https://njt.hu/jogszabaly/2021-373-20-22 (11-13); 151/2003: https://njt.hu/jogszabaly/2003-151-20-22 (2, 5)"
+      }
+    ]
+  },
+  {
+    "ruleSetVersion": "2023-01-01",
+    "rules": [
+      {
+        "id": "HU-REFUND-001",
+        "name": "Hungarian refund and defective-product guidance",
+        "prioScore": 100,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "REFUND"
+            }
+          ]
+        },
+        "result": {
+          "decision": "RefundAndWarrantyGuidance",
+          "requiredElements": [
+            "purchaseChannel",
+            "purchaseDate",
+            "productName",
+            "productPrice",
+            "defectDescription",
+            "requestedRemedy",
+            "repairHistory"
+          ],
+          "onlineWithdrawal": {
+            "scope": "Applies to qualifying distance/off-premises consumer contracts; statutory exceptions must be checked.",
+            "withdrawalPeriodDays": 14,
+            "withdrawalPeriodStarts": "For a sale of goods, from receipt; withdrawal may also be communicated before receipt.",
+            "refundDeadlineDaysAfterNotice": 14,
+            "refundMayBeWithheldUntilReturnOrProof": true,
+            "returnDeadlineDaysAfterNotice": 14,
+            "returnCost": "The consumer generally pays the direct return cost if the trader informed the consumer of this before the contract; the trader bears it if it agreed to do so or failed to provide the required cost information.",
+            "eligibilityCheck": "Ask whether the purchase was online/off-premises, when the goods were received, and whether an exception applies."
           },
-          {
-            "field": "dataDeliveryType",
-            "operator": "equals",
-            "value": "PrintedDocument"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 188,
-          "percentagePerMille": 7.9,
-          "minimumFtPerItem": 246
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2021-01-01"
-    },
-
-    {
-      "id": "POSTA-002",
-      "name": "OC31 TC51/TC52 gépi kitöltés, adatállomány",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
+          "defectiveProductClaim": {
+            "automaticRefund": false,
+            "initialRemedies": [
+              "repair",
+              "replacement"
+            ],
+            "furtherRemedies": [
+              "price reduction",
+              "termination and refund"
+            ],
+            "furtherRemediesConditions": "Price reduction or termination/refund is available only when statutory conditions are met. Do not promise an automatic refund merely because a defect was reported.",
+            "mandatoryGuaranteeDuration": {
+              "scope": "Only goods listed in the annex to Hungarian Government Decree 151/2003, under the legal version applicable to the contract.",
+              "priceAtLeastHuf": 10000,
+              "priceUpToAndIncludingHuf": 250000,
+              "durationYears": 2,
+              "priceAboveHuf": 250000,
+              "durationAbovePriceYears": 3,
+              "warning": "Price alone does not establish that mandatory guarantee rules apply. Verify product category, contract date, and guarantee document. Statutory defect liability is a separate legal right."
+            },
+            "refundTiming": "The refund deadline depends on the legal basis. Decree 151/2003 sets an eight-day refund deadline in certain specific mandatory-guarantee cases; this is not a general deadline for every defective product."
           },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "31"
-          },
-          {
-            "field": "transactionCode",
-            "operator": "in",
-            "value": ["51", "52"]
-          },
-          {
-            "field": "dataDeliveryType",
-            "operator": "equals",
-            "value": "DataFile"
-          }
-        ]
+          "responseInstructions": "Answer in Hungarian. Distinguish online withdrawal from defect-related statutory liability/mandatory guarantee. Do not infer purchase channel, date, price, or number of repairs when not provided. Explain the applicable general time limits with their stated conditions and exceptions, then ask for missing facts. Do not calculate fees or promise a guaranteed refund; eligibility depends on the facts."
+        },
+        "source": "NJT 45/2014: https://njt.hu/jogszabaly/2014-45-20-22 (20, 23-25); 373/2021: https://njt.hu/jogszabaly/2021-373-20-22 (11-13); 151/2003: https://njt.hu/jogszabaly/2003-151-20-22 (2, 5)"
       },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 144,
-          "percentagePerMille": 6.7,
-          "minimumFtPerItem": 207
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2021-01-01"
-    },
-
-    {
-      "id": "POSTA-003",
-      "name": "OC31 TC53/TC54 gépi kitöltés, sornyomtatásos bizonylat",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "31"
-          },
-          {
-            "field": "transactionCode",
-            "operator": "in",
-            "value": ["53", "54"]
-          },
-          {
-            "field": "dataDeliveryType",
-            "operator": "equals",
-            "value": "PrintedDocument"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 211,
-          "percentagePerMille": 7.9,
-          "minimumFtPerItem": 246
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2021-01-01"
-    },
-
-    {
-      "id": "POSTA-004",
-      "name": "OC31 TC53/TC54 gépi kitöltés, adatállomány",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "31"
-          },
-          {
-            "field": "transactionCode",
-            "operator": "in",
-            "value": ["53", "54"]
-          },
-          {
-            "field": "dataDeliveryType",
-            "operator": "equals",
-            "value": "DataFile"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 180,
-          "percentagePerMille": 7.9,
-          "minimumFtPerItem": 246
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2021-01-01"
-    },
-
-    {
-      "id": "POSTA-005",
-      "name": "OC32 bármely tranzakciókód",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "32"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 180,
-          "percentagePerMille": 7.9,
-          "minimumFtPerItem": 246
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2021-01-01"
-    },
-
-    {
-      "id": "POSTA-006",
-      "name": "Elektronikus adatállomány és elektronikus kép",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "dataDeliveryType",
-            "operator": "equals",
-            "value": "ElectronicDataAndImage"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 188,
-          "percentagePerMille": 7.9,
-          "minimumFtPerItem": 246
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2021-01-01"
-    },
-
-    {
-      "id": "POSTA-007",
-      "name": "Postai kódos QR befizetés",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "paymentMethod",
-            "operator": "equals",
-            "value": "PostalCodeQR"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 144,
-          "percentagePerMille": 6.7,
-          "minimumFtPerItem": 207
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2021-01-01"
-    },
-
-    {
-      "id": "POSTA-008",
-      "name": "Hibakezelési pótdíj",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "errorHandlingRequired",
-            "operator": "equals",
-            "value": true
-          }
-        ]
-      },
-      "result": {
-        "decision": "AdditionalFee",
-        "fee": {
-          "fixedFtPerItem": 72
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2021-01-01"
-    },
-
-    {
-      "id": "POSTA-009",
-      "name": "Hibás tranzakció- és outputkód párosítás",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "invalidCodeCombination",
-            "operator": "equals",
-            "value": true
-          }
-        ]
-      },
-      "result": {
-        "decision": "InterpretationErrorFee",
-        "fee": {
-          "fixedFtPerItem": 190,
-          "percentagePerMille": 6.7,
-          "minimumFtPerItem": 227
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2021-01-01"
-    }, {
-      "id": "POSTA-010",
-      "name": "Kifizetésre nem került utalvány visszatelepítése",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "paymentNotCompleted",
-            "operator": "equals",
-            "value": true
-          }
-        ]
-      },
-      "result": {
-        "decision": "ReinstallationFee",
-        "fee": {
-          "fixedFtPerItem": 91
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2021-01-01"
-    }
-  ]
-},
-{
-  "ruleSetVersion": "2023-01-01",
-  "effectiveFrom": "2023-01-01",
-  "source": "Postai díjtájékoztató",
-  "rules": [
-    {
-      "id": "POSTA-2023-001",
-      "name": "OC31 TC51/TC52 sornyomtatásos bizonylat",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "31"
-          },
-          {
-            "field": "transactionCode",
-            "operator": "in",
-            "value": ["51", "52"]
-          },
-          {
-            "field": "dataDeliveryType",
-            "operator": "equals",
-            "value": "PrintedDocument"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 234,
-          "percentagePerMille": 9.8,
-          "minimumFtPerItem": 307
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-002",
-      "name": "OC31 TC51/TC52 adatállomány",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "31"
-          },
-          {
-            "field": "transactionCode",
-            "operator": "in",
-            "value": ["51", "52"]
-          },
-          {
-            "field": "dataDeliveryType",
-            "operator": "equals",
-            "value": "DataFile"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 180,
-          "percentagePerMille": 8.3,
-          "minimumFtPerItem": 258
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-003",
-      "name": "OC31 TC51/TC52 sornyomtatásos bizonylat - magasabb díjtétel",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "31"
-          },
-          {
-            "field": "transactionCode",
-            "operator": "in",
-            "value": ["53", "54"]
-          },
-          {
-            "field": "dataDeliveryType",
-            "operator": "equals",
-            "value": "PrintedDocument"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 263,
-          "percentagePerMille": 9.8,
-          "minimumFtPerItem": 307
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-004",
-      "name": "OC31 TC53/TC54 adatállomány",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "31"
-          },
-          {
-            "field": "transactionCode",
-            "operator": "in",
-            "value": ["53", "54"]
-          },
-          {
-            "field": "dataDeliveryType",
-            "operator": "equals",
-            "value": "DataFile"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 224,
-          "percentagePerMille": 9.8,
-          "minimumFtPerItem": 307
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-005",
-      "name": "OC32 elektronikus adat és kép",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "32"
-          },
-          {
-            "field": "dataDeliveryType",
-            "operator": "equals",
-            "value": "ElectronicDataAndImage"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 224,
-          "percentagePerMille": 9.8,
-          "minimumFtPerItem": 307
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-006",
-      "name": "OC23 képnyomtatás",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "23"
-          },
-          {
-            "field": "numericalCode",
-            "operator": "equals",
-            "value": false
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 234,
-          "percentagePerMille": 9.8,
-          "minimumFtPerItem": 307
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-007",
-      "name": "OC24 képnyomtatás",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "24"
-          },
-          {
-            "field": "numericalCode",
-            "operator": "equals",
-            "value": false
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 234,
-          "percentagePerMille": 9.8,
-          "minimumFtPerItem": 307
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-008",
-      "name": "OC22 kicsinyített bizonylatkép",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "22"
-          },
-          {
-            "field": "numericalCode",
-            "operator": "equals",
-            "value": false
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 234,
-          "percentagePerMille": 9.8,
-          "minimumFtPerItem": 307
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-009",
-      "name": "OC21 eredeti méretet közelítő bizonylatkép",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "21"
-          },
-          {
-            "field": "numericalCode",
-            "operator": "equals",
-            "value": false
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 234,
-          "percentagePerMille": 9.8,
-          "minimumFtPerItem": 307
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-010",
-      "name": "Postai QR kód - OC31 TC51",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "31"
-          },
-          {
-            "field": "transactionCode",
-            "operator": "equals",
-            "value": "51"
-          },
-          {
-            "field": "paymentMethod",
-            "operator": "equals",
-            "value": "PostalQrMobileApp"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 180,
-          "percentagePerMille": 8.3,
-          "minimumFtPerItem": 258
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-011",
-      "name": "Postai QR kód - OC31 TC52/TC53/TC54",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "31"
-          },
-          {
-            "field": "transactionCode",
-            "operator": "in",
-            "value": ["52", "53", "54"]
-          },
-          {
-            "field": "paymentMethod",
-            "operator": "equals",
-            "value": "PostalQrMobileApp"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 212,
-          "percentagePerMille": 9.8,
-          "minimumFtPerItem": 307
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-012",
-      "name": "Postai QR kód - OC32",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "32"
-          },
-          {
-            "field": "paymentMethod",
-            "operator": "equals",
-            "value": "PostalQrMobileApp"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 224,
-          "percentagePerMille": 9.8,
-          "minimumFtPerItem": 307
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-013",
-      "name": "Postai QR kód - OC21/TC55",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "paymentMethod",
-            "operator": "equals",
-            "value": "PostalQrMobileApp"
-          },
-          {
-            "field": "outputCode",
-            "operator": "equals",
-            "value": "21"
-          },
-          {
-            "field": "transactionCode",
-            "operator": "equals",
-            "value": "55"
-          }
-        ]
-      },
-      "result": {
-        "decision": "FeeApplicable",
-        "fee": {
-          "fixedFtPerItem": 234,
-          "percentagePerMille": 9.8,
-          "minimumFtPerItem": 307
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-014",
-      "name": "Hibakezelési pótdíj",
-      "conditions": {
-        "all": [
-          {
-            "field": "errorHandlingRequired",
-            "operator": "equals",
-            "value": true
-          }
-        ]
-      },
-      "result": {
-        "decision": "AdditionalFee",
-        "fee": {
-          "fixedFtPerItem": 90
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-015",
-      "name": "Értelmezési hiba - hibás tranzakció/output kód párosítás",
-      "conditions": {
-        "all": [
-          {
-            "field": "paymentType",
-            "operator": "equals",
-            "value": "CashTransferOrder"
-          },
-          {
-            "field": "invalidCodeCombination",
-            "operator": "equals",
-            "value": true
-          }
-        ]
-      },
-      "result": {
-        "decision": "InterpretationErrorFee",
-        "fee": {
-          "fixedFtPerItem": 236,
-          "percentagePerMille": 8.3,
-          "minimumFtPerItem": 282
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    },
-    {
-      "id": "POSTA-2023-016",
-      "name": "Kézbesíthetetlen kifizetési utalvány visszatelepítése",
-      "conditions": {
-        "all": [
-          {
-            "field": "undeliverablePaymentOrder",
-            "operator": "equals",
-            "value": true
-          }
-        ]
-      },
-      "result": {
-        "decision": "RelocationFee",
-        "fee": {
-          "fixedFtPerItem": 114
-        }
-      },
-      "source": "Postai díjtájékoztató",
-      "effectiveFrom": "2023-01-01"
-    }
-  ]
-}]
+      {
+        "id": "HU-CONSUMER-002",
+        "name": "Clarify other or ambiguous consumer issues",
+        "prioScore": -100,
+        "conditions": {},
+        "result": {
+          "decision": "ConsumerIssueClarification",
+          "requiredElements": [
+            "category",
+            "issueDescription",
+            "purchaseChannel",
+            "purchaseDate"
+          ],
+          "responseInstructions": "Answer in Hungarian and ask for the issue type and facts needed to assess it. Do not invent banking or postal data, deadlines, legal eligibility, or refund amounts. Do not charge a fee."
+        },
+        "source": "NJT 45/2014: https://njt.hu/jogszabaly/2014-45-20-22 (20, 23-25); 373/2021: https://njt.hu/jogszabaly/2021-373-20-22 (11-13); 151/2003: https://njt.hu/jogszabaly/2003-151-20-22 (2, 5)"
+      }
+    ]
+  }
+]

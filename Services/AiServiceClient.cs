@@ -124,7 +124,12 @@ public sealed class AiServiceClient(
             string.IsNullOrWhiteSpace(payload.PromptVersion) ||
             string.IsNullOrWhiteSpace(payload.ModelName) ||
             string.IsNullOrWhiteSpace(payload.ModelId) ||
-            payload.ModelParameters is null)
+            payload.ModelParameters is null ||
+            payload.ReferenceSimilarity.HasValue !=
+                !string.IsNullOrWhiteSpace(payload.ReferenceSimilarityMetric) ||
+            payload.ReferenceSimilarity is < 0 or > 1 ||
+            payload.ReferenceSimilarityMetric is not null &&
+                string.IsNullOrWhiteSpace(payload.ReferenceSimilarityMetric))
         {
             throw InvalidResponse("generate", "Required fields are missing or invalid.");
         }
@@ -134,7 +139,9 @@ public sealed class AiServiceClient(
             payload.PromptVersion,
             payload.ModelName,
             payload.ModelId,
-            payload.ModelParameters);
+            payload.ModelParameters,
+            payload.ReferenceSimilarity,
+            payload.ReferenceSimilarityMetric);
     }
 
     private async Task<T?> SendAsync<T>(
@@ -344,6 +351,8 @@ public sealed record AiGenerationApiResponse(
     [property: JsonPropertyName("model_id")] string? ModelId,
     [property: JsonPropertyName("model_parameters")] Dictionary<string, JsonElement>? ModelParameters,
     [property: JsonPropertyName("success")] bool Success,
+    [property: JsonPropertyName("reference_similarity")] decimal? ReferenceSimilarity = null,
+    [property: JsonPropertyName("reference_similarity_metric")] string? ReferenceSimilarityMetric = null,
     [property: JsonPropertyName("error")] AiServiceError? Error = null);
 
 public sealed record AiGenerationResult(
@@ -351,7 +360,9 @@ public sealed record AiGenerationResult(
     string PromptVersion,
     string ModelName,
     string ModelId,
-    Dictionary<string, JsonElement> ModelParameters);
+    Dictionary<string, JsonElement> ModelParameters,
+    decimal? ReferenceSimilarity,
+    string? ReferenceSimilarityMetric);
 
 public sealed record AiServiceError(
     [property: JsonPropertyName("code")] string? Code,

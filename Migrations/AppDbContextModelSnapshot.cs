@@ -135,15 +135,28 @@ namespace comply_flow_api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("EffectiveFrom")
+                        .HasColumnType("varchar(50)");
+
                     b.Property<bool>("Matched")
                         .HasColumnType("bit");
+
+                    b.Property<int>("PrioScore")
+                        .HasColumnType("int");
 
                     b.Property<string>("Reason")
                         .IsRequired()
                         .HasColumnType("varchar(max)");
 
+                    b.Property<string>("ResultJson")
+                        .IsRequired()
+                        .HasColumnType("varchar(max)");
+
                     b.Property<int>("RuleId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Source")
+                        .HasColumnType("varchar(500)");
 
                     b.HasKey("Id");
 

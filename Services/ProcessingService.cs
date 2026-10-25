@@ -77,18 +77,28 @@ public class ProcessingService : IProcessingService
             await _processingRepository.SaveChangesAsync(cancellationToken);
 
             var ruleSetJson = await _textFileService.GetBusinessRulesAsync(cancellationToken);
-            var ruleSet = JsonSerializer.Deserialize<RuleSetDocument>(ruleSetJson)
+            var ruleSets = JsonSerializer.Deserialize<List<RuleSetDocument>>(ruleSetJson)
                 ?? throw new InvalidOperationException("The business rules file is empty or invalid.");
+            if (ruleSets.Count == 0 || ruleSets.Any(ruleSet => ruleSet is null))
+            {
+                throw new InvalidDataException("The business rules file contains no valid rule sets.");
+            }
 
-            if (!string.Equals(
+            var matchingRuleSets = ruleSets
+                .Where(ruleSet => string.Equals(
                     ruleSet.RuleSetVersion,
                     configuration.RuleSetVersion,
                     StringComparison.Ordinal))
+                .ToList();
+            if (matchingRuleSets.Count != 1)
             {
                 throw new InvalidOperationException(
-                    $"Configured rule set version '{configuration.RuleSetVersion}' does not match " +
-                    $"loaded version '{ruleSet.RuleSetVersion}'.");
+                    matchingRuleSets.Count == 0
+                        ? $"No business rule set was found for configured version '{configuration.RuleSetVersion}'."
+                        : $"Multiple business rule sets were found for configured version '{configuration.RuleSetVersion}'.");
             }
+            var ruleSet = matchingRuleSets[0];
+            ValidateRuleSet(ruleSet);
 
             var preprocessing = await _aiServiceClient.PreprocessAsync(
                 message.Content,
@@ -124,6 +134,12 @@ public class ProcessingService : IProcessingService
                     .Select(result => new MatchedRules
                     {
                         Matched = result.IsMatched,
+                        PrioScore = result.Rule.PrioScore,
+                        ResultJson = JsonSerializer.Serialize(
+                            result.Rule.Result,
+                            JsonSerializerOptions.Web),
+                        Source = result.Rule.Source,
+                        EffectiveFrom = result.Rule.EffectiveFrom,
                         Reason = $"{result.Rule.Id}: {result.Rule.Name}"
                     })
                     .ToList()
@@ -156,6 +172,18 @@ public class ProcessingService : IProcessingService
                     modelName,
                     modelParameters),
                 cancellationToken);
+
+            if (generation.ReferenceSimilarity is decimal referenceSimilarity &&
+                generation.ReferenceSimilarityMetric is string referenceSimilarityMetric)
+            {
+                processing.EvaluationResults.Add(new EvaluationResult
+                {
+                    Metric = "reference_similarity",
+                    Score = referenceSimilarity,
+                    Unit = "0-1",
+                    Comment = referenceSimilarityMetric
+                });
+            }
 
             processing.Response = new Response
             {
@@ -258,7 +286,13 @@ public class ProcessingService : IProcessingService
                         processing.Rules.Reason,
                         processing.Rules.RuleSetVersion,
                         processing.Rules.MatchedRules
-                            .Select(rule => new MatchedRuleResultResponse(rule.Matched, rule.Reason))
+                            .Select(rule => new MatchedRuleResultResponse(
+                                rule.Matched,
+                                rule.PrioScore,
+                                rule.ResultJson,
+                                rule.Source,
+                                rule.EffectiveFrom,
+                                rule.Reason))
                             .ToList()),
                 processing.ResponsePlan is null
                     ? null
@@ -309,6 +343,92 @@ public class ProcessingService : IProcessingService
             ProcessingStatus.Failed => "Processing failed before producing results.",
             _ => null
         };
+
+    private static void ValidateRuleSet(RuleSetDocument ruleSet)
+    {
+        if (string.IsNullOrWhiteSpace(ruleSet.RuleSetVersion) ||
+            ruleSet.Rules is null ||
+            ruleSet.Rules.Count == 0)
+        {
+            throw new InvalidDataException("The selected business rule set is missing its version or rules.");
+        }
+
+        foreach (var rule in ruleSet.Rules)
+        {
+            if (rule is null ||
+                string.IsNullOrWhiteSpace(rule.Id) ||
+                string.IsNullOrWhiteSpace(rule.Name) ||
+                rule.Conditions is null ||
+                rule.Result is null ||
+                string.IsNullOrWhiteSpace(rule.Result.Decision))
+            {
+                throw new InvalidDataException(
+                    $"The business rule set '{ruleSet.RuleSetVersion}' contains a rule with missing required fields.");
+            }
+
+            ValidateConditions(rule, rule.Conditions.All);
+            ValidateConditions(rule, rule.Conditions.Any);
+        }
+    }
+
+    private static void ValidateConditions(Rule rule, IEnumerable<Condition>? conditions)
+    {
+        if (conditions is null)
+        {
+            return;
+        }
+
+        foreach (var condition in conditions)
+        {
+            if (condition is null ||
+                string.IsNullOrWhiteSpace(condition.Field) ||
+                string.IsNullOrWhiteSpace(condition.Operator) ||
+                !IsValidConditionValue(condition))
+            {
+                throw new InvalidDataException(
+                    $"Rule '{rule.Id}' contains a condition with a missing field, operator, or invalid value type.");
+            }
+        }
+    }
+
+    private static bool IsValidConditionValue(Condition condition)
+    {
+        var operation = condition.Operator.Trim().ToLowerInvariant();
+        if (operation is not (
+                "equals" or
+                "notequals" or
+                "in" or
+                "notin" or
+                "greaterthan" or
+                "greaterthanorequal" or
+                "lessthan" or
+                "lessthanorequal"))
+        {
+            return false;
+        }
+
+        if (condition.Value is not JsonElement value)
+        {
+            return condition.Value is null && operation is "equals" or "notequals";
+        }
+
+        return operation switch
+        {
+            "equals" or "notequals" => IsScalarJsonValue(value),
+            "in" or "notin" => value.ValueKind == JsonValueKind.Array &&
+                value.EnumerateArray().All(IsScalarJsonValue),
+            "greaterthan" or "greaterthanorequal" or "lessthan" or "lessthanorequal" =>
+                value.ValueKind == JsonValueKind.Number,
+            _ => false
+        };
+    }
+
+    private static bool IsScalarJsonValue(JsonElement value) =>
+        value.ValueKind is JsonValueKind.String or
+            JsonValueKind.Number or
+            JsonValueKind.True or
+            JsonValueKind.False or
+            JsonValueKind.Null;
 
     private static ResponsePlan CreateResponsePlan(Rule? selectedRule, string decision, string reason)
     {

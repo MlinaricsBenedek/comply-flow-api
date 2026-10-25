@@ -18,6 +18,19 @@ public class MatchedRules
     public bool Matched { get; set; }
 
     [Required]
+    public int PrioScore { get; set; }
+
+    [Required]
+    [Column(TypeName = "varchar(max)")]
+    public string ResultJson { get; set; } = "{}";
+
+    [Column(TypeName = "varchar(500)")]
+    public string? Source { get; set; }
+
+    [Column(TypeName = "varchar(50)")]
+    public string? EffectiveFrom { get; set; }
+
+    [Required]
     [Column(TypeName = "varchar(max)")]
     public string Reason { get; set; } = string.Empty;
 }
