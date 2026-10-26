@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("comply-flow-api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+813c09d6c8a0a592f4d6d04ace475de6458c98bb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+29fb3ec735c424ed263a691ba341652d61d7ef9a")]
 [assembly: System.Reflection.AssemblyProductAttribute("comply-flow-api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("comply-flow-api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

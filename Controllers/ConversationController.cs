@@ -47,6 +47,20 @@ namespace comply_flow_api.Controllers
             return conversation is null ? NotFound() : Ok(conversation);
         }
 
+        [HttpGet("~/api/conversations/{conversationId:int}/messages")]
+        [ProducesResponseType<ConversationMessagesResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ConversationMessagesResponse>> GetMessages(
+            int conversationId,
+            CancellationToken cancellationToken)
+        {
+            var messages = await _conversationService.GetMessagesAsync(
+                conversationId,
+                cancellationToken);
+
+            return messages is null ? NotFound() : Ok(messages);
+        }
+
         [HttpPost("~/api/conversations/{conversationId:int}/messages")]
         public async Task<IActionResult> CreateMessage(
             int conversationId,

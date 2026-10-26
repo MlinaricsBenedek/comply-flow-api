@@ -1,4 +1,5 @@
 using comply_flow_api.Data;
+using comply_flow_api.Middleware;
 using comply_flow_api.Repositories;
 using comply_flow_api.Services;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,8 @@ builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 builder.Services.AddScoped<IProcessingService, ProcessingService>();
 builder.Services.AddScoped<ITextFileService, TextFileService>();
+builder.Services.AddSingleton<PayloadFileLogger>();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddOptions<AiServiceOptions>()
     .Bind(builder.Configuration.GetSection(AiServiceOptions.SectionName))
     .ValidateDataAnnotations()
@@ -49,6 +52,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+app.UseMiddleware<RequestPayloadLoggingMiddleware>();
 
 app.UseHttpsRedirection();
 

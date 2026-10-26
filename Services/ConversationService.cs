@@ -9,6 +9,7 @@ public interface IConversationService
 	Task<ConversationResponse> CreateAsync(RequestConversation request, CancellationToken cancellationToken);
 	Task<IReadOnlyList<ConversationResponse>> GetAllAsync(CancellationToken cancellationToken);
 	Task<ConversationResponse?> GetByIdAsync(int id, CancellationToken cancellationToken);
+	Task<ConversationMessagesResponse?> GetMessagesAsync(int conversationId, CancellationToken cancellationToken);
 	Task<MessageCreationResult> CreateMessageAsync(
 		int conversationId,
 		RequestMessage request,
@@ -74,6 +75,46 @@ public class ConversationService : IConversationService
 		return conversation is null ? null : ToResponse(conversation);
 	}
 
+	public async Task<ConversationMessagesResponse?> GetMessagesAsync(
+		int conversationId,
+		CancellationToken cancellationToken)
+	{
+		var conversation = await _conversationRepository.GetWithProcessingsAsync(
+			conversationId,
+			cancellationToken);
+		if (conversation is null)
+		{
+			return null;
+		}
+
+		var messages = conversation.Processings
+			.OrderBy(processing => processing.CreatedAt)
+			.ThenBy(processing => processing.Id)
+			.Select(processing => new ConversationExchangeResponse(
+				processing.Id,
+				processing.Status.ToString(),
+				new ConversationRequestMessageResponse(
+					processing.InputMessage.Id,
+					processing.InputMessage.Content,
+					ToUtcDateTimeOffset(processing.InputMessage.CreatedAt)),
+				processing.Response is null
+					? null
+					: new ConversationGeneratedMessageResponse(
+						processing.Response.ResponseText,
+						processing.Response.GenerationMode,
+						processing.FinishedAt is null
+							? null
+							: ToUtcDateTimeOffset(processing.FinishedAt.Value)),
+				processing.ErrorType is null && processing.ErrorMessage is null
+					? null
+					: new ConversationMessageErrorResponse(
+						processing.ErrorType ?? "ProcessingError",
+						processing.ErrorMessage ?? "The processing failed without an error message.")))
+			.ToList();
+
+		return new ConversationMessagesResponse(conversation.Id, messages);
+	}
+
 	public async Task<MessageCreationResult> CreateMessageAsync(
 		int conversationId,
 		RequestMessage request,
@@ -122,5 +163,8 @@ public class ConversationService : IConversationService
 
 	private static ConversationResponse ToResponse(Conversation conversation) =>
 		new(conversation.Id, conversation.Title, conversation.Status, conversation.CreatedAt);
+
+	private static DateTimeOffset ToUtcDateTimeOffset(DateTime value) =>
+		new(DateTime.SpecifyKind(value, DateTimeKind.Utc));
 
 }

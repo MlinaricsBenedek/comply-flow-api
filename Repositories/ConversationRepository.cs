@@ -30,4 +30,14 @@ public class ConversationRepository : IConversationRepository
         _dbContext.Conversations
             .AsNoTracking()
             .SingleOrDefaultAsync(conversation => conversation.Id == id, cancellationToken);
+
+    public Task<Conversation?> GetWithProcessingsAsync(int id, CancellationToken cancellationToken) =>
+        _dbContext.Conversations
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(conversation => conversation.Processings)
+                .ThenInclude(processing => processing.InputMessage)
+            .Include(conversation => conversation.Processings)
+                .ThenInclude(processing => processing.Response)
+            .SingleOrDefaultAsync(conversation => conversation.Id == id, cancellationToken);
 }

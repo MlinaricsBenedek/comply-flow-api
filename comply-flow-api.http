@@ -4,3 +4,11 @@ GET {{comply_flow_api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+### Get conversation messages as request/response exchanges
+GET {{comply_flow_api_HostAddress}}/api/conversations/1003/messages
+Accept: application/json
+
+### Conversation not found
+GET {{comply_flow_api_HostAddress}}/api/conversations/999999/messages
+Accept: application/json

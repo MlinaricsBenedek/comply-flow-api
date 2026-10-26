@@ -7,4 +7,5 @@ public interface IConversationRepository
     Task AddAsync(Conversation conversation, CancellationToken cancellationToken);
     Task<List<Conversation>> GetAllAsync(CancellationToken cancellationToken);
     Task<Conversation?> GetByIdAsync(int id, CancellationToken cancellationToken);
+    Task<Conversation?> GetWithProcessingsAsync(int id, CancellationToken cancellationToken);
 }

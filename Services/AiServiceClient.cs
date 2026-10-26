@@ -1,5 +1,5 @@
 using System.Net;
-using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using comply_flow_api.Models;
@@ -18,7 +18,9 @@ public interface IAiServiceClient
 
 public sealed class AiServiceClient(
     HttpClient httpClient,
-    IOptions<AiServiceOptions> options) : IAiServiceClient
+    IOptions<AiServiceOptions> options,
+    PayloadFileLogger payloadFileLogger,
+    IHttpContextAccessor httpContextAccessor) : IAiServiceClient
 {
     private static readonly JsonSerializerOptions ResponseJsonOptions =
         new(JsonSerializerDefaults.Web);
@@ -58,7 +60,7 @@ public sealed class AiServiceClient(
         CancellationToken cancellationToken)
     {
         var payload = await SendAsync<AiPreprocessingApiResponse>(
-            token => httpClient.PostAsJsonAsync(
+            token => PostJsonAsync(
                 "preprocessing",
                 new AiPreprocessingRequest(message),
                 token),
@@ -106,7 +108,7 @@ public sealed class AiServiceClient(
         CancellationToken cancellationToken)
     {
         var payload = await SendAsync<AiGenerationApiResponse>(
-            token => httpClient.PostAsJsonAsync("generate", request, token),
+            token => PostJsonAsync("generate", request, token),
             "generate",
             options.Value.GenerationTimeoutSeconds,
             cancellationToken);
@@ -142,6 +144,23 @@ public sealed class AiServiceClient(
             payload.ModelParameters,
             payload.ReferenceSimilarity,
             payload.ReferenceSimilarityMetric);
+    }
+
+    private async Task<HttpResponseMessage> PostJsonAsync<T>(
+        string endpoint,
+        T payload,
+        CancellationToken cancellationToken)
+    {
+        var body = JsonSerializer.Serialize(payload, ResponseJsonOptions);
+        await payloadFileLogger.LogAsync(
+            "outbound",
+            HttpMethod.Post.Method,
+            endpoint,
+            httpContextAccessor.HttpContext?.TraceIdentifier ?? "background",
+            body);
+
+        using var content = new StringContent(body, Encoding.UTF8, "application/json");
+        return await httpClient.PostAsync(endpoint, content, cancellationToken);
     }
 
     private async Task<T?> SendAsync<T>(
