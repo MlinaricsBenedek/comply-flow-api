@@ -137,34 +137,88 @@ public class ProcessingService : IProcessingService
             processing.ResponsePlan = CreateResponsePlan(selectedRule, decision, reason);
             await _processingRepository.SaveChangesAsync(cancellationToken);
 
-            var availableModels = await _aiServiceClient.GetModelsAsync(cancellationToken);
-            var modelName = ResolveModelName(configuration.ModelName, availableModels);
-            var modelParameters = configuration.ModelParametersJson is null
-                ? null
-                : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
-                    configuration.ModelParametersJson);
-            var promptName = configuration.PromptVersion ?? configuration.TemplateVersion;
             var inputContext = new Dictionary<string, object?>
             {
                 ["case_state"] = caseState,
                 ["decision"] = decision,
                 ["reason"] = reason,
                 ["rule_result"] = selectedRule?.Result,
-                ["bank"] = configuration.Bank
+                ["bank"] = configuration.Bank,
+                ["response_plan"] = new
+                {
+                    decision = processing.ResponsePlan.Decision,
+                    reason = processing.ResponsePlan.Reason,
+                    required_elements = JsonSerializer.Deserialize<JsonElement>(
+                        processing.ResponsePlan.RequiredElementsJson),
+                    response_structure = JsonSerializer.Deserialize<JsonElement>(
+                        processing.ResponsePlan.ResponseStructureJson),
+                    sources = JsonSerializer.Deserialize<JsonElement>(
+                        processing.ResponsePlan.SourcesJson)
+                }
             };
 
-            var generation = await _aiServiceClient.GenerateAsync(
-                new AiGenerationRequest(
-                    inputContext,
-                    preprocessing.Message,
-                    preprocessing.Facts,
-                    preprocessing.Category,
-                    promptName,
-                    modelName,
-                    modelParameters),
-                cancellationToken);
+            AiGenerationResult? generation = null;
+            string responseText;
+            if (string.Equals(configuration.GenerationMode, "Template", StringComparison.OrdinalIgnoreCase))
+            {
+                var templateJson = await _textFileService.GetResponseTemplatesAsync(cancellationToken);
+                var templateSets = JsonSerializer.Deserialize<List<ResponseTemplateSet>>(templateJson)
+                    ?? throw new InvalidDataException("The response templates file is empty or invalid.");
+                if (templateSets.Count == 0)
+                {
+                    throw new InvalidDataException("The response templates file contains no template sets.");
+                }
 
-            if (generation.ReferenceSimilarity is decimal referenceSimilarity &&
+                var matchingTemplateSets = templateSets
+                    .Where(templateSet => string.Equals(
+                        templateSet.TemplateVersion,
+                        configuration.TemplateVersion,
+                        StringComparison.Ordinal))
+                    .ToList();
+                if (matchingTemplateSets.Count != 1)
+                {
+                    throw new InvalidOperationException(
+                        matchingTemplateSets.Count == 0
+                            ? $"No response template set was found for configured version '{configuration.TemplateVersion}'."
+                            : $"Multiple response template sets were found for configured version '{configuration.TemplateVersion}'.");
+                }
+
+                responseText = TemplateResponseRenderer.Render(
+                    matchingTemplateSets[0],
+                    decision,
+                    reason,
+                    processing.ResponsePlan.RequiredElementsJson,
+                    processing.ResponsePlan.ResponseStructureJson,
+                    processing.ResponsePlan.SourcesJson);
+            }
+            else if (string.Equals(configuration.GenerationMode, "Llm", StringComparison.OrdinalIgnoreCase))
+            {
+                var availableModels = await _aiServiceClient.GetModelsAsync(cancellationToken);
+                var modelName = ResolveModelName(configuration.ModelName, availableModels);
+                var modelParameters = configuration.ModelParametersJson is null
+                    ? null
+                    : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+                        configuration.ModelParametersJson);
+
+                generation = await _aiServiceClient.GenerateAsync(
+                    new AiGenerationRequest(
+                        inputContext,
+                        preprocessing.Message,
+                        preprocessing.Facts,
+                        preprocessing.Category,
+                        configuration.PromptVersion,
+                        modelName,
+                        modelParameters),
+                    cancellationToken);
+                responseText = generation.Response;
+            }
+            else
+            {
+                throw new InvalidDataException(
+                    $"Unsupported response generation mode '{configuration.GenerationMode}'.");
+            }
+
+            if (generation?.ReferenceSimilarity is decimal referenceSimilarity &&
                 generation.ReferenceSimilarityMetric is string referenceSimilarityMetric)
             {
                 processing.EvaluationResults.Add(new EvaluationResult
@@ -179,11 +233,13 @@ public class ProcessingService : IProcessingService
             processing.Response = new Response
             {
                 GenerationMode = configuration.GenerationMode,
-                ResponseText = generation.Response,
+                ResponseText = responseText,
                 TemplateVersion = configuration.TemplateVersion,
-                PromptVersion = generation.PromptVersion,
-                ModelName = generation.ModelName,
-                ModelParametersJson = JsonSerializer.Serialize(generation.ModelParameters),
+                PromptVersion = generation?.PromptVersion,
+                ModelName = generation?.ModelName,
+                ModelParametersJson = generation is null
+                    ? null
+                    : JsonSerializer.Serialize(generation.ModelParameters),
                 InputContextJson = JsonSerializer.Serialize(inputContext),
                 ProcessingTimeMs = (int)Math.Min(stopwatch.ElapsedMilliseconds, int.MaxValue)
             };

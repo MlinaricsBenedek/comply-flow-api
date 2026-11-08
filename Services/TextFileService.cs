@@ -4,12 +4,14 @@ public interface ITextFileService
 {
     Task<string> GetPromptAsync(CancellationToken cancellationToken = default);
     Task<string> GetBusinessRulesAsync(string bank, CancellationToken cancellationToken = default);
+    Task<string> GetResponseTemplatesAsync(CancellationToken cancellationToken = default);
 }
 
 public class TextFileService : ITextFileService
 {
     private readonly string _promptDirectory;
     private readonly string _businessRulesDirectory;
+    private readonly string _responseTemplatesDirectory;
 
     public TextFileService(IConfiguration configuration, IHostEnvironment environment)
     {
@@ -21,6 +23,10 @@ public class TextFileService : ITextFileService
             configuration["TextFiles:BusinessRulesDirectory"],
             environment.ContentRootPath,
             "TextFiles:BusinessRulesDirectory");
+        _responseTemplatesDirectory = ResolveDirectory(
+            configuration["TextFiles:ResponseTemplatesDirectory"],
+            environment.ContentRootPath,
+            "TextFiles:ResponseTemplatesDirectory");
     }
 
     public Task<string> GetPromptAsync(CancellationToken cancellationToken = default) =>
@@ -40,8 +46,19 @@ public class TextFileService : ITextFileService
                 "The configured bank is not supported.")
         };
 
-        return ReadBusinessRulesAsync(_businessRulesDirectory, fileName, cancellationToken);
+        return ReadConfiguredFileAsync(
+            _businessRulesDirectory,
+            fileName,
+            "Business rules",
+            cancellationToken);
     }
+
+    public Task<string> GetResponseTemplatesAsync(CancellationToken cancellationToken = default) =>
+        ReadConfiguredFileAsync(
+            _responseTemplatesDirectory,
+            "ResponseTemplates.JSON",
+            "Response templates",
+            cancellationToken);
 
     private static string ResolveDirectory(string? directory, string contentRootPath, string settingName)
     {
@@ -54,20 +71,21 @@ public class TextFileService : ITextFileService
             Path.IsPathRooted(directory) ? directory : Path.Combine(contentRootPath, directory));
     }
 
-    private static async Task<string> ReadBusinessRulesAsync(
+    private static async Task<string> ReadConfiguredFileAsync(
         string directory,
         string fileName,
+        string fileDescription,
         CancellationToken cancellationToken)
     {
         if (!Directory.Exists(directory))
         {
-            throw new DirectoryNotFoundException($"Business rules directory was not found: {directory}");
+            throw new DirectoryNotFoundException($"{fileDescription} directory was not found: {directory}");
         }
 
         var filePath = Path.Combine(directory, fileName);
         if (!File.Exists(filePath))
         {
-            throw new FileNotFoundException($"Business rules file was not found: {filePath}");
+            throw new FileNotFoundException($"{fileDescription} file was not found: {filePath}");
         }
 
         return await File.ReadAllTextAsync(filePath, cancellationToken);

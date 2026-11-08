@@ -382,7 +382,14 @@ Részleges siker esetén a `partial_success` értéke `true`, és a `warnings` l
     "decision": "Approved",
     "reason": "Matched rule",
     "rule_result": {},
-    "bank": "otp"
+    "bank": "otp",
+    "response_plan": {
+      "decision": "Approved",
+      "reason": "Matched rule",
+      "required_elements": [],
+      "response_structure": {},
+      "sources": []
+    }
   },
   "message": "A feldolgozott üzenet",
   "facts": {
@@ -396,6 +403,8 @@ Részleges siker esetén a `partial_success` értéke `true`, és a `warnings` l
   }
 }
 ```
+
+`response_plan` a szabálymotor teljes választervét adja át az LLM-nek. A template generációs mód nem hívja ezt az AI-végpontot.
 
 **Sikeres válasz body:**
 

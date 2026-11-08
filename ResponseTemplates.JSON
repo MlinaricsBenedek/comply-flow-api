@@ -1,0 +1,8 @@
+[
+  {
+    "templateVersion": "template-v1",
+    "templates": {
+      "default": "Tisztelt Ügyfelünk!\n\n{{responseStructure}}\n\nDöntés: {{decision}}\n\nIndoklás: {{reason}}\n\nA válaszban kötelezően szerepeltetendő elemek:\n{{requiredElements}}\n\nForrások:\n{{sources}}"
+    }
+  }
+]
