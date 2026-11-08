@@ -2,6 +2,7 @@ using comply_flow_api.Data;
 using comply_flow_api.Middleware;
 using comply_flow_api.Repositories;
 using comply_flow_api.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,6 +39,14 @@ builder.Services.AddHttpClient<IAiServiceClient, AiServiceClient>((serviceProvid
 });
 
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+        new BadRequestObjectResult(
+            ApiProblemDetails.CreateValidation(context.HttpContext, context.ModelState));
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -54,6 +63,8 @@ if (app.Environment.IsDevelopment())
 
 
 app.UseMiddleware<RequestPayloadLoggingMiddleware>();
+
+app.UseExceptionHandler();
 
 app.UseHttpsRedirection();
 

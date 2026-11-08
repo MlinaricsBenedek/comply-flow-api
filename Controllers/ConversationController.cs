@@ -1,4 +1,5 @@
 using comply_flow_api.Models.dtos.Conversations;
+using comply_flow_api.Middleware;
 using comply_flow_api.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -44,7 +45,13 @@ namespace comply_flow_api.Controllers
         {
             var conversation = await _conversationService.GetByIdAsync(id, cancellationToken);
 
-            return conversation is null ? NotFound() : Ok(conversation);
+            return conversation is null
+                ? NotFound(ApiProblemDetails.Create(
+                    HttpContext,
+                    StatusCodes.Status404NotFound,
+                    "Conversation not found.",
+                    "conversation_not_found"))
+                : Ok(conversation);
         }
 
         [HttpGet("~/api/conversations/{conversationId:int}/messages")]
@@ -58,7 +65,13 @@ namespace comply_flow_api.Controllers
                 conversationId,
                 cancellationToken);
 
-            return messages is null ? NotFound() : Ok(messages);
+            return messages is null
+                ? NotFound(ApiProblemDetails.Create(
+                    HttpContext,
+                    StatusCodes.Status404NotFound,
+                    "Conversation not found.",
+                    "conversation_not_found"))
+                : Ok(messages);
         }
 
         [HttpPost("~/api/conversations/{conversationId:int}/messages")]
@@ -75,19 +88,31 @@ namespace comply_flow_api.Controllers
             return result.Status switch
             {
                 MessageCreationStatus.Created => StatusCode(StatusCodes.Status201Created, result.Message),
-                MessageCreationStatus.ConversationNotFound => NotFound(new
-                {
-                    message = $"Conversation {conversationId} was not found."
-                }),
-                MessageCreationStatus.ConfigurationNotFound => NotFound(new
-                {
-                    message = $"Configuration {request.ConfigurationId} was not found."
-                }),
-                MessageCreationStatus.InvalidContent => BadRequest(new
-                {
-                    message = "Message content cannot be empty."
-                }),
-                _ => StatusCode(StatusCodes.Status500InternalServerError)
+                MessageCreationStatus.ConversationNotFound => NotFound(ApiProblemDetails.Create(
+                    HttpContext,
+                    StatusCodes.Status404NotFound,
+                    "Conversation not found.",
+                    "conversation_not_found",
+                    $"Conversation {conversationId} was not found.")),
+                MessageCreationStatus.ConfigurationNotFound => NotFound(ApiProblemDetails.Create(
+                    HttpContext,
+                    StatusCodes.Status404NotFound,
+                    "Configuration not found.",
+                    "configuration_not_found",
+                    $"Configuration {request.ConfigurationId} was not found.")),
+                MessageCreationStatus.InvalidContent => BadRequest(ApiProblemDetails.Create(
+                    HttpContext,
+                    StatusCodes.Status400BadRequest,
+                    "Message content is invalid.",
+                    "invalid_message_content",
+                    "Message content cannot be empty.")),
+                _ => StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    ApiProblemDetails.Create(
+                        HttpContext,
+                        StatusCodes.Status500InternalServerError,
+                        "An unexpected error occurred.",
+                        "internal_error"))
             };
         }
     }

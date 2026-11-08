@@ -1,5 +1,5 @@
 using comply_flow_api.Models.dtos.Configurations;
-using comply_flow_api.Repositories;
+using comply_flow_api.Middleware;
 using comply_flow_api.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,7 +32,13 @@ public class ConfigurationController : ControllerBase
     {
         var configuration = await _configurationService.GetByIdAsync(id, cancellationToken);
 
-        return configuration is null ? NotFound() : Ok(configuration);
+        return configuration is null
+            ? NotFound(ApiProblemDetails.Create(
+                HttpContext,
+                StatusCodes.Status404NotFound,
+                "Configuration not found.",
+                "configuration_not_found"))
+            : Ok(configuration);
     }
 
     [HttpPost("template")]

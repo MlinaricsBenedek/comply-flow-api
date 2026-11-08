@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using comply_flow_api.Middleware;
 using comply_flow_api.Models.dtos.ProcessDtos;
 using comply_flow_api.Services;
 
@@ -25,7 +26,11 @@ namespace comply_flow_api.Controllers
             var processing = await _processingService.GetResultAsync(processingId, cancellationToken);
             if (processing is null)
             {
-                return NotFound();
+                return NotFound(ApiProblemDetails.Create(
+                    HttpContext,
+                    StatusCodes.Status404NotFound,
+                    "Processing not found.",
+                    "processing_not_found"));
             }
 
             return processing.IsFinished ? Ok(processing) : Accepted(processing);
