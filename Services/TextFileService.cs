@@ -11,12 +11,16 @@ public class TextFileService : ITextFileService
     private readonly string _promptDirectory;
     private readonly string _businessRulesDirectory;
 
-    public TextFileService(IConfiguration configuration)
+    public TextFileService(IConfiguration configuration, IHostEnvironment environment)
     {
-        _promptDirectory = configuration["TextFiles:PromptDirectory"]
-            ?? throw new InvalidOperationException("TextFiles:PromptDirectory is not configured.");
-        _businessRulesDirectory = configuration["TextFiles:BusinessRulesDirectory"]
-            ?? throw new InvalidOperationException("TextFiles:BusinessRulesDirectory is not configured.");
+        _promptDirectory = ResolveDirectory(
+            configuration["TextFiles:PromptDirectory"],
+            environment.ContentRootPath,
+            "TextFiles:PromptDirectory");
+        _businessRulesDirectory = ResolveDirectory(
+            configuration["TextFiles:BusinessRulesDirectory"],
+            environment.ContentRootPath,
+            "TextFiles:BusinessRulesDirectory");
     }
 
     public Task<string> GetPromptAsync(CancellationToken cancellationToken = default) =>
@@ -24,6 +28,17 @@ public class TextFileService : ITextFileService
 
     public Task<string> GetBusinessRulesAsync(CancellationToken cancellationToken = default) =>
         ReadBusinessRulesAsync(_businessRulesDirectory, cancellationToken);
+
+    private static string ResolveDirectory(string? directory, string contentRootPath, string settingName)
+    {
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            throw new InvalidOperationException($"{settingName} is not configured.");
+        }
+
+        return Path.GetFullPath(
+            Path.IsPathRooted(directory) ? directory : Path.Combine(contentRootPath, directory));
+    }
 
     private static async Task<string> ReadBusinessRulesAsync(
         string directory,
