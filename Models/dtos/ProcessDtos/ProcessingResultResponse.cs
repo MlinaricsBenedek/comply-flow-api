@@ -1,3 +1,5 @@
+using comply_flow_api.Models;
+
 namespace comply_flow_api.Models.dtos.ProcessDtos;
 
 public sealed record ProcessingResultResponse(
@@ -30,7 +32,8 @@ public sealed record RuleDecisionResultResponse(
     string Decision,
     string Reason,
     string Bank,
-    string RuleSetVersion);
+    string RuleSetVersion,
+    IReadOnlyList<RuleEvaluationTrace> EvaluationTrace);
 
 public sealed record ResponsePlanResultResponse(
     string Decision,

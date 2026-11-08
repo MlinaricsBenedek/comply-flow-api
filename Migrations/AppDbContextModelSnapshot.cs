@@ -354,6 +354,10 @@ namespace comply_flow_api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
+                    b.Property<string>("EvaluationTraceJson")
+                        .IsRequired()
+                        .HasColumnType("varchar(max)");
+
                     b.Property<int>("ProcessingId")
                         .HasColumnType("int");
 

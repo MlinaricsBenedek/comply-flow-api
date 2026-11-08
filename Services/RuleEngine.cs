@@ -132,24 +132,86 @@ public static class RuleEngine
         ArgumentNullException.ThrowIfNull(caseState);
         ArgumentNullException.ThrowIfNull(rules);
 
-        RuleEvaluationResult? selectedRule = null;
-        var evaluatedRuleCount = 0;
+        var evaluations = new List<RuleEvaluationResult>();
+        var traces = new List<RuleEvaluationTrace>();
         foreach (var rule in rules)
         {
-            evaluatedRuleCount++;
-            var evaluation = new RuleEvaluationResult(rule, EvaluateRule(rule, caseState));
-            if (evaluation.IsMatched &&
-                (selectedRule is null || evaluation.Rule.PrioScore > selectedRule.Rule.PrioScore))
+            var evaluation = EvaluateRuleWithTrace(rule, caseState);
+            evaluations.Add(evaluation.Result);
+            traces.Add(evaluation.Trace);
+        }
+
+        var selectedIndex = -1;
+        for (var index = 0; index < evaluations.Count; index++)
+        {
+            if (evaluations[index].IsMatched &&
+                (selectedIndex < 0 ||
+                    evaluations[index].Rule.PrioScore > evaluations[selectedIndex].Rule.PrioScore))
             {
-                selectedRule = evaluation;
+                selectedIndex = index;
             }
         }
 
+        var selectedRule = selectedIndex < 0 ? null : evaluations[selectedIndex];
+        var evaluationTrace = traces
+            .Select((trace, index) => trace with
+            {
+                IsSelected = index == selectedIndex
+            })
+            .ToArray();
         var reason = selectedRule is null
-            ? $"Egyik vizsgált szabály feltételei sem teljesültek ({evaluatedRuleCount} szabály vizsgálata alapján); nem történt szabálykiválasztás."
+            ? $"Egyik vizsgált szabály feltételei sem teljesültek ({evaluations.Count} szabály vizsgálata alapján); nem történt szabálykiválasztás."
             : CreateSelectionReason(selectedRule.Rule, caseState);
 
-        return new RuleEngineResult(selectedRule, reason);
+        return new RuleEngineResult(selectedRule, reason, evaluationTrace);
+    }
+
+    private static (RuleEvaluationResult Result, RuleEvaluationTrace Trace) EvaluateRuleWithTrace(
+        Rule rule,
+        StructuredCaseState caseState)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        var allConditions = rule.Conditions?.All?
+            .Select(condition => EvaluateConditionWithTrace(condition, caseState))
+            .ToArray() ?? [];
+        var anyConditions = rule.Conditions?.Any?
+            .Select(condition => EvaluateConditionWithTrace(condition, caseState))
+            .ToArray() ?? [];
+        var hasAllConditions = rule.Conditions?.All is not null;
+        var hasAnyConditions = rule.Conditions?.Any is not null;
+        bool? allMatched = hasAllConditions ? allConditions.All(condition => condition.IsMatched) : null;
+        bool? anyMatched = hasAnyConditions ? anyConditions.Any(condition => condition.IsMatched) : null;
+        var isMatched = rule.Conditions is not null &&
+            (allMatched ?? true) &&
+            (!hasAnyConditions || anyMatched == true);
+
+        var result = new RuleEvaluationResult(rule, isMatched);
+        var trace = new RuleEvaluationTrace(
+            rule.Id,
+            rule.Name,
+            rule.PrioScore,
+            isMatched,
+            false,
+            allMatched,
+            anyMatched,
+            allConditions,
+            anyConditions);
+        return (result, trace);
+    }
+
+    private static ConditionEvaluationTrace EvaluateConditionWithTrace(
+        Condition condition,
+        StructuredCaseState caseState)
+    {
+        var fieldPresent = caseState.TryGetValue(condition.Field, out _);
+        var expected = JsonSerializer.SerializeToElement(condition.Value);
+        return new ConditionEvaluationTrace(
+            condition.Field,
+            condition.Operator,
+            expected,
+            fieldPresent,
+            EvaluateCondition(condition, caseState));
     }
 
     private static string CreateSelectionReason(Rule rule, StructuredCaseState caseState)

@@ -32,4 +32,8 @@ public class Rules
     [StringLength(20)]
     [Column(TypeName = "varchar(20)")]
     public string Bank { get; set; } = string.Empty;
+
+    [Required]
+    [Column(TypeName = "varchar(max)")]
+    public string EvaluationTraceJson { get; set; } = "[]";
 }

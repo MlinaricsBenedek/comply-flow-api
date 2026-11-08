@@ -133,6 +133,7 @@ public class ProcessingService : IProcessingService
                 Reason = reason,
                 Bank = configuration.Bank,
                 RuleSetVersion = ruleSet.RuleSetVersion,
+                EvaluationTraceJson = JsonSerializer.Serialize(evaluation.EvaluationTrace)
             };
             processing.ResponsePlan = CreateResponsePlan(selectedRule, decision, reason);
             await _processingRepository.SaveChangesAsync(cancellationToken);
@@ -354,7 +355,9 @@ public class ProcessingService : IProcessingService
                         processing.Rules.Decision,
                         processing.Rules.Reason,
                         processing.Rules.Bank,
-                        processing.Rules.RuleSetVersion),
+                        processing.Rules.RuleSetVersion,
+                        JsonSerializer.Deserialize<IReadOnlyList<RuleEvaluationTrace>>(
+                            processing.Rules.EvaluationTraceJson) ?? []),
                 processing.ResponsePlan is null
                     ? null
                     : new ResponsePlanResultResponse(

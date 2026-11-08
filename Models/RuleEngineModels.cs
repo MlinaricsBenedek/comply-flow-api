@@ -77,6 +77,24 @@ public sealed class RuleOutcome
     public Dictionary<string, System.Text.Json.JsonElement> AdditionalData { get; set; } = [];
 }
 
+public sealed record ConditionEvaluationTrace(
+    string Field,
+    string Operator,
+    System.Text.Json.JsonElement Expected,
+    bool FieldPresent,
+    bool IsMatched);
+
+public sealed record RuleEvaluationTrace(
+    string RuleId,
+    string RuleName,
+    int PrioScore,
+    bool IsMatched,
+    bool IsSelected,
+    bool? AllConditionsMatched,
+    bool? AnyConditionsMatched,
+    IReadOnlyList<ConditionEvaluationTrace> AllConditions,
+    IReadOnlyList<ConditionEvaluationTrace> AnyConditions);
+
 public sealed class ResponseValidationRequirements
 {
     [JsonPropertyName("requiredPhrases")]
@@ -88,4 +106,7 @@ public sealed class ResponseValidationRequirements
 
 public sealed record RuleEvaluationResult(Rule Rule, bool IsMatched);
 
-public sealed record RuleEngineResult(RuleEvaluationResult? SelectedRule, string Reason);
+public sealed record RuleEngineResult(
+    RuleEvaluationResult? SelectedRule,
+    string Reason,
+    IReadOnlyList<RuleEvaluationTrace> EvaluationTrace);

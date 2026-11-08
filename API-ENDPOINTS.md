@@ -273,7 +273,28 @@ Az alábbi két GET útvonal ugyanazt az eredményt adja:
       "decision": "Approved",
       "reason": "Matched rule",
       "bank": "otp",
-      "ruleSetVersion": "v1"
+      "ruleSetVersion": "v1",
+      "evaluationTrace": [
+        {
+          "ruleId": "HU-EXAMPLE-001",
+          "ruleName": "Example rule",
+          "prioScore": 100,
+          "isMatched": false,
+          "isSelected": false,
+          "allConditionsMatched": false,
+          "anyConditionsMatched": null,
+          "allConditions": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "expected": "SAVINGS_ACCOUNT_FEES",
+              "fieldPresent": true,
+              "isMatched": false
+            }
+          ],
+          "anyConditions": []
+        }
+      ]
     },
     "responsePlan": {
       "decision": "Approved",
@@ -302,7 +323,7 @@ Az alábbi két GET útvonal ugyanazt az eredményt adja:
 }
 ```
 
-Az eredmény egyes részei még nem állnak rendelkezésre, ezért `null` értékűek lehetnek. Ha egyetlen eredményrész sem érhető el, a `results` értéke `null`, a `resultsAvailable` pedig `false`. A `ruleDecision.reason` az alkalmazott szabály azonosítóját, a teljesült feltételeket és a prioritás szerinti kiválasztás okát írja le; a `Rules` rekordban tárolt érték a választerv `reason` mezőjében is megjelenik. Ha nincs egyezés, az indoklás ezt és a vizsgált szabályok számát jelzi. Feldolgozási hiba esetén az `error` alakja:
+Az eredmény egyes részei még nem állnak rendelkezésre, ezért `null` értékűek lehetnek. Ha egyetlen eredményrész sem érhető el, a `results` értéke `null`, a `resultsAvailable` pedig `false`. A `ruleDecision.reason` az alkalmazott szabály azonosítóját, a teljesült feltételeket és a prioritás szerinti kiválasztás okát írja le; a `ruleDecision.evaluationTrace` minden vizsgált szabályhoz visszaadja a találati/kiválasztási állapotot és a feltételek külön eredményét. A nyomvonal nem tartalmaz tényleges ügyadat-értékeket. A `Rules` rekordban tárolt indoklás a választerv `reason` mezőjében is megjelenik. Ha nincs egyezés, az indoklás ezt és a vizsgált szabályok számát jelzi. Feldolgozási hiba esetén az `error` alakja:
 
 ```json
 {
