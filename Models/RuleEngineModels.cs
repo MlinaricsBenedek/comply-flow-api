@@ -77,6 +77,15 @@ public sealed class RuleOutcome
     public Dictionary<string, System.Text.Json.JsonElement> AdditionalData { get; set; } = [];
 }
 
+public sealed class ResponseValidationRequirements
+{
+    [JsonPropertyName("requiredPhrases")]
+    public List<string> RequiredPhrases { get; init; } = [];
+
+    [JsonPropertyName("requiredFacts")]
+    public List<string> RequiredFacts { get; init; } = [];
+}
+
 public sealed record RuleEvaluationResult(Rule Rule, bool IsMatched);
 
 public sealed record RuleEngineResult(RuleEvaluationResult? SelectedRule, string Reason);

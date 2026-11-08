@@ -137,6 +137,7 @@ public class ProcessingService : IProcessingService
             processing.ResponsePlan = CreateResponsePlan(selectedRule, decision, reason);
             await _processingRepository.SaveChangesAsync(cancellationToken);
 
+            var responseValidationRequirements = ResponseContentValidator.GetRequirements(selectedRule);
             var inputContext = new Dictionary<string, object?>
             {
                 ["case_state"] = caseState,
@@ -153,7 +154,8 @@ public class ProcessingService : IProcessingService
                     response_structure = JsonSerializer.Deserialize<JsonElement>(
                         processing.ResponsePlan.ResponseStructureJson),
                     sources = JsonSerializer.Deserialize<JsonElement>(
-                        processing.ResponsePlan.SourcesJson)
+                        processing.ResponsePlan.SourcesJson),
+                    validation_requirements = responseValidationRequirements
                 }
             };
 
@@ -216,6 +218,26 @@ public class ProcessingService : IProcessingService
             {
                 throw new InvalidDataException(
                     $"Unsupported response generation mode '{configuration.GenerationMode}'.");
+            }
+
+            var validationResult = ResponseContentValidator.Validate(
+                responseText,
+                responseValidationRequirements,
+                caseState);
+            if (validationResult.CheckedCount > 0)
+            {
+                processing.EvaluationResults.Add(new EvaluationResult
+                {
+                    Metric = "required_content_coverage",
+                    Score = validationResult.Coverage,
+                    Unit = "0-1",
+                    Comment = JsonSerializer.Serialize(new
+                    {
+                        status = validationResult.IsComplete ? "complete" : "incomplete",
+                        checkedCount = validationResult.CheckedCount,
+                        missingRequirements = validationResult.MissingRequirements
+                    })
+                });
             }
 
             if (generation?.ReferenceSimilarity is decimal referenceSimilarity &&
