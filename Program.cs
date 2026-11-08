@@ -62,9 +62,33 @@ if (app.Environment.IsDevelopment())
 }
 
 
-app.UseMiddleware<RequestPayloadLoggingMiddleware>();
-
 app.UseExceptionHandler();
+
+app.UseStatusCodePages(async statusCodeContext =>
+{
+    var context = statusCodeContext.HttpContext;
+    var statusCode = context.Response.StatusCode;
+    var (title, code) = statusCode switch
+    {
+        StatusCodes.Status404NotFound => ("Resource not found.", "not_found"),
+        StatusCodes.Status405MethodNotAllowed => ("HTTP method not allowed.", "method_not_allowed"),
+        _ => ("HTTP request failed.", "http_error")
+    };
+
+    await context.RequestServices
+        .GetRequiredService<IProblemDetailsService>()
+        .WriteAsync(new ProblemDetailsContext
+        {
+            HttpContext = context,
+            ProblemDetails = ApiProblemDetails.Create(
+                context,
+                statusCode,
+                title,
+                code)
+        });
+});
+
+app.UseMiddleware<RequestPayloadLoggingMiddleware>();
 
 app.UseHttpsRedirection();
 

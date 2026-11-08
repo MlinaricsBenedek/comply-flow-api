@@ -7,8 +7,24 @@ Ez a dokumentum a publikus API-végpontokat és az alkalmazás által hívott k�
 - A publikus végpontok útvonalai `/api` előtaggal kezdődnek.
 - A JSON-példák camelCase mezőneveket használnak.
 - A `DateTime` mezők ISO 8601 formátumúak.
-- A validációs hibák `400 Bad Request` választ adnak; a válasz ASP.NET Core `ValidationProblemDetails` formátumú.
+- Minden hiba `application/problem+json` típusú ProblemDetails választ ad. A DTO-validációs hibák további `errors` mezőt tartalmaznak.
+- A hibaválaszokban szerepel a stabil `code` és kérésenkénti `traceId`; AI-szolgáltatási hibánál az AI korrelációs azonosítója `aiCorrelationId` néven is megjelenhet.
 - A `{id}` és `{conversationId}` útvonalparaméterek egész számok.
+
+Példa általános hibaválaszra:
+
+```json
+{
+  "type": "about:blank",
+  "title": "AI service timed out.",
+  "status": 504,
+  "instance": "/api/conversations/1/messages",
+  "code": "ai_service_timeout",
+  "traceId": "00-..."
+}
+```
+
+Az AI-szolgáltatás hibái `504 Gateway Timeout` (`ai_service_timeout`), `503 Service Unavailable` (`ai_service_unavailable`) vagy `502 Bad Gateway` (`ai_service_failure`) választ adnak. Váratlan szerverhiba `500 Internal Server Error` (`internal_error`); a belső kivételüzenet nem kerül a válaszba. A DTO-validáció `400` (`validation_error`), a service-validáció `400` (`invalid_request`), a nem találat pedig `404` (`not_found` vagy a végpontnak megfelelő részletesebb kód). A Processing rekord a hibát ettől függetlenül `Failed` állapottal és hibaadataival rögzíti.
 
 ### Request payload naplózás
 
@@ -53,7 +69,7 @@ Az API a bejövő JSON-kéréseket és az AI-szolgáltatás felé elküldött JS
 }
 ```
 
-Ha nincs ilyen konfiguráció: `404 Not Found`, válaszbody nélkül.
+Ha nincs ilyen konfiguráció: `404 Not Found`, ProblemDetails válasszal (`configuration_not_found`).
 
 A konfigurációs válasz `templateVersion`, `promptVersion`, `modelName` és `modelParameters` mezői csak akkor szerepelnek, ha értékük nem `null`. A konkrét konfiguráció típusától függően ezek közül eltérő mezők lehetnek jelen.
 
@@ -145,7 +161,7 @@ A válasz `Location` fejlécében az új beszélgetés lekérdezési útvonala t
 
 **Sikeres válasz — `200 OK`:** egy beszélgetés, a fenti példában látható alakban.
 
-Ha nincs ilyen beszélgetés: `404 Not Found`, válaszbody nélkül.
+Ha nincs ilyen beszélgetés: `404 Not Found`, ProblemDetails válasszal (`conversation_not_found`).
 
 #### `GET /api/conversations/{conversationId}/messages`
 
@@ -176,7 +192,7 @@ Ha nincs ilyen beszélgetés: `404 Not Found`, válaszbody nélkül.
 }
 ```
 
-Folyamatban lévő vagy sikertelen feldolgozásnál a `response` lehet `null`; hiba esetén az `error` tartalmazza a hiba típusát és üzenetét. Érvényes, de még üres beszélgetés esetén `200 OK` válasz és üres `messages` lista érkezik. Nem létező beszélgetésnél `404 Not Found`, válaszbody nélkül.
+Folyamatban lévő vagy sikertelen feldolgozásnál a `response` lehet `null`; hiba esetén az `error` tartalmazza a hiba típusát és üzenetét. Érvényes, de még üres beszélgetés esetén `200 OK` válasz és üres `messages` lista érkezik. Nem létező beszélgetésnél `404 Not Found`, ProblemDetails válasszal.
 
 #### `POST /api/conversations/{conversationId}/messages`
 
@@ -208,10 +224,12 @@ A `content` kötelező, a `configurationId` értékének legalább 1-nek kell le
 
 | HTTP státusz | Válaszbody |
 |---|---|
-| `400 Bad Request` | Üres tartalom esetén: `{"message":"Message content cannot be empty."}` |
-| `404 Not Found` | Hiányzó beszélgetés esetén: `{"message":"Conversation {conversationId} was not found."}` |
-| `404 Not Found` | Hiányzó konfiguráció esetén: `{"message":"Configuration {configurationId} was not found."}` |
-| `500 Internal Server Error` | Nem kezelt hiba esetén nincs megadott válaszbody. |
+| `400 Bad Request` | ProblemDetails; üres tartalom: `code: "invalid_message_content"`. DTO-validáció: `code: "validation_error"` és `errors`. |
+| `404 Not Found` | ProblemDetails; a kód `conversation_not_found` vagy `configuration_not_found`. |
+| `504 Gateway Timeout` | AI-szolgáltatás időtúllépése: `code: "ai_service_timeout"`. |
+| `503 Service Unavailable` | AI-szolgáltatás nem érhető el: `code: "ai_service_unavailable"`. |
+| `502 Bad Gateway` | AI-szolgáltatási hiba vagy hibás válasz: `code: "ai_service_failure"`. |
+| `500 Internal Server Error` | Nem várt hiba: `code: "internal_error"`; a belső kivételüzenet nincs kitéve. |
 
 ### Feldolgozási eredmény
 
@@ -224,7 +242,7 @@ Az alábbi két GET útvonal ugyanazt az eredményt adja:
 
 - `200 OK`: a feldolgozás befejeződött.
 - `202 Accepted`: a feldolgozás még folyamatban van.
-- `404 Not Found`: nincs ilyen feldolgozás, válaszbody nélkül.
+- `404 Not Found`: nincs ilyen feldolgozás, ProblemDetails válasszal (`processing_not_found`).
 
 **Sikeres vagy folyamatban lévő válasz — `ProcessingResultResponse`:**
 

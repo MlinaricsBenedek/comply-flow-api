@@ -197,7 +197,7 @@ Kapcsolatok: Conversation 1:N Message és 1:N Processing; Configuration 1:N Proc
 
 - Az `[ApiController]` és az alap DTO DataAnnotations validáció biztosított; teljes, központosított domain-validációs/hibaformátum nincs.
 - Az alkalmazás regisztrál `UseAuthorization()` middleware-t, de nincs autentikációs séma, autentikációs middleware vagy endpoint-szintű jogosultságvédelem konfigurálva. Az API ezért nem tekinthető hitelesítettnek.
-- Nincs egyedi globális exception middleware; a nem kezelt service- és külső szolgáltatási hibák az ASP.NET Core alapértelmezett hibakezelésére jutnak.
+- Központi exception handler egységes ProblemDetails választ ad. Az AI-időtúllépés `504`, az AI-szolgáltatás elérhetetlensége `503`, más AI-szolgáltatási hiba `502`, a hibás kérés `400`, a váratlan hiba pedig `500`. A kliens által megszakított kérésre nem próbál választ írni. A hibaobjektum `code` és `traceId` mezőt tartalmaz; belső kivételüzenet nem kerül ki. Az ismeretlen útvonalak és üres státuszválaszok is ProblemDetails formátumot kapnak.
 - A POST üzenetvégpont teljes feldolgozást végez a HTTP kérés részeként; hosszú AI-válasz esetén a kliensnek nyitva kell tartania a kérést. Tartós háttérfeldolgozás, újrapróbálkozási sor és idempotenciakulcs nincs.
 - A konfiguráció `GenerationMode` értékét menti a rendszer, de a jelenlegi ProcessingService mindkét konfigurációs módban meghívja a `/models` és `/generate` végpontot. A `TemplateVersion` csak prompt fallbackként kerül felhasználásra, külön template-renderelő nincs.
 - A preprocessing figyelmeztetések alkalmazáslogba kerülnek, de külön eredménytáblában vagy publikus válaszmezőben nem szerepelnek.
