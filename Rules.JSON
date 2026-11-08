@@ -3,6 +3,648 @@
     "ruleSetVersion": "1.0",
     "rules": [
       {
+        "id": "HU-SAVINGS-FEES-001",
+        "name": "Hungarian savings account fees and terms",
+        "prioScore": 300,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "SAVINGS_ACCOUNT_FEES"
+            }
+          ]
+        },
+        "result": {
+          "decision": "SavingsAccountFeesGuidance",
+          "requiredElements": [
+            "accountType",
+            "accountCurrency",
+            "transactionType",
+            "transactionChannel",
+            "statementDeliveryMethod",
+            "discountEligibility"
+          ],
+          "documents": [
+            {
+              "documentId": "OTP-SAVINGS-RATES-FEES-2026-07-01",
+              "title": "Hirdetmény a lakossági Forint és Deviza megtakarítási számlák, valamint a Persely számla kamatairól és költségeiről",
+              "sourceFile": "Pasted text #2.txt",
+              "sourceSections": [
+                "4. fejezet"
+              ],
+              "effectiveFrom": "2026-07-01",
+              "validity": "Visszavonásig; közzétéve 2026-04-30.",
+              "publishedFees": {
+                "accountMaintenanceAmounts": [
+                  "Forint megtakarítási számla: 556 Ft/negyedév zöld bankszámlakivonattal, 633 Ft/negyedév postázott kivonattal a hirdetményben megadott feltétel teljesülésekor.",
+                  "Deviza megtakarítási számla: 77 Ft/hó zöld bankszámlakivonattal, 98 Ft/hó postázott kivonattal a hirdetményben megadott feltétel teljesülésekor.",
+                  "Forint megtakarítási számla: 458 Ft/negyedév zöld bankszámlakivonattal, 588 Ft/negyedév postázott kivonattal a feltétel nem teljesülésekor."
+                ],
+                "transfers": [
+                  "Bankon belüli, nem saját számlák közötti eseti átutalás: forint megtakarítási számláról 0,45% (713–3 788 Ft); deviza megtakarítási számláról 0,20% (921–64 876 Ft).",
+                  "A hirdetményben meghatározott saját számlák közötti átutalás díjmentes; a saját számlák fogalmára és kivételeire a hirdetmény 12. lábjegyzete vonatkozik.",
+                  "Forint megtakarítási számláról OTP InternetBank/MobilBank útján bankon belüli, nem saját számlára indított forint átutalás: 0,45% (713–3 788 Ft)."
+                ],
+                "otherFees": "A hirdetmény további készpénzfelvételi, deviza-jóváírási és készpénzbefizetési díjakat, kedvezményeket és kivételeket tartalmaz. Ezeket csak a számlatípus, pénznem, csatorna, kedvezmény és aktuális hirdetmény ellenőrzése után közöld."
+              },
+              "limitations": [
+                "A díjak számlatípustól, kivonati módtól, csatornától, feltételektől és kedvezményektől függhetnek; az idézett összeg nem minden ügyfélre érvényes.",
+                "A devizaszámlához kapcsolódó költségeket a hirdetmény szerinti számlapénznemben terhelhetik, és további konverziós költség is felmerülhet."
+              ]
+            },
+            {
+              "documentId": "OTP-RETAIL-DEPOSIT-TERMS-2026-08-27",
+              "title": "Üzletszabályzat a Lakossági bankszámlákról, betétekről és a Folyószámlahitelről – Betétek",
+              "sourceFile": "Pasted text #3.txt",
+              "sourceSections": [
+                "V./B Lakossági megtakarítási számla",
+                "V./C Lakossági deviza-megtakarítási számla",
+                "V./D Persely számla"
+              ],
+              "effectiveFrom": "2026-08-27",
+              "accountTerms": {
+                "hufSavings": [
+                  "Az önálló forint megtakarítási számla az igénylő saját nevén vezetett forint fizetési számlához kötött.",
+                  "Lekötés nélkül, a befizetés napjától kamatozik; a kamat jóváírása negyedévente történik.",
+                  "Terhelési napos eseti átutalás kizárólag bankon belül adható."
+                ],
+                "foreignCurrencySavings": [
+                  "Devizabelföldi magánszemély 14 éves kortól, devizakülföldi magánszemély 18 éves kortól nyithat számlát.",
+                  "A számla csak az igénylő saját nevén vezetett, azonos devizanemű fizetési számla meglétével nyitható; a hirdetmény EUR és USD számlavezetési pénznemet sorol fel.",
+                  "A devizanemtől eltérő megbízás konverzióval teljesülhet; terhelési napos eseti átutalás kizárólag bankon belül adható.",
+                  "A kamatot hetente állapítják meg és negyedévente írják jóvá; a számlavezetési díj negyedévente esedékes, negyedéven belüli megszüntetéskor időarányos lehet."
+                ],
+                "piggyBank": [
+                  "Digitális Szolgáltatási szerződés és OTP fizetési számla szükséges; legfeljebb 5 persely kapcsolható hozzá, mindegyikhez az ügyfél saját nevén vezetett fizetési számla kell.",
+                  "Készpénzbefizetés és készpénzkifizetés nem lehetséges.",
+                  "Eseti átutalás csak tárgynapra, kizárólag a kapcsolt fizetési számla javára adható; jóváírás bankon belül, kizárólag a kapcsolt számláról érkezhet.",
+                  "A számla megszüntetése csak bankfiókban lehetséges; a kapcsolt fizetési számla megszüntetése a Persely számla megszüntetését és egyenlegének átvezetését is eredményezi."
+                ]
+              }
+            }
+          ],
+          "responseInstructions": "Magyarul válaszolj. A konkrét díj megadásához azonosítsd a számlatípust, pénznemet, tranzakciót, csatornát, kivonati módot és kedvezményfeltételeket. Különböztesd meg a hirdetményi díjat a jogszabályi tranzakciós illetéktől. Közöld a díj forrásának hatálynapját és jelezd, ha további adat vagy aktuális hirdetmény szükséges; ne következtess hiányzó feltételekre."
+        },
+        "source": "OTP Hirdetmény a lakossági Forint és Deviza megtakarítási számlákról (érvényes 2026-07-01-től); OTP Lakossági betéti üzletszabályzat (hatályos 2026-08-27-től)"
+      },
+      {
+        "id": "HU-TRANSACTION-TAX-001",
+        "name": "Hungarian financial transaction tax guidance",
+        "prioScore": 300,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "TRANSACTION_TAX"
+            }
+          ]
+        },
+        "result": {
+          "decision": "TransactionTaxGuidance",
+          "requiredElements": [
+            "transactionType",
+            "transactionAmount",
+            "transactionCurrency",
+            "accountHolderType"
+          ],
+          "documents": [
+            {
+              "documentId": "HU-TRANSACTION-TAX-2012-CXVI",
+              "title": "2012. évi CXVI. törvény a pénzügyi tranzakciós illetékről",
+              "sourceFile": "Pasted text #1.txt",
+              "sourceSections": [
+                "3-7. ?"
+              ],
+              "scope": "A pénzügyi tranzakciós illeték jogszabály szerinti alapja és mértéke. Az illeték megfizetésére a törvényben meghatározott szolgáltató kötelezett; ez önmagában nem azonos az ügyfélnek felszámított banki díjjal.",
+              "commonRates": {
+                "transferPercent": 0.45,
+                "transferMaximumHufPerPayment": 20000,
+                "cashWithdrawalPercent": 0.9
+              },
+              "beneficiaryInitiatedCardPayment": {
+                "taxBase": "Az előző naptári évben ugyanazzal a készpénz-helyettesítő fizetési eszközzel lebonyolított műveletek.",
+                "fixedTaxHuf": 800,
+                "fixedTaxHufWhenContactlessUsed": 500
+              },
+              "privateIndividualTransfer": {
+                "scope": "Magánszemély fizetési számlájáról indított átutalás, az egyéni vállalkozói számla kivételével.",
+                "taxableBaseThresholdHufPerTransfer": 50000,
+                "taxableBase": "Az 50 000 Ft-ot meghaladó rész."
+              },
+              "foreignCurrency": "A törvényben meghatározott külföldi pénznemű összegeket a teljesítési napon érvényes MNB hivatalos árfolyamon kell forintra átszámítani.",
+              "limitations": [
+                "A törvény további kivételeket, eltérő illetékalapokat és speciális eseteket tartalmaz; az alkalmazhatóságot a konkrét művelet alapján kell ellenőrizni.",
+                "Ne számítsd ki vagy ígérd meg az ügyfél banki díját az illetékmértékből. A banki díj a külön hatályos hirdetménytől és a számlafeltételektől függ."
+              ]
+            }
+          ],
+          "responseInstructions": "Magyarul v?laszolj. K?l?nb?ztesd meg a jogszab?ly szerinti p?nz?gyi tranzakci?s illet?ket a bank ?gyf?lnek felsz?m?tott d?j?t?l. Az alkalmazand? alap ?s kiv?telek a m?velett?l ?s ?gyf?lt?l f?ggenek; k?rdezz r? a hi?nyz? adatokra, ne alkalmazz ?ltal?nos m?rt?ket kiv?telvizsg?lat n?lk?l."
+        },
+        "source": "2012. ?vi CXVI. t?rv?ny (3-7. ?)"
+      },
+      {
+        "id": "HU-SAVINGS-INTEREST-001",
+        "name": "Hungarian savings account interest guidance",
+        "prioScore": 300,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "SAVINGS_ACCOUNT_INTEREST"
+            }
+          ]
+        },
+        "result": {
+          "decision": "SavingsAccountInterestGuidance",
+          "requiredElements": [
+            "accountType",
+            "accountCurrency",
+            "balanceAmount",
+            "balanceCurrency"
+          ],
+          "documents": [
+            {
+              "documentId": "OTP-SAVINGS-RATES-FEES-2026-07-01",
+              "title": "Hirdetmény a lakossági Forint és Deviza megtakarítási számlák, valamint a Persely számla kamatairól és költségeiről",
+              "sourceFile": "Pasted text #2.txt",
+              "sourceSections": [
+                "1-3. fejezet"
+              ],
+              "effectiveFrom": "2026-07-01",
+              "validity": "Visszavonásig; közzétéve 2026-04-30.",
+              "interest": {
+                "hufSavingsAnnualPercentByBalanceBand": [
+                  {
+                    "minimumHuf": 0,
+                    "maximumHuf": 100000,
+                    "annualPercent": 0
+                  },
+                  {
+                    "minimumHuf": 100001,
+                    "maximumHuf": 2500000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumHuf": 2500001,
+                    "maximumHuf": 5000000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumHuf": 5000001,
+                    "maximumHuf": 30000000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumHufExclusive": 30000000,
+                    "maximumHuf": null,
+                    "annualPercent": 0.01
+                  }
+                ],
+                "piggyBank": "A Persely számla teljes egyenlege a 100 001–2 500 000 Ft-os sáv kamatával kamatozik.",
+                "eurSavingsAnnualBands": [
+                  {
+                    "minimumEur": 0,
+                    "maximumEurExclusive": 500,
+                    "annualPercent": 0
+                  },
+                  {
+                    "minimumEur": 500,
+                    "maximumEurExclusive": 3000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumEur": 3000,
+                    "maximumEurExclusive": 20000,
+                    "formula": "1 havi EURIBOR - 0,5 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumEur": 20000,
+                    "maximumEurExclusive": 50000,
+                    "formula": "1 havi EURIBOR - 0,4 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumEur": 50000,
+                    "maximumEur": null,
+                    "formula": "1 havi EURIBOR - 0,3 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  }
+                ],
+                "usdSavingsAnnualBands": [
+                  {
+                    "minimumUsd": 0,
+                    "maximumUsdExclusive": 600,
+                    "annualPercent": 0
+                  },
+                  {
+                    "minimumUsd": 600,
+                    "maximumUsdExclusive": 3500,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumUsd": 3500,
+                    "maximumUsdExclusive": 22000,
+                    "formula": "1 havi CME TERM SOFR - 0,5 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumUsd": 22000,
+                    "maximumUsdExclusive": 53000,
+                    "formula": "1 havi CME TERM SOFR - 0,4 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumUsd": 53000,
+                    "maximumUsd": null,
+                    "formula": "1 havi CME TERM SOFR - 0,3 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  }
+                ],
+                "rateLimitations": [
+                  "A devizaszámla konkrét kamatait és érvényességi idejét a mindenkor hatályos Lakossági Devizaszámla kamatok hirdetmény határozza meg; a referenciakamatból önmagában ne állíts elő aktuális kamatot.",
+                  "A forint megtakarítási számlán az egyes egyenlegrészek a saját sávjuk szerint kamatoznak; ez eltér a Persely számla teljes egyenlegére vonatkozó szabálytól."
+                ]
+              }
+            }
+          ],
+          "responseInstructions": "Magyarul v?laszolj. K?rdezz r? a sz?mlat?pusra, p?nznemre ?s egyenlegre. A forint megtakar?t?si sz?ml?n a kamats?vok szerinti egyenlegr?szeket k?l?n kezeld; a Persely teljes egyenleg?re elt?r? szab?ly vonatkozik. Devizasz?mla aktu?lis kamat?t a mindenkor hat?lyos k?l?n kamathirdetm?ny n?lk?l ne ?ll?tsd biztosan; jelezd a hirdetm?ny 2026-07-01-i hat?ly?t ?s annak ellen?rz?si sz?ks?gess?g?t."
+        },
+        "source": "OTP Hirdetm?ny a lakoss?gi Forint ?s Deviza megtakar?t?si sz?ml?k kamatair?l (?rv?nyes 2026-07-01-t?l)"
+      },
+      {
+        "id": "HU-SAVINGS-TERMS-001",
+        "name": "Hungarian savings account eligibility and terms",
+        "prioScore": 300,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "SAVINGS_ACCOUNT_TERMS"
+            }
+          ]
+        },
+        "result": {
+          "decision": "SavingsAccountTermsGuidance",
+          "requiredElements": [
+            "accountType",
+            "accountHolderAge",
+            "accountHolderResidency",
+            "accountChannel",
+            "accountAction"
+          ],
+          "documents": [
+            {
+              "documentId": "OTP-RETAIL-DEPOSIT-TERMS-2026-08-27",
+              "title": "Üzletszabályzat a Lakossági bankszámlákról, betétekről és a Folyószámlahitelről – Betétek",
+              "sourceFile": "Pasted text #3.txt",
+              "sourceSections": [
+                "V./B Lakossági megtakarítási számla",
+                "V./C Lakossági deviza-megtakarítási számla",
+                "V./D Persely számla"
+              ],
+              "effectiveFrom": "2026-08-27",
+              "accountTerms": {
+                "hufSavings": [
+                  "Az önálló forint megtakarítási számla az igénylő saját nevén vezetett forint fizetési számlához kötött.",
+                  "Lekötés nélkül, a befizetés napjától kamatozik; a kamat jóváírása negyedévente történik.",
+                  "Terhelési napos eseti átutalás kizárólag bankon belül adható."
+                ],
+                "foreignCurrencySavings": [
+                  "Devizabelföldi magánszemély 14 éves kortól, devizakülföldi magánszemély 18 éves kortól nyithat számlát.",
+                  "A számla csak az igénylő saját nevén vezetett, azonos devizanemű fizetési számla meglétével nyitható; a hirdetmény EUR és USD számlavezetési pénznemet sorol fel.",
+                  "A devizanemtől eltérő megbízás konverzióval teljesülhet; terhelési napos eseti átutalás kizárólag bankon belül adható.",
+                  "A kamatot hetente állapítják meg és negyedévente írják jóvá; a számlavezetési díj negyedévente esedékes, negyedéven belüli megszüntetéskor időarányos lehet."
+                ],
+                "piggyBank": [
+                  "Digitális Szolgáltatási szerződés és OTP fizetési számla szükséges; legfeljebb 5 persely kapcsolható hozzá, mindegyikhez az ügyfél saját nevén vezetett fizetési számla kell.",
+                  "Készpénzbefizetés és készpénzkifizetés nem lehetséges.",
+                  "Eseti átutalás csak tárgynapra, kizárólag a kapcsolt fizetési számla javára adható; jóváírás bankon belül, kizárólag a kapcsolt számláról érkezhet.",
+                  "A számla megszüntetése csak bankfiókban lehetséges; a kapcsolt fizetési számla megszüntetése a Persely számla megszüntetését és egyenlegének átvezetését is eredményezi."
+                ]
+              }
+            }
+          ],
+          "responseInstructions": "Magyarul v?laszolj, ?s a megfelel? forint, deviza vagy Persely sz?ml?ra vonatkoz? felt?teleket ismertesd. K?rdezz r? a hi?nyz? sz?mlat?pusra, ?letkorra, illet?s?gre vagy ?gyint?z?si csatorn?ra; ne ?ltal?nos?ts elt?r? term?kek szab?lyai k?z?tt. Jelezd az ?zletszab?lyzat 2026-08-27-i hat?ly?t."
+        },
+        "source": "OTP Lakoss?gi bet?ti ?zletszab?lyzat (hat?lyos 2026-08-27-t?l), V./B-V./D"
+      },
+      {
+        "id": "HU-BANK-TRANSFER-FEES-001",
+        "name": "Hungarian bank transfer fees for savings accounts",
+        "prioScore": 300,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "BANK_TRANSFER_FEES"
+            }
+          ]
+        },
+        "result": {
+          "decision": "BankTransferFeesGuidance",
+          "requiredElements": [
+            "accountType",
+            "accountCurrency",
+            "transactionType",
+            "transactionAmount",
+            "transactionCurrency",
+            "transactionChannel",
+            "isOwnAccountTransfer"
+          ],
+          "documents": [
+            {
+              "documentId": "OTP-SAVINGS-RATES-FEES-2026-07-01",
+              "title": "Hirdetmény a lakossági Forint és Deviza megtakarítási számlák, valamint a Persely számla kamatairól és költségeiről",
+              "sourceFile": "Pasted text #2.txt",
+              "sourceSections": [
+                "4. fejezet - megtakar?t?si sz?ml?k ?tutal?si d?jai"
+              ],
+              "effectiveFrom": "2026-07-01",
+              "validity": "Visszavonásig; közzétéve 2026-04-30.",
+              "limitations": [
+                "A díjak számlatípustól, kivonati módtól, csatornától, feltételektől és kedvezményektől függhetnek; az idézett összeg nem minden ügyfélre érvényes.",
+                "A devizaszámlához kapcsolódó költségeket a hirdetmény szerinti számlapénznemben terhelhetik, és további konverziós költség is felmerülhet."
+              ],
+              "applicableTransferFees": [
+                "Bankon belüli, nem saját számlák közötti eseti átutalás: forint megtakarítási számláról 0,45% (713–3 788 Ft); deviza megtakarítási számláról 0,20% (921–64 876 Ft).",
+                "A hirdetményben meghatározott saját számlák közötti átutalás díjmentes; a saját számlák fogalmára és kivételeire a hirdetmény 12. lábjegyzete vonatkozik.",
+                "Forint megtakarítási számláról OTP InternetBank/MobilBank útján bankon belüli, nem saját számlára indított forint átutalás: 0,45% (713–3 788 Ft)."
+              ],
+              "scopeLimitation": "A felsorolt d?jak kiz?r?lag a hirdetm?nyben megjel?lt lakoss?gi forint ?s deviza megtakar?t?si sz?ml?kra vonatkoznak. M?s sz?mlat?pus d?ja ebb?l nem ?llap?that? meg."
+            }
+          ],
+          "responseInstructions": "Magyarul v?laszolj. A rendelkez?sre ?ll? d?jadatok kiz?r?lag az OTP lakoss?gi forint ?s deviza megtakar?t?si sz?ml?kra vonatkoznak; m?s sz?mlat?pusra ne alkalmazd ?ket. K?rdezz r? a sz?mlat?pusra, p?nznemre, csatorn?ra ?s arra, hogy saj?t sz?ml?k k?z?tti-e az utal?s. A banki d?jat k?l?nb?ztesd meg a jogszab?lyi tranzakci?s illet?kt?l. M?s term?kn?l k?rd a megfelel? hat?lyos hirdetm?nyt vagy jelezd, hogy a d?j ezekb?l az adatokb?l nem ?llap?that? meg."
+        },
+        "source": "OTP Hirdetm?ny a lakoss?gi Forint ?s Deviza megtakar?t?si sz?ml?k d?jair?l (?rv?nyes 2026-07-01-t?l)"
+      },
+      {
+        "id": "HU-BANKING-001",
+        "name": "General Hungarian banking and transaction tax guidance",
+        "prioScore": 200,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "BANKING"
+            }
+          ]
+        },
+        "result": {
+          "decision": "HungarianBankingGuidance",
+          "requiredElements": [
+            "category",
+            "transactionType",
+            "transactionAmount",
+            "transactionCurrency",
+            "accountType",
+            "accountCurrency",
+            "accountChannel",
+            "accountHolderAge",
+            "accountHolderResidency"
+          ],
+          "documents": [
+            {
+              "documentId": "HU-TRANSACTION-TAX-2012-CXVI",
+              "title": "2012. évi CXVI. törvény a pénzügyi tranzakciós illetékről",
+              "sourceFile": "Pasted text #1.txt",
+              "sourceSections": [
+                "3-7. §"
+              ],
+              "scope": "A pénzügyi tranzakciós illeték jogszabály szerinti alapja és mértéke. Az illeték megfizetésére a törvényben meghatározott szolgáltató kötelezett; ez önmagában nem azonos az ügyfélnek felszámított banki díjjal.",
+              "commonRates": {
+                "transferPercent": 0.45,
+                "transferMaximumHufPerPayment": 20000,
+                "cashWithdrawalPercent": 0.9
+              },
+              "beneficiaryInitiatedCardPayment": {
+                "taxBase": "Az előző naptári évben ugyanazzal a készpénz-helyettesítő fizetési eszközzel lebonyolított műveletek.",
+                "fixedTaxHuf": 800,
+                "fixedTaxHufWhenContactlessUsed": 500
+              },
+              "privateIndividualTransfer": {
+                "scope": "Magánszemély fizetési számlájáról indított átutalás, az egyéni vállalkozói számla kivételével.",
+                "taxableBaseThresholdHufPerTransfer": 50000,
+                "taxableBase": "Az 50 000 Ft-ot meghaladó rész."
+              },
+              "foreignCurrency": "A törvényben meghatározott külföldi pénznemű összegeket a teljesítési napon érvényes MNB hivatalos árfolyamon kell forintra átszámítani.",
+              "limitations": [
+                "A törvény további kivételeket, eltérő illetékalapokat és speciális eseteket tartalmaz; az alkalmazhatóságot a konkrét művelet alapján kell ellenőrizni.",
+                "Ne számítsd ki vagy ígérd meg az ügyfél banki díját az illetékmértékből. A banki díj a külön hatályos hirdetménytől és a számlafeltételektől függ."
+              ]
+            },
+            {
+              "documentId": "OTP-SAVINGS-RATES-FEES-2026-07-01",
+              "title": "Hirdetmény a lakossági Forint és Deviza megtakarítási számlák, valamint a Persely számla kamatairól és költségeiről",
+              "sourceFile": "Pasted text #2.txt",
+              "sourceSections": [
+                "1-4. fejezet"
+              ],
+              "effectiveFrom": "2026-07-01",
+              "validity": "Visszavonásig; közzétéve 2026-04-30.",
+              "interest": {
+                "hufSavingsAnnualPercentByBalanceBand": [
+                  {
+                    "minimumHuf": 0,
+                    "maximumHuf": 100000,
+                    "annualPercent": 0
+                  },
+                  {
+                    "minimumHuf": 100001,
+                    "maximumHuf": 2500000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumHuf": 2500001,
+                    "maximumHuf": 5000000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumHuf": 5000001,
+                    "maximumHuf": 30000000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumHufExclusive": 30000000,
+                    "maximumHuf": null,
+                    "annualPercent": 0.01
+                  }
+                ],
+                "piggyBank": "A Persely számla teljes egyenlege a 100 001–2 500 000 Ft-os sáv kamatával kamatozik.",
+                "eurSavingsAnnualBands": [
+                  {
+                    "minimumEur": 0,
+                    "maximumEurExclusive": 500,
+                    "annualPercent": 0
+                  },
+                  {
+                    "minimumEur": 500,
+                    "maximumEurExclusive": 3000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumEur": 3000,
+                    "maximumEurExclusive": 20000,
+                    "formula": "1 havi EURIBOR - 0,5 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumEur": 20000,
+                    "maximumEurExclusive": 50000,
+                    "formula": "1 havi EURIBOR - 0,4 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumEur": 50000,
+                    "maximumEur": null,
+                    "formula": "1 havi EURIBOR - 0,3 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  }
+                ],
+                "usdSavingsAnnualBands": [
+                  {
+                    "minimumUsd": 0,
+                    "maximumUsdExclusive": 600,
+                    "annualPercent": 0
+                  },
+                  {
+                    "minimumUsd": 600,
+                    "maximumUsdExclusive": 3500,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumUsd": 3500,
+                    "maximumUsdExclusive": 22000,
+                    "formula": "1 havi CME TERM SOFR - 0,5 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumUsd": 22000,
+                    "maximumUsdExclusive": 53000,
+                    "formula": "1 havi CME TERM SOFR - 0,4 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumUsd": 53000,
+                    "maximumUsd": null,
+                    "formula": "1 havi CME TERM SOFR - 0,3 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  }
+                ],
+                "rateLimitations": [
+                  "A devizaszámla konkrét kamatait és érvényességi idejét a mindenkor hatályos Lakossági Devizaszámla kamatok hirdetmény határozza meg; a referenciakamatból önmagában ne állíts elő aktuális kamatot.",
+                  "A forint megtakarítási számlán az egyes egyenlegrészek a saját sávjuk szerint kamatoznak; ez eltér a Persely számla teljes egyenlegére vonatkozó szabálytól."
+                ]
+              },
+              "publishedFees": {
+                "accountMaintenanceAmounts": [
+                  "Forint megtakarítási számla: 556 Ft/negyedév zöld bankszámlakivonattal, 633 Ft/negyedév postázott kivonattal a hirdetményben megadott feltétel teljesülésekor.",
+                  "Deviza megtakarítási számla: 77 Ft/hó zöld bankszámlakivonattal, 98 Ft/hó postázott kivonattal a hirdetményben megadott feltétel teljesülésekor.",
+                  "Forint megtakarítási számla: 458 Ft/negyedév zöld bankszámlakivonattal, 588 Ft/negyedév postázott kivonattal a feltétel nem teljesülésekor."
+                ],
+                "transfers": [
+                  "Bankon belüli, nem saját számlák közötti eseti átutalás: forint megtakarítási számláról 0,45% (713–3 788 Ft); deviza megtakarítási számláról 0,20% (921–64 876 Ft).",
+                  "A hirdetményben meghatározott saját számlák közötti átutalás díjmentes; a saját számlák fogalmára és kivételeire a hirdetmény 12. lábjegyzete vonatkozik.",
+                  "Forint megtakarítási számláról OTP InternetBank/MobilBank útján bankon belüli, nem saját számlára indított forint átutalás: 0,45% (713–3 788 Ft)."
+                ],
+                "otherFees": "A hirdetmény további készpénzfelvételi, deviza-jóváírási és készpénzbefizetési díjakat, kedvezményeket és kivételeket tartalmaz. Ezeket csak a számlatípus, pénznem, csatorna, kedvezmény és aktuális hirdetmény ellenőrzése után közöld.",
+                "limitations": [
+                  "A díjak számlatípustól, kivonati módtól, csatornától, feltételektől és kedvezményektől függhetnek; az idézett összeg nem minden ügyfélre érvényes.",
+                  "A devizaszámlához kapcsolódó költségeket a hirdetmény szerinti számlapénznemben terhelhetik, és további konverziós költség is felmerülhet."
+                ]
+              }
+            },
+            {
+              "documentId": "OTP-RETAIL-DEPOSIT-TERMS-2026-08-27",
+              "title": "Üzletszabályzat a Lakossági bankszámlákról, betétekről és a Folyószámlahitelről – Betétek",
+              "sourceFile": "Pasted text #3.txt",
+              "sourceSections": [
+                "V./B Lakossági megtakarítási számla",
+                "V./C Lakossági deviza-megtakarítási számla",
+                "V./D Persely számla"
+              ],
+              "effectiveFrom": "2026-08-27",
+              "accountTerms": {
+                "hufSavings": [
+                  "Az önálló forint megtakarítási számla az igénylő saját nevén vezetett forint fizetési számlához kötött.",
+                  "Lekötés nélkül, a befizetés napjától kamatozik; a kamat jóváírása negyedévente történik.",
+                  "Terhelési napos eseti átutalás kizárólag bankon belül adható."
+                ],
+                "foreignCurrencySavings": [
+                  "Devizabelföldi magánszemély 14 éves kortól, devizakülföldi magánszemély 18 éves kortól nyithat számlát.",
+                  "A számla csak az igénylő saját nevén vezetett, azonos devizanemű fizetési számla meglétével nyitható; a hirdetmény EUR és USD számlavezetési pénznemet sorol fel.",
+                  "A devizanemtől eltérő megbízás konverzióval teljesülhet; terhelési napos eseti átutalás kizárólag bankon belül adható.",
+                  "A kamatot hetente állapítják meg és negyedévente írják jóvá; a számlavezetési díj negyedévente esedékes, negyedéven belüli megszüntetéskor időarányos lehet."
+                ],
+                "piggyBank": [
+                  "Digitális Szolgáltatási szerződés és OTP fizetési számla szükséges; legfeljebb 5 persely kapcsolható hozzá, mindegyikhez az ügyfél saját nevén vezetett fizetési számla kell.",
+                  "Készpénzbefizetés és készpénzkifizetés nem lehetséges.",
+                  "Eseti átutalás csak tárgynapra, kizárólag a kapcsolt fizetési számla javára adható; jóváírás bankon belül, kizárólag a kapcsolt számláról érkezhet.",
+                  "A számla megszüntetése csak bankfiókban lehetséges; a kapcsolt fizetési számla megszüntetése a Persely számla megszüntetését és egyenlegének átvezetését is eredményezi."
+                ]
+              }
+            }
+          ],
+          "responseInstructions": "Magyarul válaszolj, és csak a kérdéshez tartozó dokumentumrészt használd. A jogszabályi illetéket különböztesd meg a bank ügyfélnek felszámított díjától. Kérdezz rá a hiányzó műveletre, összegre, pénznemre, számlatípusra, csatornára és kedvezményre; ne következtess ezekre. Devizakamatnál ne állíts aktuális konkrét kamatot a mindenkor hatályos kamathirdetmény ellenőrzése nélkül. Jelezd a dokumentum hatálynapját és az alkalmazandó kivételeket; ne állítsd, hogy a felsorolt szabályok minden esetet lefednek."
+        },
+        "source": "2012. évi CXVI. törvény (3–7. §); OTP Hirdetmény a lakossági Forint és Deviza megtakarítási számlákról (érvényes 2026-07-01-től); OTP Lakossági betéti üzletszabályzat (hatályos 2026-08-27-től)"
+      },
+      {
+        "id": "HU-DELIVERY-001",
+        "name": "Clarify delivery issues",
+        "prioScore": 100,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "DELIVERY"
+            }
+          ]
+        },
+        "result": {
+          "decision": "DeliveryIssueClarification",
+          "requiredElements": [
+            "deliveryProvider",
+            "trackingNumber",
+            "orderDate",
+            "expectedDeliveryDate",
+            "issueDescription"
+          ],
+          "responseInstructions": "Magyarul válaszolj. Kérd be a hiányzó rendelési és kézbesítési adatokat. Ne találj ki kézbesítési határidőt, státuszt vagy kártérítési jogosultságot; ezeket csak a megadott adatok és az alkalmazandó feltételek alapján értékeld."
+        },
+        "source": "Python preprocessing category contract: DELIVERY"
+      },
+      {
+        "id": "HU-OTHER-001",
+        "name": "Clarify other issues",
+        "prioScore": 100,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "OTHER"
+            }
+          ]
+        },
+        "result": {
+          "decision": "OtherIssueClarification",
+          "requiredElements": [
+            "issueDescription",
+            "relevantServiceOrProduct"
+          ],
+          "responseInstructions": "Magyarul válaszolj. Kérdezd meg, pontosan milyen szolgáltatással vagy termékkel kapcsolatos az ügy, és kérd be a megítéléséhez szükséges tényeket. Ne következtess jogokra, határidőkre vagy díjakra."
+        },
+        "source": "Python preprocessing category contract: OTHER"
+      },
+      {
         "id": "HU-REFUND-001",
         "name": "Hungarian refund and defective-product guidance",
         "prioScore": 100,
@@ -84,6 +726,648 @@
   {
     "ruleSetVersion": "2023-01-01",
     "rules": [
+      {
+        "id": "HU-SAVINGS-FEES-001",
+        "name": "Hungarian savings account fees and terms",
+        "prioScore": 300,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "SAVINGS_ACCOUNT_FEES"
+            }
+          ]
+        },
+        "result": {
+          "decision": "SavingsAccountFeesGuidance",
+          "requiredElements": [
+            "accountType",
+            "accountCurrency",
+            "transactionType",
+            "transactionChannel",
+            "statementDeliveryMethod",
+            "discountEligibility"
+          ],
+          "documents": [
+            {
+              "documentId": "OTP-SAVINGS-RATES-FEES-2026-07-01",
+              "title": "Hirdetmény a lakossági Forint és Deviza megtakarítási számlák, valamint a Persely számla kamatairól és költségeiről",
+              "sourceFile": "Pasted text #2.txt",
+              "sourceSections": [
+                "4. fejezet"
+              ],
+              "effectiveFrom": "2026-07-01",
+              "validity": "Visszavonásig; közzétéve 2026-04-30.",
+              "publishedFees": {
+                "accountMaintenanceAmounts": [
+                  "Forint megtakarítási számla: 556 Ft/negyedév zöld bankszámlakivonattal, 633 Ft/negyedév postázott kivonattal a hirdetményben megadott feltétel teljesülésekor.",
+                  "Deviza megtakarítási számla: 77 Ft/hó zöld bankszámlakivonattal, 98 Ft/hó postázott kivonattal a hirdetményben megadott feltétel teljesülésekor.",
+                  "Forint megtakarítási számla: 458 Ft/negyedév zöld bankszámlakivonattal, 588 Ft/negyedév postázott kivonattal a feltétel nem teljesülésekor."
+                ],
+                "transfers": [
+                  "Bankon belüli, nem saját számlák közötti eseti átutalás: forint megtakarítási számláról 0,45% (713–3 788 Ft); deviza megtakarítási számláról 0,20% (921–64 876 Ft).",
+                  "A hirdetményben meghatározott saját számlák közötti átutalás díjmentes; a saját számlák fogalmára és kivételeire a hirdetmény 12. lábjegyzete vonatkozik.",
+                  "Forint megtakarítási számláról OTP InternetBank/MobilBank útján bankon belüli, nem saját számlára indított forint átutalás: 0,45% (713–3 788 Ft)."
+                ],
+                "otherFees": "A hirdetmény további készpénzfelvételi, deviza-jóváírási és készpénzbefizetési díjakat, kedvezményeket és kivételeket tartalmaz. Ezeket csak a számlatípus, pénznem, csatorna, kedvezmény és aktuális hirdetmény ellenőrzése után közöld."
+              },
+              "limitations": [
+                "A díjak számlatípustól, kivonati módtól, csatornától, feltételektől és kedvezményektől függhetnek; az idézett összeg nem minden ügyfélre érvényes.",
+                "A devizaszámlához kapcsolódó költségeket a hirdetmény szerinti számlapénznemben terhelhetik, és további konverziós költség is felmerülhet."
+              ]
+            },
+            {
+              "documentId": "OTP-RETAIL-DEPOSIT-TERMS-2026-08-27",
+              "title": "Üzletszabályzat a Lakossági bankszámlákról, betétekről és a Folyószámlahitelről – Betétek",
+              "sourceFile": "Pasted text #3.txt",
+              "sourceSections": [
+                "V./B Lakossági megtakarítási számla",
+                "V./C Lakossági deviza-megtakarítási számla",
+                "V./D Persely számla"
+              ],
+              "effectiveFrom": "2026-08-27",
+              "accountTerms": {
+                "hufSavings": [
+                  "Az önálló forint megtakarítási számla az igénylő saját nevén vezetett forint fizetési számlához kötött.",
+                  "Lekötés nélkül, a befizetés napjától kamatozik; a kamat jóváírása negyedévente történik.",
+                  "Terhelési napos eseti átutalás kizárólag bankon belül adható."
+                ],
+                "foreignCurrencySavings": [
+                  "Devizabelföldi magánszemély 14 éves kortól, devizakülföldi magánszemély 18 éves kortól nyithat számlát.",
+                  "A számla csak az igénylő saját nevén vezetett, azonos devizanemű fizetési számla meglétével nyitható; a hirdetmény EUR és USD számlavezetési pénznemet sorol fel.",
+                  "A devizanemtől eltérő megbízás konverzióval teljesülhet; terhelési napos eseti átutalás kizárólag bankon belül adható.",
+                  "A kamatot hetente állapítják meg és negyedévente írják jóvá; a számlavezetési díj negyedévente esedékes, negyedéven belüli megszüntetéskor időarányos lehet."
+                ],
+                "piggyBank": [
+                  "Digitális Szolgáltatási szerződés és OTP fizetési számla szükséges; legfeljebb 5 persely kapcsolható hozzá, mindegyikhez az ügyfél saját nevén vezetett fizetési számla kell.",
+                  "Készpénzbefizetés és készpénzkifizetés nem lehetséges.",
+                  "Eseti átutalás csak tárgynapra, kizárólag a kapcsolt fizetési számla javára adható; jóváírás bankon belül, kizárólag a kapcsolt számláról érkezhet.",
+                  "A számla megszüntetése csak bankfiókban lehetséges; a kapcsolt fizetési számla megszüntetése a Persely számla megszüntetését és egyenlegének átvezetését is eredményezi."
+                ]
+              }
+            }
+          ],
+          "responseInstructions": "Magyarul válaszolj. A konkrét díj megadásához azonosítsd a számlatípust, pénznemet, tranzakciót, csatornát, kivonati módot és kedvezményfeltételeket. Különböztesd meg a hirdetményi díjat a jogszabályi tranzakciós illetéktől. Közöld a díj forrásának hatálynapját és jelezd, ha további adat vagy aktuális hirdetmény szükséges; ne következtess hiányzó feltételekre."
+        },
+        "source": "OTP Hirdetmény a lakossági Forint és Deviza megtakarítási számlákról (érvényes 2026-07-01-től); OTP Lakossági betéti üzletszabályzat (hatályos 2026-08-27-től)"
+      },
+      {
+        "id": "HU-TRANSACTION-TAX-001",
+        "name": "Hungarian financial transaction tax guidance",
+        "prioScore": 300,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "TRANSACTION_TAX"
+            }
+          ]
+        },
+        "result": {
+          "decision": "TransactionTaxGuidance",
+          "requiredElements": [
+            "transactionType",
+            "transactionAmount",
+            "transactionCurrency",
+            "accountHolderType"
+          ],
+          "documents": [
+            {
+              "documentId": "HU-TRANSACTION-TAX-2012-CXVI",
+              "title": "2012. évi CXVI. törvény a pénzügyi tranzakciós illetékről",
+              "sourceFile": "Pasted text #1.txt",
+              "sourceSections": [
+                "3-7. ?"
+              ],
+              "scope": "A pénzügyi tranzakciós illeték jogszabály szerinti alapja és mértéke. Az illeték megfizetésére a törvényben meghatározott szolgáltató kötelezett; ez önmagában nem azonos az ügyfélnek felszámított banki díjjal.",
+              "commonRates": {
+                "transferPercent": 0.45,
+                "transferMaximumHufPerPayment": 20000,
+                "cashWithdrawalPercent": 0.9
+              },
+              "beneficiaryInitiatedCardPayment": {
+                "taxBase": "Az előző naptári évben ugyanazzal a készpénz-helyettesítő fizetési eszközzel lebonyolított műveletek.",
+                "fixedTaxHuf": 800,
+                "fixedTaxHufWhenContactlessUsed": 500
+              },
+              "privateIndividualTransfer": {
+                "scope": "Magánszemély fizetési számlájáról indított átutalás, az egyéni vállalkozói számla kivételével.",
+                "taxableBaseThresholdHufPerTransfer": 50000,
+                "taxableBase": "Az 50 000 Ft-ot meghaladó rész."
+              },
+              "foreignCurrency": "A törvényben meghatározott külföldi pénznemű összegeket a teljesítési napon érvényes MNB hivatalos árfolyamon kell forintra átszámítani.",
+              "limitations": [
+                "A törvény további kivételeket, eltérő illetékalapokat és speciális eseteket tartalmaz; az alkalmazhatóságot a konkrét művelet alapján kell ellenőrizni.",
+                "Ne számítsd ki vagy ígérd meg az ügyfél banki díját az illetékmértékből. A banki díj a külön hatályos hirdetménytől és a számlafeltételektől függ."
+              ]
+            }
+          ],
+          "responseInstructions": "Magyarul v?laszolj. K?l?nb?ztesd meg a jogszab?ly szerinti p?nz?gyi tranzakci?s illet?ket a bank ?gyf?lnek felsz?m?tott d?j?t?l. Az alkalmazand? alap ?s kiv?telek a m?velett?l ?s ?gyf?lt?l f?ggenek; k?rdezz r? a hi?nyz? adatokra, ne alkalmazz ?ltal?nos m?rt?ket kiv?telvizsg?lat n?lk?l."
+        },
+        "source": "2012. ?vi CXVI. t?rv?ny (3-7. ?)"
+      },
+      {
+        "id": "HU-SAVINGS-INTEREST-001",
+        "name": "Hungarian savings account interest guidance",
+        "prioScore": 300,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "SAVINGS_ACCOUNT_INTEREST"
+            }
+          ]
+        },
+        "result": {
+          "decision": "SavingsAccountInterestGuidance",
+          "requiredElements": [
+            "accountType",
+            "accountCurrency",
+            "balanceAmount",
+            "balanceCurrency"
+          ],
+          "documents": [
+            {
+              "documentId": "OTP-SAVINGS-RATES-FEES-2026-07-01",
+              "title": "Hirdetmény a lakossági Forint és Deviza megtakarítási számlák, valamint a Persely számla kamatairól és költségeiről",
+              "sourceFile": "Pasted text #2.txt",
+              "sourceSections": [
+                "1-3. fejezet"
+              ],
+              "effectiveFrom": "2026-07-01",
+              "validity": "Visszavonásig; közzétéve 2026-04-30.",
+              "interest": {
+                "hufSavingsAnnualPercentByBalanceBand": [
+                  {
+                    "minimumHuf": 0,
+                    "maximumHuf": 100000,
+                    "annualPercent": 0
+                  },
+                  {
+                    "minimumHuf": 100001,
+                    "maximumHuf": 2500000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumHuf": 2500001,
+                    "maximumHuf": 5000000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumHuf": 5000001,
+                    "maximumHuf": 30000000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumHufExclusive": 30000000,
+                    "maximumHuf": null,
+                    "annualPercent": 0.01
+                  }
+                ],
+                "piggyBank": "A Persely számla teljes egyenlege a 100 001–2 500 000 Ft-os sáv kamatával kamatozik.",
+                "eurSavingsAnnualBands": [
+                  {
+                    "minimumEur": 0,
+                    "maximumEurExclusive": 500,
+                    "annualPercent": 0
+                  },
+                  {
+                    "minimumEur": 500,
+                    "maximumEurExclusive": 3000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumEur": 3000,
+                    "maximumEurExclusive": 20000,
+                    "formula": "1 havi EURIBOR - 0,5 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumEur": 20000,
+                    "maximumEurExclusive": 50000,
+                    "formula": "1 havi EURIBOR - 0,4 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumEur": 50000,
+                    "maximumEur": null,
+                    "formula": "1 havi EURIBOR - 0,3 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  }
+                ],
+                "usdSavingsAnnualBands": [
+                  {
+                    "minimumUsd": 0,
+                    "maximumUsdExclusive": 600,
+                    "annualPercent": 0
+                  },
+                  {
+                    "minimumUsd": 600,
+                    "maximumUsdExclusive": 3500,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumUsd": 3500,
+                    "maximumUsdExclusive": 22000,
+                    "formula": "1 havi CME TERM SOFR - 0,5 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumUsd": 22000,
+                    "maximumUsdExclusive": 53000,
+                    "formula": "1 havi CME TERM SOFR - 0,4 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumUsd": 53000,
+                    "maximumUsd": null,
+                    "formula": "1 havi CME TERM SOFR - 0,3 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  }
+                ],
+                "rateLimitations": [
+                  "A devizaszámla konkrét kamatait és érvényességi idejét a mindenkor hatályos Lakossági Devizaszámla kamatok hirdetmény határozza meg; a referenciakamatból önmagában ne állíts elő aktuális kamatot.",
+                  "A forint megtakarítási számlán az egyes egyenlegrészek a saját sávjuk szerint kamatoznak; ez eltér a Persely számla teljes egyenlegére vonatkozó szabálytól."
+                ]
+              }
+            }
+          ],
+          "responseInstructions": "Magyarul v?laszolj. K?rdezz r? a sz?mlat?pusra, p?nznemre ?s egyenlegre. A forint megtakar?t?si sz?ml?n a kamats?vok szerinti egyenlegr?szeket k?l?n kezeld; a Persely teljes egyenleg?re elt?r? szab?ly vonatkozik. Devizasz?mla aktu?lis kamat?t a mindenkor hat?lyos k?l?n kamathirdetm?ny n?lk?l ne ?ll?tsd biztosan; jelezd a hirdetm?ny 2026-07-01-i hat?ly?t ?s annak ellen?rz?si sz?ks?gess?g?t."
+        },
+        "source": "OTP Hirdetm?ny a lakoss?gi Forint ?s Deviza megtakar?t?si sz?ml?k kamatair?l (?rv?nyes 2026-07-01-t?l)"
+      },
+      {
+        "id": "HU-SAVINGS-TERMS-001",
+        "name": "Hungarian savings account eligibility and terms",
+        "prioScore": 300,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "SAVINGS_ACCOUNT_TERMS"
+            }
+          ]
+        },
+        "result": {
+          "decision": "SavingsAccountTermsGuidance",
+          "requiredElements": [
+            "accountType",
+            "accountHolderAge",
+            "accountHolderResidency",
+            "accountChannel",
+            "accountAction"
+          ],
+          "documents": [
+            {
+              "documentId": "OTP-RETAIL-DEPOSIT-TERMS-2026-08-27",
+              "title": "Üzletszabályzat a Lakossági bankszámlákról, betétekről és a Folyószámlahitelről – Betétek",
+              "sourceFile": "Pasted text #3.txt",
+              "sourceSections": [
+                "V./B Lakossági megtakarítási számla",
+                "V./C Lakossági deviza-megtakarítási számla",
+                "V./D Persely számla"
+              ],
+              "effectiveFrom": "2026-08-27",
+              "accountTerms": {
+                "hufSavings": [
+                  "Az önálló forint megtakarítási számla az igénylő saját nevén vezetett forint fizetési számlához kötött.",
+                  "Lekötés nélkül, a befizetés napjától kamatozik; a kamat jóváírása negyedévente történik.",
+                  "Terhelési napos eseti átutalás kizárólag bankon belül adható."
+                ],
+                "foreignCurrencySavings": [
+                  "Devizabelföldi magánszemély 14 éves kortól, devizakülföldi magánszemély 18 éves kortól nyithat számlát.",
+                  "A számla csak az igénylő saját nevén vezetett, azonos devizanemű fizetési számla meglétével nyitható; a hirdetmény EUR és USD számlavezetési pénznemet sorol fel.",
+                  "A devizanemtől eltérő megbízás konverzióval teljesülhet; terhelési napos eseti átutalás kizárólag bankon belül adható.",
+                  "A kamatot hetente állapítják meg és negyedévente írják jóvá; a számlavezetési díj negyedévente esedékes, negyedéven belüli megszüntetéskor időarányos lehet."
+                ],
+                "piggyBank": [
+                  "Digitális Szolgáltatási szerződés és OTP fizetési számla szükséges; legfeljebb 5 persely kapcsolható hozzá, mindegyikhez az ügyfél saját nevén vezetett fizetési számla kell.",
+                  "Készpénzbefizetés és készpénzkifizetés nem lehetséges.",
+                  "Eseti átutalás csak tárgynapra, kizárólag a kapcsolt fizetési számla javára adható; jóváírás bankon belül, kizárólag a kapcsolt számláról érkezhet.",
+                  "A számla megszüntetése csak bankfiókban lehetséges; a kapcsolt fizetési számla megszüntetése a Persely számla megszüntetését és egyenlegének átvezetését is eredményezi."
+                ]
+              }
+            }
+          ],
+          "responseInstructions": "Magyarul v?laszolj, ?s a megfelel? forint, deviza vagy Persely sz?ml?ra vonatkoz? felt?teleket ismertesd. K?rdezz r? a hi?nyz? sz?mlat?pusra, ?letkorra, illet?s?gre vagy ?gyint?z?si csatorn?ra; ne ?ltal?nos?ts elt?r? term?kek szab?lyai k?z?tt. Jelezd az ?zletszab?lyzat 2026-08-27-i hat?ly?t."
+        },
+        "source": "OTP Lakoss?gi bet?ti ?zletszab?lyzat (hat?lyos 2026-08-27-t?l), V./B-V./D"
+      },
+      {
+        "id": "HU-BANK-TRANSFER-FEES-001",
+        "name": "Hungarian bank transfer fees for savings accounts",
+        "prioScore": 300,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "BANK_TRANSFER_FEES"
+            }
+          ]
+        },
+        "result": {
+          "decision": "BankTransferFeesGuidance",
+          "requiredElements": [
+            "accountType",
+            "accountCurrency",
+            "transactionType",
+            "transactionAmount",
+            "transactionCurrency",
+            "transactionChannel",
+            "isOwnAccountTransfer"
+          ],
+          "documents": [
+            {
+              "documentId": "OTP-SAVINGS-RATES-FEES-2026-07-01",
+              "title": "Hirdetmény a lakossági Forint és Deviza megtakarítási számlák, valamint a Persely számla kamatairól és költségeiről",
+              "sourceFile": "Pasted text #2.txt",
+              "sourceSections": [
+                "4. fejezet - megtakar?t?si sz?ml?k ?tutal?si d?jai"
+              ],
+              "effectiveFrom": "2026-07-01",
+              "validity": "Visszavonásig; közzétéve 2026-04-30.",
+              "limitations": [
+                "A díjak számlatípustól, kivonati módtól, csatornától, feltételektől és kedvezményektől függhetnek; az idézett összeg nem minden ügyfélre érvényes.",
+                "A devizaszámlához kapcsolódó költségeket a hirdetmény szerinti számlapénznemben terhelhetik, és további konverziós költség is felmerülhet."
+              ],
+              "applicableTransferFees": [
+                "Bankon belüli, nem saját számlák közötti eseti átutalás: forint megtakarítási számláról 0,45% (713–3 788 Ft); deviza megtakarítási számláról 0,20% (921–64 876 Ft).",
+                "A hirdetményben meghatározott saját számlák közötti átutalás díjmentes; a saját számlák fogalmára és kivételeire a hirdetmény 12. lábjegyzete vonatkozik.",
+                "Forint megtakarítási számláról OTP InternetBank/MobilBank útján bankon belüli, nem saját számlára indított forint átutalás: 0,45% (713–3 788 Ft)."
+              ],
+              "scopeLimitation": "A felsorolt d?jak kiz?r?lag a hirdetm?nyben megjel?lt lakoss?gi forint ?s deviza megtakar?t?si sz?ml?kra vonatkoznak. M?s sz?mlat?pus d?ja ebb?l nem ?llap?that? meg."
+            }
+          ],
+          "responseInstructions": "Magyarul v?laszolj. A rendelkez?sre ?ll? d?jadatok kiz?r?lag az OTP lakoss?gi forint ?s deviza megtakar?t?si sz?ml?kra vonatkoznak; m?s sz?mlat?pusra ne alkalmazd ?ket. K?rdezz r? a sz?mlat?pusra, p?nznemre, csatorn?ra ?s arra, hogy saj?t sz?ml?k k?z?tti-e az utal?s. A banki d?jat k?l?nb?ztesd meg a jogszab?lyi tranzakci?s illet?kt?l. M?s term?kn?l k?rd a megfelel? hat?lyos hirdetm?nyt vagy jelezd, hogy a d?j ezekb?l az adatokb?l nem ?llap?that? meg."
+        },
+        "source": "OTP Hirdetm?ny a lakoss?gi Forint ?s Deviza megtakar?t?si sz?ml?k d?jair?l (?rv?nyes 2026-07-01-t?l)"
+      },
+      {
+        "id": "HU-BANKING-001",
+        "name": "General Hungarian banking and transaction tax guidance",
+        "prioScore": 200,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "BANKING"
+            }
+          ]
+        },
+        "result": {
+          "decision": "HungarianBankingGuidance",
+          "requiredElements": [
+            "category",
+            "transactionType",
+            "transactionAmount",
+            "transactionCurrency",
+            "accountType",
+            "accountCurrency",
+            "accountChannel",
+            "accountHolderAge",
+            "accountHolderResidency"
+          ],
+          "documents": [
+            {
+              "documentId": "HU-TRANSACTION-TAX-2012-CXVI",
+              "title": "2012. évi CXVI. törvény a pénzügyi tranzakciós illetékről",
+              "sourceFile": "Pasted text #1.txt",
+              "sourceSections": [
+                "3-7. §"
+              ],
+              "scope": "A pénzügyi tranzakciós illeték jogszabály szerinti alapja és mértéke. Az illeték megfizetésére a törvényben meghatározott szolgáltató kötelezett; ez önmagában nem azonos az ügyfélnek felszámított banki díjjal.",
+              "commonRates": {
+                "transferPercent": 0.45,
+                "transferMaximumHufPerPayment": 20000,
+                "cashWithdrawalPercent": 0.9
+              },
+              "beneficiaryInitiatedCardPayment": {
+                "taxBase": "Az előző naptári évben ugyanazzal a készpénz-helyettesítő fizetési eszközzel lebonyolított műveletek.",
+                "fixedTaxHuf": 800,
+                "fixedTaxHufWhenContactlessUsed": 500
+              },
+              "privateIndividualTransfer": {
+                "scope": "Magánszemély fizetési számlájáról indított átutalás, az egyéni vállalkozói számla kivételével.",
+                "taxableBaseThresholdHufPerTransfer": 50000,
+                "taxableBase": "Az 50 000 Ft-ot meghaladó rész."
+              },
+              "foreignCurrency": "A törvényben meghatározott külföldi pénznemű összegeket a teljesítési napon érvényes MNB hivatalos árfolyamon kell forintra átszámítani.",
+              "limitations": [
+                "A törvény további kivételeket, eltérő illetékalapokat és speciális eseteket tartalmaz; az alkalmazhatóságot a konkrét művelet alapján kell ellenőrizni.",
+                "Ne számítsd ki vagy ígérd meg az ügyfél banki díját az illetékmértékből. A banki díj a külön hatályos hirdetménytől és a számlafeltételektől függ."
+              ]
+            },
+            {
+              "documentId": "OTP-SAVINGS-RATES-FEES-2026-07-01",
+              "title": "Hirdetmény a lakossági Forint és Deviza megtakarítási számlák, valamint a Persely számla kamatairól és költségeiről",
+              "sourceFile": "Pasted text #2.txt",
+              "sourceSections": [
+                "1-4. fejezet"
+              ],
+              "effectiveFrom": "2026-07-01",
+              "validity": "Visszavonásig; közzétéve 2026-04-30.",
+              "interest": {
+                "hufSavingsAnnualPercentByBalanceBand": [
+                  {
+                    "minimumHuf": 0,
+                    "maximumHuf": 100000,
+                    "annualPercent": 0
+                  },
+                  {
+                    "minimumHuf": 100001,
+                    "maximumHuf": 2500000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumHuf": 2500001,
+                    "maximumHuf": 5000000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumHuf": 5000001,
+                    "maximumHuf": 30000000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumHufExclusive": 30000000,
+                    "maximumHuf": null,
+                    "annualPercent": 0.01
+                  }
+                ],
+                "piggyBank": "A Persely számla teljes egyenlege a 100 001–2 500 000 Ft-os sáv kamatával kamatozik.",
+                "eurSavingsAnnualBands": [
+                  {
+                    "minimumEur": 0,
+                    "maximumEurExclusive": 500,
+                    "annualPercent": 0
+                  },
+                  {
+                    "minimumEur": 500,
+                    "maximumEurExclusive": 3000,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumEur": 3000,
+                    "maximumEurExclusive": 20000,
+                    "formula": "1 havi EURIBOR - 0,5 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumEur": 20000,
+                    "maximumEurExclusive": 50000,
+                    "formula": "1 havi EURIBOR - 0,4 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumEur": 50000,
+                    "maximumEur": null,
+                    "formula": "1 havi EURIBOR - 0,3 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  }
+                ],
+                "usdSavingsAnnualBands": [
+                  {
+                    "minimumUsd": 0,
+                    "maximumUsdExclusive": 600,
+                    "annualPercent": 0
+                  },
+                  {
+                    "minimumUsd": 600,
+                    "maximumUsdExclusive": 3500,
+                    "annualPercent": 0.01
+                  },
+                  {
+                    "minimumUsd": 3500,
+                    "maximumUsdExclusive": 22000,
+                    "formula": "1 havi CME TERM SOFR - 0,5 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumUsd": 22000,
+                    "maximumUsdExclusive": 53000,
+                    "formula": "1 havi CME TERM SOFR - 0,4 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  },
+                  {
+                    "minimumUsd": 53000,
+                    "maximumUsd": null,
+                    "formula": "1 havi CME TERM SOFR - 0,3 százalékpont",
+                    "maximumAnnualPercent": 0.05
+                  }
+                ],
+                "rateLimitations": [
+                  "A devizaszámla konkrét kamatait és érvényességi idejét a mindenkor hatályos Lakossági Devizaszámla kamatok hirdetmény határozza meg; a referenciakamatból önmagában ne állíts elő aktuális kamatot.",
+                  "A forint megtakarítási számlán az egyes egyenlegrészek a saját sávjuk szerint kamatoznak; ez eltér a Persely számla teljes egyenlegére vonatkozó szabálytól."
+                ]
+              },
+              "publishedFees": {
+                "accountMaintenanceAmounts": [
+                  "Forint megtakarítási számla: 556 Ft/negyedév zöld bankszámlakivonattal, 633 Ft/negyedév postázott kivonattal a hirdetményben megadott feltétel teljesülésekor.",
+                  "Deviza megtakarítási számla: 77 Ft/hó zöld bankszámlakivonattal, 98 Ft/hó postázott kivonattal a hirdetményben megadott feltétel teljesülésekor.",
+                  "Forint megtakarítási számla: 458 Ft/negyedév zöld bankszámlakivonattal, 588 Ft/negyedév postázott kivonattal a feltétel nem teljesülésekor."
+                ],
+                "transfers": [
+                  "Bankon belüli, nem saját számlák közötti eseti átutalás: forint megtakarítási számláról 0,45% (713–3 788 Ft); deviza megtakarítási számláról 0,20% (921–64 876 Ft).",
+                  "A hirdetményben meghatározott saját számlák közötti átutalás díjmentes; a saját számlák fogalmára és kivételeire a hirdetmény 12. lábjegyzete vonatkozik.",
+                  "Forint megtakarítási számláról OTP InternetBank/MobilBank útján bankon belüli, nem saját számlára indított forint átutalás: 0,45% (713–3 788 Ft)."
+                ],
+                "otherFees": "A hirdetmény további készpénzfelvételi, deviza-jóváírási és készpénzbefizetési díjakat, kedvezményeket és kivételeket tartalmaz. Ezeket csak a számlatípus, pénznem, csatorna, kedvezmény és aktuális hirdetmény ellenőrzése után közöld.",
+                "limitations": [
+                  "A díjak számlatípustól, kivonati módtól, csatornától, feltételektől és kedvezményektől függhetnek; az idézett összeg nem minden ügyfélre érvényes.",
+                  "A devizaszámlához kapcsolódó költségeket a hirdetmény szerinti számlapénznemben terhelhetik, és további konverziós költség is felmerülhet."
+                ]
+              }
+            },
+            {
+              "documentId": "OTP-RETAIL-DEPOSIT-TERMS-2026-08-27",
+              "title": "Üzletszabályzat a Lakossági bankszámlákról, betétekről és a Folyószámlahitelről – Betétek",
+              "sourceFile": "Pasted text #3.txt",
+              "sourceSections": [
+                "V./B Lakossági megtakarítási számla",
+                "V./C Lakossági deviza-megtakarítási számla",
+                "V./D Persely számla"
+              ],
+              "effectiveFrom": "2026-08-27",
+              "accountTerms": {
+                "hufSavings": [
+                  "Az önálló forint megtakarítási számla az igénylő saját nevén vezetett forint fizetési számlához kötött.",
+                  "Lekötés nélkül, a befizetés napjától kamatozik; a kamat jóváírása negyedévente történik.",
+                  "Terhelési napos eseti átutalás kizárólag bankon belül adható."
+                ],
+                "foreignCurrencySavings": [
+                  "Devizabelföldi magánszemély 14 éves kortól, devizakülföldi magánszemély 18 éves kortól nyithat számlát.",
+                  "A számla csak az igénylő saját nevén vezetett, azonos devizanemű fizetési számla meglétével nyitható; a hirdetmény EUR és USD számlavezetési pénznemet sorol fel.",
+                  "A devizanemtől eltérő megbízás konverzióval teljesülhet; terhelési napos eseti átutalás kizárólag bankon belül adható.",
+                  "A kamatot hetente állapítják meg és negyedévente írják jóvá; a számlavezetési díj negyedévente esedékes, negyedéven belüli megszüntetéskor időarányos lehet."
+                ],
+                "piggyBank": [
+                  "Digitális Szolgáltatási szerződés és OTP fizetési számla szükséges; legfeljebb 5 persely kapcsolható hozzá, mindegyikhez az ügyfél saját nevén vezetett fizetési számla kell.",
+                  "Készpénzbefizetés és készpénzkifizetés nem lehetséges.",
+                  "Eseti átutalás csak tárgynapra, kizárólag a kapcsolt fizetési számla javára adható; jóváírás bankon belül, kizárólag a kapcsolt számláról érkezhet.",
+                  "A számla megszüntetése csak bankfiókban lehetséges; a kapcsolt fizetési számla megszüntetése a Persely számla megszüntetését és egyenlegének átvezetését is eredményezi."
+                ]
+              }
+            }
+          ],
+          "responseInstructions": "Magyarul válaszolj, és csak a kérdéshez tartozó dokumentumrészt használd. A jogszabályi illetéket különböztesd meg a bank ügyfélnek felszámított díjától. Kérdezz rá a hiányzó műveletre, összegre, pénznemre, számlatípusra, csatornára és kedvezményre; ne következtess ezekre. Devizakamatnál ne állíts aktuális konkrét kamatot a mindenkor hatályos kamathirdetmény ellenőrzése nélkül. Jelezd a dokumentum hatálynapját és az alkalmazandó kivételeket; ne állítsd, hogy a felsorolt szabályok minden esetet lefednek."
+        },
+        "source": "2012. évi CXVI. törvény (3–7. §); OTP Hirdetmény a lakossági Forint és Deviza megtakarítási számlákról (érvényes 2026-07-01-től); OTP Lakossági betéti üzletszabályzat (hatályos 2026-08-27-től)"
+      },
+      {
+        "id": "HU-DELIVERY-001",
+        "name": "Clarify delivery issues",
+        "prioScore": 100,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "DELIVERY"
+            }
+          ]
+        },
+        "result": {
+          "decision": "DeliveryIssueClarification",
+          "requiredElements": [
+            "deliveryProvider",
+            "trackingNumber",
+            "orderDate",
+            "expectedDeliveryDate",
+            "issueDescription"
+          ],
+          "responseInstructions": "Magyarul válaszolj. Kérd be a hiányzó rendelési és kézbesítési adatokat. Ne találj ki kézbesítési határidőt, státuszt vagy kártérítési jogosultságot; ezeket csak a megadott adatok és az alkalmazandó feltételek alapján értékeld."
+        },
+        "source": "Python preprocessing category contract: DELIVERY"
+      },
+      {
+        "id": "HU-OTHER-001",
+        "name": "Clarify other issues",
+        "prioScore": 100,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "OTHER"
+            }
+          ]
+        },
+        "result": {
+          "decision": "OtherIssueClarification",
+          "requiredElements": [
+            "issueDescription",
+            "relevantServiceOrProduct"
+          ],
+          "responseInstructions": "Magyarul válaszolj. Kérdezd meg, pontosan milyen szolgáltatással vagy termékkel kapcsolatos az ügy, és kérd be a megítéléséhez szükséges tényeket. Ne következtess jogokra, határidőkre vagy díjakra."
+        },
+        "source": "Python preprocessing category contract: OTHER"
+      },
       {
         "id": "HU-REFUND-001",
         "name": "Hungarian refund and defective-product guidance",
