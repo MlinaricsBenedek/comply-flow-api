@@ -10,7 +10,10 @@ namespace comply_flow_api.Services;
 public interface IAiServiceClient
 {
     Task<IReadOnlyList<AiModelOption>> GetModelsAsync(CancellationToken cancellationToken);
-    Task<AiPreprocessingResult> PreprocessAsync(string message, CancellationToken cancellationToken);
+    Task<AiPreprocessingResult> PreprocessAsync(
+        string message,
+        string bank,
+        CancellationToken cancellationToken);
     Task<AiGenerationResult> GenerateAsync(
         AiGenerationRequest request,
         CancellationToken cancellationToken);
@@ -57,12 +60,13 @@ public sealed class AiServiceClient(
 
     public async Task<AiPreprocessingResult> PreprocessAsync(
         string message,
+        string bank,
         CancellationToken cancellationToken)
     {
         var payload = await SendAsync<AiPreprocessingApiResponse>(
             token => PostJsonAsync(
                 "preprocessing",
-                new AiPreprocessingRequest(message),
+                new AiPreprocessingRequest(message, bank),
                 token),
             "preprocessing",
             options.Value.PreprocessingTimeoutSeconds,
@@ -344,7 +348,8 @@ public sealed record AiModelsApiResponse(
     [property: JsonPropertyName("error")] AiServiceError? Error = null);
 
 public sealed record AiPreprocessingRequest(
-    [property: JsonPropertyName("message")] string Message);
+    [property: JsonPropertyName("message")] string Message,
+    [property: JsonPropertyName("bank")] string Bank);
 
 public sealed record AiPreprocessingApiResponse(
     [property: JsonPropertyName("message")] string? Message,

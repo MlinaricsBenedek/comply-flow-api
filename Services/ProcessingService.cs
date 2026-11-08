@@ -104,6 +104,7 @@ public class ProcessingService : IProcessingService
 
             var preprocessing = await _aiServiceClient.PreprocessAsync(
                 message.Content,
+                configuration.Bank,
                 cancellationToken);
             if (preprocessing.PartialSuccess)
             {
@@ -148,7 +149,8 @@ public class ProcessingService : IProcessingService
                 ["case_state"] = caseState,
                 ["decision"] = decision,
                 ["reason"] = reason,
-                ["rule_result"] = selectedRule?.Result
+                ["rule_result"] = selectedRule?.Result,
+                ["bank"] = configuration.Bank
             };
 
             var generation = await _aiServiceClient.GenerateAsync(

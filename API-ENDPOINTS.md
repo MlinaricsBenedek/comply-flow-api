@@ -344,9 +344,12 @@ A `models` lista nem lehet üres; minden modell neve kötelező és egyedi, vala
 
 ```json
 {
-  "message": "A feldolgozandó ügyfélüzenet"
+  "message": "A feldolgozandó ügyfélüzenet",
+  "bank": "otp"
 }
 ```
+
+`bank` értéke `otp` vagy `raiffeisen`, és a konfigurációban kiválasztott szabálykészlet bankját jelöli.
 
 **Sikeres válasz body:**
 
@@ -378,7 +381,8 @@ Részleges siker esetén a `partial_success` értéke `true`, és a `warnings` l
     "case_state": {},
     "decision": "Approved",
     "reason": "Matched rule",
-    "rule_result": {}
+    "rule_result": {},
+    "bank": "otp"
   },
   "message": "A feldolgozott üzenet",
   "facts": {
