@@ -5,13 +5,6 @@ namespace comply_flow_api.Services;
 
 public static class TemplateResponseRenderer
 {
-    private static readonly string[] RequiredPlaceholders =
-    [
-        "{{decision}}",
-        "{{reason}}",
-        "{{sources}}"
-    ];
-
     public static string Render(
         ResponseTemplateSet templateSet,
         string decision,
@@ -51,13 +44,6 @@ public static class TemplateResponseRenderer
         {
             throw new InvalidDataException(
                 $"Template version '{templateSet.TemplateVersion}' has no template for decision '{decision}' or a default template.");
-        }
-
-        if (RequiredPlaceholders.Any(placeholder =>
-            !template.Contains(placeholder, StringComparison.Ordinal)))
-        {
-            throw new InvalidDataException(
-                $"The selected template must include all required placeholders: {string.Join(", ", RequiredPlaceholders)}.");
         }
 
         var replacements = new Dictionary<string, string>(StringComparer.Ordinal)
