@@ -88,7 +88,7 @@ Az egyedi konfiguráció válasza a tárolt `bank` értéket is tartalmazza (`ot
 }
 ```
 
-A `name`, `bank`, `ruleSetVersion` és `templateVersion` mező kötelező. A `bank` értéke `otp` vagy `raiffeisen`; a `name` legfeljebb 100, a verziómezők legfeljebb 50 karakter hosszúak lehetnek.
+A `name`, `bank`, `ruleSetVersion` és `templateVersion` mező kötelező. A `bank` értéke `otp` vagy `raiffeisen`; a `name` legfeljebb 100, a verziómezők legfeljebb 50 karakter hosszúak lehetnek. A `templateVersion` értékének pontosan egyeznie kell a `ResponseTemplates.JSON` fájlban szereplő verzióval (jelenleg `template-v1` vagy `template-v2`); ismeretlen verzió esetén `400 Bad Request` érkezik.
 
 **Sikeres válasz — `201 Created`:** a létrehozott konfiguráció `ConfigurationResponse` alakban, az előző példában leírt mezőkkel. A válasz `Location` fejlécében a konfiguráció lekérdezési útvonala található.
 

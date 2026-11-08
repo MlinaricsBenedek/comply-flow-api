@@ -20,23 +20,30 @@ public interface IConfigurationService
 public class ConfigurationService : IConfigurationService
 {
     private readonly IConfigurationRepository _configurationRepository;
+    private readonly ITextFileService _textFileService;
 
-    public ConfigurationService(IConfigurationRepository configurationRepository)
+    public ConfigurationService(
+        IConfigurationRepository configurationRepository,
+        ITextFileService textFileService)
     {
         _configurationRepository = configurationRepository;
+        _textFileService = textFileService;
     }
 
     public async Task<ConfigurationResponse> CreateTemplateAsync(
         RequestTemplateConfiguration request,
         CancellationToken cancellationToken)
     {
+        var templateVersion = request.TemplateVersion.Trim();
+        await _textFileService.GetResponseTemplateSetAsync(templateVersion, cancellationToken);
+
         var configuration = new Configuration
         {
             Name = request.Name.Trim(),
             Bank = request.Bank,
             RuleSetVersion = request.RuleSetVersion.Trim(),
             GenerationMode = "Template",
-            TemplateVersion = request.TemplateVersion.Trim(),
+            TemplateVersion = templateVersion,
             CreatedAt = DateTime.UtcNow
         };
 

@@ -1,10 +1,15 @@
+using comply_flow_api.Models;
+using System.Text.Json;
+
 namespace comply_flow_api.Services;
 
 public interface ITextFileService
 {
     Task<string> GetPromptAsync(CancellationToken cancellationToken = default);
     Task<string> GetBusinessRulesAsync(string bank, CancellationToken cancellationToken = default);
-    Task<string> GetResponseTemplatesAsync(CancellationToken cancellationToken = default);
+    Task<ResponseTemplateSet> GetResponseTemplateSetAsync(
+        string templateVersion,
+        CancellationToken cancellationToken = default);
 }
 
 public class TextFileService : ITextFileService
@@ -53,12 +58,40 @@ public class TextFileService : ITextFileService
             cancellationToken);
     }
 
-    public Task<string> GetResponseTemplatesAsync(CancellationToken cancellationToken = default) =>
-        ReadConfiguredFileAsync(
+    public async Task<ResponseTemplateSet> GetResponseTemplateSetAsync(
+        string templateVersion,
+        CancellationToken cancellationToken = default)
+    {
+        var templateJson = await ReadConfiguredFileAsync(
             _responseTemplatesDirectory,
             "ResponseTemplates.JSON",
             "Response templates",
             cancellationToken);
+        var templateSets = JsonSerializer.Deserialize<List<ResponseTemplateSet>>(templateJson)
+            ?? throw new InvalidDataException("The response templates file is empty or invalid.");
+        if (templateSets.Count == 0 || templateSets.Any(templateSet => templateSet is null))
+        {
+            throw new InvalidDataException("The response templates file contains no valid template sets.");
+        }
+
+        var matchingTemplateSets = templateSets
+            .Where(templateSet => string.Equals(
+                templateSet.TemplateVersion,
+                templateVersion,
+                StringComparison.Ordinal))
+            .ToList();
+        if (matchingTemplateSets.Count != 1)
+        {
+            throw matchingTemplateSets.Count == 0
+                ? new ArgumentException(
+                    $"No response template set was found for configured version '{templateVersion}'.",
+                    nameof(templateVersion))
+                : new InvalidDataException(
+                    $"Multiple response template sets were found for configured version '{templateVersion}'.");
+        }
+
+        return matchingTemplateSets[0];
+    }
 
     private static string ResolveDirectory(string? directory, string contentRootPath, string settingName)
     {

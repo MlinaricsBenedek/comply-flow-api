@@ -166,30 +166,10 @@ public class ProcessingService : IProcessingService
             string responseText;
             if (string.Equals(configuration.GenerationMode, "Template", StringComparison.OrdinalIgnoreCase))
             {
-                var templateJson = await _textFileService.GetResponseTemplatesAsync(cancellationToken);
-                var templateSets = JsonSerializer.Deserialize<List<ResponseTemplateSet>>(templateJson)
-                    ?? throw new InvalidDataException("The response templates file is empty or invalid.");
-                if (templateSets.Count == 0)
-                {
-                    throw new InvalidDataException("The response templates file contains no template sets.");
-                }
-
-                var matchingTemplateSets = templateSets
-                    .Where(templateSet => string.Equals(
-                        templateSet.TemplateVersion,
-                        configuration.TemplateVersion,
-                        StringComparison.Ordinal))
-                    .ToList();
-                if (matchingTemplateSets.Count != 1)
-                {
-                    throw new InvalidOperationException(
-                        matchingTemplateSets.Count == 0
-                            ? $"No response template set was found for configured version '{configuration.TemplateVersion}'."
-                            : $"Multiple response template sets were found for configured version '{configuration.TemplateVersion}'.");
-                }
-
                 responseText = TemplateResponseRenderer.Render(
-                    matchingTemplateSets[0],
+                    await _textFileService.GetResponseTemplateSetAsync(
+                        configuration.TemplateVersion!,
+                        cancellationToken),
                     decision,
                     reason,
                     processing.ResponsePlan.Action,

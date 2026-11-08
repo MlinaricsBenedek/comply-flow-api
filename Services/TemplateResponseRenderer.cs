@@ -9,8 +9,6 @@ public static class TemplateResponseRenderer
     [
         "{{decision}}",
         "{{reason}}",
-        "{{requiredElements}}",
-        "{{responseStructure}}",
         "{{sources}}"
     ];
 
@@ -114,11 +112,16 @@ public static class TemplateResponseRenderer
         var lines = new List<string>();
         foreach (var property in document.RootElement.EnumerateObject())
         {
+            if (IsInternalProperty(property.Name))
+            {
+                continue;
+            }
+
             AddJsonLines(property.Value, property.Name, lines);
         }
 
         return lines.Count == 0
-            ? "A döntéshez nem tartozik további strukturált tájékoztatás."
+            ? string.Empty
             : string.Join(Environment.NewLine, lines.Select(line => $"- {line}"));
     }
 
@@ -129,6 +132,11 @@ public static class TemplateResponseRenderer
             case JsonValueKind.Object:
                 foreach (var property in value.EnumerateObject())
                 {
+                    if (IsInternalProperty(property.Name))
+                    {
+                        continue;
+                    }
+
                     AddJsonLines(property.Value, $"{path} - {property.Name}", lines);
                 }
                 break;
@@ -149,4 +157,8 @@ public static class TemplateResponseRenderer
                 break;
         }
     }
+
+    private static bool IsInternalProperty(string name) =>
+        string.Equals(name, "documents", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(name, "responseInstructions", StringComparison.OrdinalIgnoreCase);
 }
