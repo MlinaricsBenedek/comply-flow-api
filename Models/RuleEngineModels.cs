@@ -79,7 +79,4 @@ public sealed class RuleOutcome
 
 public sealed record RuleEvaluationResult(Rule Rule, bool IsMatched);
 
-public sealed record RuleEngineResult(
-    IReadOnlyList<RuleEvaluationResult> Evaluations,
-    IReadOnlyList<RuleEvaluationResult> MatchedRules,
-    RuleEvaluationResult? SelectedRule);
+public sealed record RuleEngineResult(RuleEvaluationResult? SelectedRule);

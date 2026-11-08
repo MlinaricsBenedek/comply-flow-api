@@ -76,7 +76,9 @@ public class ProcessingService : IProcessingService
             processing.TransitionTo(ProcessingStatus.Processing);
             await _processingRepository.SaveChangesAsync(cancellationToken);
 
-            var ruleSetJson = await _textFileService.GetBusinessRulesAsync(cancellationToken);
+            var ruleSetJson = await _textFileService.GetBusinessRulesAsync(
+                configuration.Bank,
+                cancellationToken);
             var ruleSets = JsonSerializer.Deserialize<List<RuleSetDocument>>(ruleSetJson)
                 ?? throw new InvalidOperationException("The business rules file is empty or invalid.");
             if (ruleSets.Count == 0 || ruleSets.Any(ruleSet => ruleSet is null))
@@ -130,20 +132,8 @@ public class ProcessingService : IProcessingService
             {
                 Decision = decision,
                 Reason = reason,
+                Bank = configuration.Bank,
                 RuleSetVersion = ruleSet.RuleSetVersion,
-                MatchedRules = evaluation.Evaluations
-                    .Select(result => new MatchedRules
-                    {
-                        Matched = result.IsMatched,
-                        PrioScore = result.Rule.PrioScore,
-                        ResultJson = JsonSerializer.Serialize(
-                            result.Rule.Result,
-                            JsonSerializerOptions.Web),
-                        Source = result.Rule.Source,
-                        EffectiveFrom = result.Rule.EffectiveFrom,
-                        Reason = $"{result.Rule.Id}: {result.Rule.Name}"
-                    })
-                    .ToList()
             };
             processing.ResponsePlan = CreateResponsePlan(selectedRule, decision, reason);
             await _processingRepository.SaveChangesAsync(cancellationToken);
@@ -285,16 +275,8 @@ public class ProcessingService : IProcessingService
                     : new RuleDecisionResultResponse(
                         processing.Rules.Decision,
                         processing.Rules.Reason,
-                        processing.Rules.RuleSetVersion,
-                        processing.Rules.MatchedRules
-                            .Select(rule => new MatchedRuleResultResponse(
-                                rule.Matched,
-                                rule.PrioScore,
-                                rule.ResultJson,
-                                rule.Source,
-                                rule.EffectiveFrom,
-                                rule.Reason))
-                            .ToList()),
+                        processing.Rules.Bank,
+                        processing.Rules.RuleSetVersion),
                 processing.ResponsePlan is null
                     ? null
                     : new ResponsePlanResultResponse(

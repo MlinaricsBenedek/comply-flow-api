@@ -1,0 +1,427 @@
+[
+  {
+    "ruleSetVersion": "2.0",
+    "rules": [
+      {
+        "id": "RB-REFLEX-AUTOMATIC-SAVINGS-001",
+        "name": "Raiffeisen Reflex automatic savings operation",
+        "prioScore": 300,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "SAVINGS_AUTOMATIC"
+            }
+          ]
+        },
+        "result": {
+          "decision": "RaiffeisenReflexAutomaticSavingsGuidance",
+          "requiredElements": [
+            "program",
+            "linkedRaiffeisenForintAccount",
+            "linkedCardType",
+            "cardTransactionType",
+            "chosenSavingsAmount",
+            "availableFunds"
+          ],
+          "documents": [
+            {
+              "documentId": "RAIFFEISEN-REFLEX-CONDITIONS-2026-07-01",
+              "title": "Lakossági Kondíciós Lista – Raiffeisen Reflex Megtakarítási Program",
+              "sourceFile": "Pasted text #1",
+              "sourceSections": [
+                "1.1 Alapfeltételek",
+                "1.2 Automatikus megtakarítás",
+                "1.2.3 Az automatikus megtakarítás alapját képező tranzakciók"
+              ],
+              "announcedOn": "2026-06-30",
+              "effectiveFrom": "2026-07-01",
+              "programElements": [
+                "Raiffeisen forint bankszámla",
+                "Raiffeisen bankkártya, OKOSkártya vagy hitelkártya",
+                "Raiffeisen Megtakarítási Számla"
+              ],
+              "defaultSavingsAmountHuf": 500,
+              "minimumSavingsAmountHuf": null,
+              "savingsAmountIncrementHuf": 100,
+              "changeEffective": "A módosítás a megbízás megadását követő napon lép hatályba.",
+              "eligibleCardTransactions": [
+                "Bankkártyás vásárlás",
+                "Bankkártyás készpénzfelvétel ATM-ben, postahelyen vagy bankfiókban",
+                "Internetes bankkártyás vásárlás"
+              ],
+              "processing": {
+                "frequency": "Naponta, a kártyatranzakciók könyvelését követően összesítve, egy összegben.",
+                "requiredFundsHuf": "A beállított megtakarítási összeg szorozva az időszakban könyvelt kártyatranzakciók számával; a fedezetnek legkésőbb nap végén rendelkezésre kell állnia.",
+                "partialCompletion": false,
+                "insufficientFunds": "A napvégi zárást követően a Bank megkísérli az automatikus megtakarítás ismételt átvezetését.",
+                "creditLineFundsAllowed": false,
+                "closedSavingsAccount": "Ha a Megtakarítási Számla az automatikus könyvelés kezdetéig bezárásra kerül, az átvezetés nem teljesül."
+              }
+            }
+          ],
+          "responseInstructions": "Magyarul válaszolj. Ismertesd, hogy a programhoz Raiffeisen forint bankszámla, a kondíciós listában felsorolt Raiffeisen-kártya és Megtakarítási Számla szükséges. A beállított összeg alapértelmezése 500 Ft, minimumot a dokumentum nem ír elő, 100 Ft-os lépésekben módosítható. Csak a felsorolt könyvelt kártyatranzakciókat vedd figyelembe; az átvezetés napi, összevont, részteljesítés nélküli, és hitelkeret terhére nem teljesül. Hiányzó egyedi beállításokat ne feltételezz."
+        },
+        "source": "Raiffeisen Lakossági Kondíciós Lista – Raiffeisen Reflex Megtakarítási Program (meghirdetve 2026-06-30, hatályos 2026-07-01-től)"
+      },
+      {
+        "id": "RB-SAVINGS-INTEREST-001",
+        "name": "Raiffeisen Megtakarítási Számla interest",
+        "prioScore": 300,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "SAVINGS_ACCOUNT_INTEREST"
+            }
+          ]
+        },
+        "result": {
+          "decision": "RaiffeisenSavingsInterestGuidance",
+          "requiredElements": [
+            "accountProduct",
+            "balanceHuf",
+            "interestPeriod",
+            "effectiveDate"
+          ],
+          "documents": [
+            {
+              "documentId": "RAIFFEISEN-REFLEX-CONDITIONS-2026-07-01",
+              "title": "Lakossági Kondíciós Lista – Raiffeisen Reflex Megtakarítási Program",
+              "sourceFile": "Pasted text #1",
+              "sourceSections": [
+                "2. Raiffeisen Megtakarítási Számla kamatai"
+              ],
+              "announcedOn": "2026-06-30",
+              "effectiveFrom": "2026-07-01",
+              "interestTiers": [
+                {
+                  "balanceHuf": "0-50000",
+                  "annualInterestPercent": 0.01,
+                  "ebkmPercent": 0.01
+                },
+                {
+                  "balanceHuf": "50001-200000",
+                  "annualInterestPercent": 0.01,
+                  "ebkmPercent": 0.01
+                },
+                {
+                  "balanceHuf": "200001-3000000",
+                  "annualInterestPercent": 0.01,
+                  "ebkmPercent": 0.01
+                },
+                {
+                  "balanceHuf": "above 3000000",
+                  "annualInterestPercent": 0.01,
+                  "ebkmPercent": 0.01
+                }
+              ],
+              "tierCalculation": "Az egyes sávokba eső összegekre az adott sáv kamata vonatkozik.",
+              "overdraftInterestPercent": 24.5
+            }
+          ],
+          "responseInstructions": "Magyarul válaszolj, és jelezd, hogy a közölt kamatok a 2026-07-01-től hatályos kondíciós listából származnak. Minden felsorolt egyenlegsáv éves kamata és EBKM-je 0,01%; a táblázat külön 24,50%-os kényszerhitel-kamatlábat is feltüntet. A kamatsávok számítását ne keverd össze az EBKM-mel, és ne számolj hozamot időtartam, egyenleg és a szükséges számítási feltételek nélkül."
+        },
+        "source": "Raiffeisen Lakossági Kondíciós Lista – Raiffeisen Reflex Megtakarítási Program (meghirdetve 2026-06-30, hatályos 2026-07-01-től)"
+      },
+      {
+        "id": "RB-SAVINGS-TERMS-001",
+        "name": "Raiffeisen Megtakarítási Számla terms and transactions",
+        "prioScore": 300,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "SAVINGS_ACCOUNT_TERMS"
+            }
+          ]
+        },
+        "result": {
+          "decision": "RaiffeisenSavingsAccountTermsGuidance",
+          "requiredElements": [
+            "accountProduct",
+            "requestedOperation",
+            "transactionChannel",
+            "transactionDirection"
+          ],
+          "documents": [
+            {
+              "documentId": "RAIFFEISEN-REFLEX-CONDITIONS-2026-07-01",
+              "title": "Lakossági Kondíciós Lista – Raiffeisen Reflex Megtakarítási Program",
+              "sourceFile": "Pasted text #1",
+              "sourceSections": [
+                "1.1 Alapfeltételek",
+                "3. Eseti vagy rendszeres jóváírás",
+                "4. Raiffeisen Megtakarítási Számla díjai és jutalékai"
+              ],
+              "announcedOn": "2026-06-30",
+              "effectiveFrom": "2026-07-01",
+              "accountMaintenanceFee": "Díjmentes",
+              "cardCanBeLinkedToSavingsAccount": false,
+              "credits": [
+                {
+                  "method": "Belső, saját számlák közötti átvezetés",
+                  "fee": "A jelen lista külön, saját számlára történő átvezetési díjszabása irányadó."
+                },
+                {
+                  "method": "Eseti vagy állandó átutalás",
+                  "fee": "A jóváírás díja a bemásolt dokumentumokból nem állapítható meg; a díjmentességet csak a pénzügyi intézménytől érkező forint átutalásra közli a lista."
+                },
+                {
+                  "method": "Pénztári készpénzbefizetés",
+                  "fee": "A mindenkor hatályos Pénztár és csekk tranzakciók Lakossági Kondíciós Lista irányadó; annak díja ebből a dokumentumból nem állapítható meg."
+                },
+                {
+                  "method": "Pénzügyi intézménytől érkező forint átutalás",
+                  "fee": "Díjmentes"
+                },
+                {
+                  "method": "Postán keresztül érkező forint tétel",
+                  "fee": "A Magyar Posta által felszámított költség"
+                }
+              ],
+              "debits": [
+                "A kondíciós lista saját számlára történő átvezetést és eseti, forint átutalást szabályoz.",
+                "Állandó átutalás és szolgáltatói díj beszedése a Megtakarítási Számla terhére nem adható meg.",
+                "A fentieken kívül egyéb, ügyfél által kezdeményezett fizetési vagy betétlekötési megbízás nem adható.",
+                "A számlához bank- vagy OKOSkártya nem kapcsolható."
+              ],
+              "feeSettlementAccount": "A Megtakarítási Számla terhére felszámított díjak elszámolása az Elszámolási Számlán történik."
+            },
+            {
+              "documentId": "RAIFFEISEN-RETAIL-TERMS-2026-03-28",
+              "title": "Lakossági Üzletszabályzat – pénzügyi szolgáltatások nyújtásáról",
+              "sourceFile": "Pasted text #2",
+              "sourceSections": [
+                "IX. Számlavezetés és kapcsolódó szolgáltatások",
+                "IX.4 Átutalás, átvezetési megbízás, jóváírások teljesítése",
+                "X. Betét lekötés"
+              ],
+              "announcedOn": "2026-03-27",
+              "effectiveFrom": "2026-03-28",
+              "applicability": "Ez az üzletszabályzat általános keretszabályokat tartalmaz. A Raiffeisen Megtakarítási Számla konkrét kamatát, díját és műveleti körét a termékspecifikus Kondíciós Lista alapján kell megadni; az általános bankszámla- vagy betétfeltételekből ne következtess termékspecifikus kondíciókra."
+            }
+          ],
+          "responseInstructions": "Magyarul válaszolj. Válaszd külön a Megtakarítási Számla javára érkező jóváírásokat és a terhére indított műveleteket. Ne állítsd, hogy minden átutalás vagy pénztári művelet díjmentes: a postai tétel a Magyar Posta költségével járhat, a készpénzbefizetés aktuális díja pedig a megadott másik kondíciós listából derül ki, amely itt nem szerepel. A dokumentumokban nem szabályozott műveletről kérj pontosítást."
+        },
+        "source": "Raiffeisen Lakossági Kondíciós Lista – Raiffeisen Reflex Megtakarítási Program (hatályos 2026-07-01-től); Raiffeisen Lakossági Üzletszabályzat (hatályos 2026-03-28-tól)"
+      },
+      {
+        "id": "RB-SAVINGS-FEES-001",
+        "name": "Raiffeisen Megtakarítási Számla fees",
+        "prioScore": 300,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "SAVINGS_ACCOUNT_FEES"
+            }
+          ]
+        },
+        "result": {
+          "decision": "RaiffeisenSavingsAccountFeesGuidance",
+          "requiredElements": [
+            "accountProduct",
+            "transactionType",
+            "transactionAmount",
+            "transactionChannel",
+            "beneficiaryBank",
+            "ownAccountStatus",
+            "effectiveDate"
+          ],
+          "documents": [
+            {
+              "documentId": "RAIFFEISEN-REFLEX-CONDITIONS-2026-07-01",
+              "title": "Lakossági Kondíciós Lista – Raiffeisen Reflex Megtakarítási Program",
+              "sourceFile": "Pasted text #1",
+              "sourceSections": [
+                "3. Eseti vagy rendszeres jóváírás",
+                "4. Raiffeisen Megtakarítási Számla díjai és jutalékai"
+              ],
+              "announcedOn": "2026-06-30",
+              "effectiveFrom": "2026-07-01",
+              "accountMaintenanceFee": "Díjmentes",
+              "ownAccountTransferFromSavings": {
+                "promotionalFee": "Díjmentes visszavonásig",
+                "standardFee": {
+                  "percent": 0.5,
+                  "minimumHuf": 798,
+                  "maximumHuf": 20250
+                },
+                "qualification": "Az akció visszavonásig meghosszabbítva; a saját számlának minősülést és az akció mindenkori fennállását ellenőrizni kell."
+              },
+              "oneOffHufTransferFromSavings": {
+                "branch": {
+                  "withinBank": {
+                    "basePercent": 0.5,
+                    "minimumHuf": 798,
+                    "maximumHuf": 20281,
+                    "additionalOver50000Huf": {
+                      "percent": 0.45,
+                      "maximumHuf": 20000,
+                      "onlyOnAmountAboveHuf": 50000
+                    }
+                  },
+                  "outsideBank": {
+                    "basePercent": 0.5,
+                    "minimumHuf": 798,
+                    "maximumHuf": 20281,
+                    "additionalOver50000Huf": {
+                      "percent": 0.45,
+                      "maximumHuf": 20000,
+                      "onlyOnAmountAboveHuf": 50000
+                    }
+                  }
+                },
+                "raiffeisenDirekt": {
+                  "withinBank": {
+                    "basePercent": 0.5,
+                    "minimumHuf": 798,
+                    "maximumHuf": 20281,
+                    "additionalOver50000Huf": {
+                      "percent": 0.45,
+                      "maximumHuf": 20000,
+                      "onlyOnAmountAboveHuf": 50000
+                    }
+                  },
+                  "outsideBank": {
+                    "basePercent": 0.5,
+                    "minimumHuf": 798,
+                    "maximumHuf": 20281,
+                    "additionalOver50000Huf": {
+                      "percent": 0.45,
+                      "maximumHuf": 20000,
+                      "onlyOnAmountAboveHuf": 50000
+                    }
+                  }
+                },
+                "raiffeisenDirektNet": {
+                  "withinBank": "Nem adható megbízás",
+                  "outsideBank": "Nem adható megbízás"
+                },
+                "myRaiffeisenMobileApp": {
+                  "withinBank": {
+                    "basePercent": 0.39,
+                    "minimumHuf": 482,
+                    "maximumHuf": 16128,
+                    "additionalOver50000Huf": {
+                      "percent": 0.45,
+                      "maximumHuf": 20000,
+                      "onlyOnAmountAboveHuf": 50000
+                    }
+                  },
+                  "outsideBank": {
+                    "basePercent": 0.39,
+                    "minimumHuf": 482,
+                    "maximumHuf": 16128,
+                    "additionalOver50000Huf": {
+                      "percent": 0.45,
+                      "maximumHuf": 20000,
+                      "onlyOnAmountAboveHuf": 50000
+                    }
+                  },
+                  "portalAvailability": "A myRaiffeisen portálon a funkció átmenetileg nem elérhető."
+                },
+                "additionalFeeElement": {
+                  "description": "A Bank az átutalásonkénti első 50 000 Ft-ra jutó, 0,45%-os, legfeljebb 20 000 Ft-os díjelemet nem számítja fel, amíg a dokumentumban hivatkozott jogszabályi mentesség fennáll. 50 000 Ft felett ez a díjelem csak az e feletti összegre vonatkozik.",
+                  "conditionalOn": "A dokumentum szerint a kedvező díjszabás addig marad hatályban, amíg a jogszabály az érintett tranzakcióknál mentességet biztosít az 50 000 Ft-ig terjedő összegre; a dokumentum nem igazolja a jogszabály későbbi változatlan fennállását."
+                },
+                "treasuryTransferExemption": {
+                  "description": "A dokumentumban felsorolt Magyar Államkincstári ügyfélszámlákra és állampapír-forgalmazáshoz használt központi számlákra utalásnál a Bank a pénzügyi tranzakciós illetékkel megegyező, 0,45%-os, legfeljebb 20 000 Ft-os díjelemet nem számítja fel. Ez nem jelenti automatikusan az átutalás teljes díjának elengedését.",
+                  "accountNumberPatterns": [
+                    "10002003-93489306-XXXXXXXX",
+                    "10028007-93489306-XXXXXXXX",
+                    "10036004-93489306-XXXXXXXX",
+                    "10046003-93489306-XXXXXXXX",
+                    "10024003-93489306-XXXXXXXX",
+                    "10029008-93489306-XXXXXXXX",
+                    "10037005-93489306-XXXXXXXX",
+                    "10047004-93489306-XXXXXXXX",
+                    "10025004-93489306-XXXXXXXX",
+                    "10033001-93489306-XXXXXXXX",
+                    "10039007-93489306-XXXXXXXX",
+                    "10048005-93489306-XXXXXXXX",
+                    "10026005-93489306-XXXXXXXX",
+                    "10034002-93489306-XXXXXXXX",
+                    "10044001-93489306-XXXXXXXX",
+                    "10049006-93489306-XXXXXXXX",
+                    "10027006-93489306-XXXXXXXX",
+                    "10035003-93489306-XXXXXXXX",
+                    "10045002-93489306-XXXXXXXX",
+                    "19017004-88104264-70100001"
+                  ]
+                },
+                "feeDebitingAccount": "A Megtakarítási Számlához kapcsolódó díjakat az Elszámolási Számlán számolják el."
+              }
+            }
+          ],
+          "responseInstructions": "Magyarul válaszolj, és mindig azonosítsd a tranzakció összegét, csatornáját, bankon belüli/kívüli irányát és azt, hogy az átutalás saját számlára történik-e. Az alapdíj és az 50 000 Ft feletti részre vonatkozó 0,45%-os díjelem külön tétel; ne alkalmazd az utóbbit az első 50 000 Ft-ra. A saját számlára történő átvezetés akciója visszavonásig díjmentes, de ne vond le ebből, hogy minden átutalás ingyenes. DirektNeten ezek az eseti átutalások nem adhatók meg. Az MÁK kivétel csak a felsorolt számlákra és csak a megnevezett 0,45%-os díjelemre vonatkozik. A jogszabályi feltétel aktuális fennállását ne állítsd ellenőrzés nélkül. Minden összegnél jelezd a kondíciós lista 2026-07-01-i hatálynapját."
+        },
+        "source": "Raiffeisen Lakossági Kondíciós Lista – Raiffeisen Reflex Megtakarítási Program (meghirdetve 2026-06-30, hatályos 2026-07-01-től)"
+      },
+      {
+        "id": "RB-BANK-TRANSFER-FEES-001",
+        "name": "Raiffeisen savings account transfer fee clarification",
+        "prioScore": 250,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "BANK_TRANSFER_FEES"
+            }
+          ]
+        },
+        "result": {
+          "decision": "RaiffeisenSavingsTransferFeeClarification",
+          "requiredElements": [
+            "sourceAccountProduct",
+            "transactionAmount",
+            "transactionCurrency",
+            "transactionChannel",
+            "beneficiaryBank",
+            "ownAccountStatus"
+          ],
+          "documents": [
+            {
+              "documentId": "RAIFFEISEN-REFLEX-CONDITIONS-2026-07-01",
+              "title": "Lakossági Kondíciós Lista – Raiffeisen Reflex Megtakarítási Program",
+              "sourceFile": "Pasted text #1",
+              "sourceSections": [
+                "4. Raiffeisen Megtakarítási Számla díjai és jutalékai"
+              ],
+              "announcedOn": "2026-06-30",
+              "effectiveFrom": "2026-07-01",
+              "scope": "A jelen díjtételek kizárólag a Raiffeisen Megtakarítási Számla terhére indított forint eseti átutalásokra, illetve a saját számlára történő átvezetésre vonatkoznak."
+            }
+          ],
+          "responseInstructions": "Magyarul válaszolj. Először tisztázd, hogy a megbízás Raiffeisen Megtakarítási Számlát terhel-e. A mellékelt kondíciós lista nem általános Raiffeisen bankszámla-díjtábla; más számlatermékre vagy devizaátutalásra ne alkalmazd ezeket a díjakat. Ha nem Megtakarítási Számláról van szó, kérd el a pontos számlacsomagot és a hozzá tartozó aktuális kondíciós listát."
+        },
+        "source": "Raiffeisen Lakossági Kondíciós Lista – Raiffeisen Reflex Megtakarítási Program (hatályos 2026-07-01-től)"
+      },
+      {
+        "id": "RB-REFLEX-CLARIFICATION-001",
+        "name": "Clarify unsupported Raiffeisen savings questions",
+        "prioScore": -100,
+        "conditions": {},
+        "result": {
+          "decision": "RaiffeisenSavingsClarification",
+          "requiredElements": [
+            "category",
+            "accountProduct",
+            "question",
+            "transactionType",
+            "transactionChannel",
+            "transactionAmount"
+          ],
+          "responseInstructions": "Magyarul válaszolj. A rendelkezésre álló források a Raiffeisen Reflex Megtakarítási Programot és a Raiffeisen Megtakarítási Számlát ismertetik. Kérd el a terméket és a kérdéshez szükséges tényeket. Ne adj meg nem szereplő banki díjat, kamatot, szolgáltatási feltételt vagy aktuális jogszabályi állapotot. Ha a kérdéshez másik kondíciós lista szükséges, jelezd, hogy az nem része a rendelkezésre álló dokumentumoknak."
+        },
+        "source": "Raiffeisen Lakossági Kondíciós Lista – Raiffeisen Reflex Megtakarítási Program (hatályos 2026-07-01-től); Raiffeisen Lakossági Üzletszabályzat (hatályos 2026-03-28-tól)"
+      }
+    ]
+  }
+]

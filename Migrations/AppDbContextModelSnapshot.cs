@@ -30,6 +30,11 @@ namespace comply_flow_api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Bank")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime");
 
@@ -125,44 +130,6 @@ namespace comply_flow_api.Migrations
                     b.HasIndex("ProcessingId");
 
                     b.ToTable("EvaluationResults");
-                });
-
-            modelBuilder.Entity("comply_flow_api.Models.MatchedRules", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("EffectiveFrom")
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<bool>("Matched")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("PrioScore")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("varchar(max)");
-
-                    b.Property<string>("ResultJson")
-                        .IsRequired()
-                        .HasColumnType("varchar(max)");
-
-                    b.Property<int>("RuleId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Source")
-                        .HasColumnType("varchar(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RuleId");
-
-                    b.ToTable("MatchedRules");
                 });
 
             modelBuilder.Entity("comply_flow_api.Models.Message", b =>
@@ -377,6 +344,11 @@ namespace comply_flow_api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Bank")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<string>("Decision")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -411,17 +383,6 @@ namespace comply_flow_api.Migrations
                         .IsRequired();
 
                     b.Navigation("Processing");
-                });
-
-            modelBuilder.Entity("comply_flow_api.Models.MatchedRules", b =>
-                {
-                    b.HasOne("comply_flow_api.Models.Rules", "Rule")
-                        .WithMany("MatchedRules")
-                        .HasForeignKey("RuleId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Rule");
                 });
 
             modelBuilder.Entity("comply_flow_api.Models.Message", b =>
@@ -543,11 +504,6 @@ namespace comply_flow_api.Migrations
                     b.Navigation("ResponsePlan");
 
                     b.Navigation("Rules");
-                });
-
-            modelBuilder.Entity("comply_flow_api.Models.Rules", b =>
-                {
-                    b.Navigation("MatchedRules");
                 });
 #pragma warning restore 612, 618
         }

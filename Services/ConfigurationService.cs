@@ -33,6 +33,7 @@ public class ConfigurationService : IConfigurationService
         var configuration = new Configuration
         {
             Name = request.Name.Trim(),
+            Bank = request.Bank,
             RuleSetVersion = request.RuleSetVersion.Trim(),
             GenerationMode = "Template",
             TemplateVersion = request.TemplateVersion.Trim(),
@@ -51,6 +52,7 @@ public class ConfigurationService : IConfigurationService
         var configuration = new Configuration
         {
             Name = request.Name.Trim(),
+            Bank = request.Bank,
             RuleSetVersion = request.RuleSetVersion.Trim(),
             GenerationMode = "Llm",
             PromptVersion = request.PromptVersion.Trim(),
@@ -84,6 +86,7 @@ public class ConfigurationService : IConfigurationService
     private static ConfigurationResponse ToResponse(Configuration configuration) => new(
         configuration.Id,
         configuration.Name,
+        configuration.Bank,
         configuration.RuleSetVersion,
         configuration.GenerationMode,
         configuration.TemplateVersion,

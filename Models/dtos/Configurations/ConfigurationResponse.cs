@@ -8,6 +8,7 @@ public sealed record ConfigurationSummaryResponse(int Id, string Name);
 public sealed record ConfigurationResponse(
     int Id,
     string Name,
+    string Bank,
     string RuleSetVersion,
     string GenerationMode,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? TemplateVersion,

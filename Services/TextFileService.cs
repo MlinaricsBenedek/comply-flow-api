@@ -3,7 +3,7 @@ namespace comply_flow_api.Services;
 public interface ITextFileService
 {
     Task<string> GetPromptAsync(CancellationToken cancellationToken = default);
-    Task<string> GetBusinessRulesAsync(CancellationToken cancellationToken = default);
+    Task<string> GetBusinessRulesAsync(string bank, CancellationToken cancellationToken = default);
 }
 
 public class TextFileService : ITextFileService
@@ -26,8 +26,22 @@ public class TextFileService : ITextFileService
     public Task<string> GetPromptAsync(CancellationToken cancellationToken = default) =>
         ReadTxtFilesAsync(_promptDirectory, cancellationToken);
 
-    public Task<string> GetBusinessRulesAsync(CancellationToken cancellationToken = default) =>
-        ReadBusinessRulesAsync(_businessRulesDirectory, cancellationToken);
+    public Task<string> GetBusinessRulesAsync(
+        string bank,
+        CancellationToken cancellationToken = default)
+    {
+        var fileName = bank switch
+        {
+            "otp" => "OTP.JSON",
+            "raiffeisen" => "Raiffeisen.JSON",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(bank),
+                bank,
+                "The configured bank is not supported.")
+        };
+
+        return ReadBusinessRulesAsync(_businessRulesDirectory, fileName, cancellationToken);
+    }
 
     private static string ResolveDirectory(string? directory, string contentRootPath, string settingName)
     {
@@ -42,6 +56,7 @@ public class TextFileService : ITextFileService
 
     private static async Task<string> ReadBusinessRulesAsync(
         string directory,
+        string fileName,
         CancellationToken cancellationToken)
     {
         if (!Directory.Exists(directory))
@@ -49,7 +64,7 @@ public class TextFileService : ITextFileService
             throw new DirectoryNotFoundException($"Business rules directory was not found: {directory}");
         }
 
-        var filePath = Path.Combine(directory, "Rules.JSON");
+        var filePath = Path.Combine(directory, fileName);
         if (!File.Exists(filePath))
         {
             throw new FileNotFoundException($"Business rules file was not found: {filePath}");

@@ -143,11 +143,21 @@ public static class RuleEngine
         StructuredCaseState caseState,
         IEnumerable<Rule> rules)
     {
-        var evaluations = EvaluateRules(rules, caseState);
-        var matchedRules = GetMatchedRules(evaluations);
-        var selectedRule = SelectRule(matchedRules);
+        ArgumentNullException.ThrowIfNull(caseState);
+        ArgumentNullException.ThrowIfNull(rules);
 
-        return new RuleEngineResult(evaluations, matchedRules, selectedRule);
+        RuleEvaluationResult? selectedRule = null;
+        foreach (var rule in rules)
+        {
+            var evaluation = new RuleEvaluationResult(rule, EvaluateRule(rule, caseState));
+            if (evaluation.IsMatched &&
+                (selectedRule is null || evaluation.Rule.PrioScore > selectedRule.Rule.PrioScore))
+            {
+                selectedRule = evaluation;
+            }
+        }
+
+        return new RuleEngineResult(selectedRule);
     }
 
     private static bool CompareEquality(object? actual, object? expected, bool negate)

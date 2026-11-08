@@ -92,6 +92,7 @@ public class ConversationService : IConversationService
 			.ThenBy(processing => processing.Id)
 			.Select(processing => new ConversationExchangeResponse(
 				processing.Id,
+				processing.ConfigurationId,
 				processing.Status.ToString(),
 				new ConversationRequestMessageResponse(
 					processing.InputMessage.Id,
@@ -156,6 +157,7 @@ public class ConversationService : IConversationService
 				message.Id,
 				message.ConversationId,
 				processing.Id,
+				processing.ConfigurationId,
 				message.Role,
 				message.Content,
 				message.CreatedAt));

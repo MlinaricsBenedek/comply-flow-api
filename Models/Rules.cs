@@ -28,5 +28,8 @@ public class Rules
     [Column(TypeName = "varchar(50)")]
     public string RuleSetVersion { get; set; } = string.Empty;
 
-    public ICollection<MatchedRules> MatchedRules { get; set; } = new List<MatchedRules>();
+    [Required]
+    [StringLength(20)]
+    [Column(TypeName = "varchar(20)")]
+    public string Bank { get; set; } = string.Empty;
 }

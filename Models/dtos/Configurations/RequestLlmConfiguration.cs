@@ -10,6 +10,10 @@ public sealed class RequestLlmConfiguration
     public required string Name { get; init; }
 
     [Required]
+    [RegularExpression(@"\A(otp|raiffeisen)\z", ErrorMessage = "Bank must be either 'otp' or 'raiffeisen'.")]
+    public required string Bank { get; init; }
+
+    [Required]
     [StringLength(50)]
     public required string RuleSetVersion { get; init; }
 

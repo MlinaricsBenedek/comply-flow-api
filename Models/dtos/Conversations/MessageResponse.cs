@@ -4,6 +4,7 @@ public sealed record MessageResponse(
     int Id,
     int ConversationId,
     int ProcessingId,
+    int ConfigurationId,
     string Role,
     string Content,
     DateTime CreatedAt);
@@ -16,6 +17,7 @@ public sealed record ConversationMessagesResponse(
 /// <summary>A user request, its generated response if available, and processing status.</summary>
 public sealed record ConversationExchangeResponse(
     int ProcessingId,
+    int ConfigurationId,
     string Status,
     ConversationRequestMessageResponse Request,
     ConversationGeneratedMessageResponse? Response,

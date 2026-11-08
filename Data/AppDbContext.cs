@@ -10,7 +10,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Processing> Processings => Set<Processing>();
     public DbSet<PreProcessing> PreProcessings => Set<PreProcessing>();
     public DbSet<Rules> Rules => Set<Rules>();
-    public DbSet<MatchedRules> MatchedRules => Set<MatchedRules>();
     public DbSet<ResponsePlan> ResponsePlans => Set<ResponsePlan>();
     public DbSet<Response> Responses => Set<Response>();
     public DbSet<Configuration> Configurations => Set<Configuration>();
@@ -64,12 +63,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasOne(processing => processing.Rules)
             .WithOne(rules => rules.Processing)
             .HasForeignKey<Rules>(rules => rules.ProcessingId)
-            .OnDelete(DeleteBehavior.NoAction);
-
-        modelBuilder.Entity<Rules>()
-            .HasMany(rules => rules.MatchedRules)
-            .WithOne(matchedRules => matchedRules.Rule)
-            .HasForeignKey(matchedRules => matchedRules.RuleId)
             .OnDelete(DeleteBehavior.NoAction);
 
         modelBuilder.Entity<Processing>()

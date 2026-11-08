@@ -33,7 +33,6 @@ public class ProcessingRepository : IProcessingRepository
             .AsSplitQuery()
             .Include(processing => processing.PreProcessing)
             .Include(processing => processing.Rules)
-                .ThenInclude(rules => rules!.MatchedRules)
             .Include(processing => processing.ResponsePlan)
             .Include(processing => processing.Response)
             .Include(processing => processing.EvaluationResults)

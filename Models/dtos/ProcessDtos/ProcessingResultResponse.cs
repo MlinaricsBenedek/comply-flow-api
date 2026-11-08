@@ -29,16 +29,8 @@ public sealed record PreProcessingResultResponse(
 public sealed record RuleDecisionResultResponse(
     string Decision,
     string Reason,
-    string RuleSetVersion,
-    IReadOnlyList<MatchedRuleResultResponse> MatchedRules);
-
-public sealed record MatchedRuleResultResponse(
-    bool Matched,
-    int PrioScore,
-    string ResultJson,
-    string? Source,
-    string? EffectiveFrom,
-    string Reason);
+    string Bank,
+    string RuleSetVersion);
 
 public sealed record ResponsePlanResultResponse(
     string Decision,
