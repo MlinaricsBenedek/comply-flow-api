@@ -302,7 +302,7 @@ Az alábbi két GET útvonal ugyanazt az eredményt adja:
 }
 ```
 
-Az eredmény egyes részei még nem állnak rendelkezésre, ezért `null` értékűek lehetnek. Ha egyetlen eredményrész sem érhető el, a `results` értéke `null`, a `resultsAvailable` pedig `false`. Feldolgozási hiba esetén az `error` alakja:
+Az eredmény egyes részei még nem állnak rendelkezésre, ezért `null` értékűek lehetnek. Ha egyetlen eredményrész sem érhető el, a `results` értéke `null`, a `resultsAvailable` pedig `false`. A `ruleDecision.reason` az alkalmazott szabály azonosítóját, a teljesült feltételeket és a prioritás szerinti kiválasztás okát írja le; a `Rules` rekordban tárolt érték a választerv `reason` mezőjében is megjelenik. Ha nincs egyezés, az indoklás ezt és a vizsgált szabályok számát jelzi. Feldolgozási hiba esetén az `error` alakja:
 
 ```json
 {

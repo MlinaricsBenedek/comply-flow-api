@@ -125,20 +125,6 @@ public static class RuleEngine
         return rule.Conditions is not null && EvaluateConditionGroup(rule.Conditions, caseState);
     }
 
-    public static List<RuleEvaluationResult> EvaluateRules(
-        IEnumerable<Rule> rules,
-        StructuredCaseState caseState) =>
-        rules.Select(rule => new RuleEvaluationResult(rule, EvaluateRule(rule, caseState))).ToList();
-
-    public static List<RuleEvaluationResult> GetMatchedRules(IEnumerable<RuleEvaluationResult> results) =>
-        results.Where(result => result.IsMatched).ToList();
-
-    public static RuleEvaluationResult? SelectRule(IEnumerable<RuleEvaluationResult> matchedRules) =>
-        matchedRules
-            .Where(result => result.IsMatched)
-            .OrderByDescending(result => result.Rule.PrioScore)
-            .FirstOrDefault();
-
     public static RuleEngineResult Evaluate(
         StructuredCaseState caseState,
         IEnumerable<Rule> rules)
@@ -147,8 +133,10 @@ public static class RuleEngine
         ArgumentNullException.ThrowIfNull(rules);
 
         RuleEvaluationResult? selectedRule = null;
+        var evaluatedRuleCount = 0;
         foreach (var rule in rules)
         {
+            evaluatedRuleCount++;
             var evaluation = new RuleEvaluationResult(rule, EvaluateRule(rule, caseState));
             if (evaluation.IsMatched &&
                 (selectedRule is null || evaluation.Rule.PrioScore > selectedRule.Rule.PrioScore))
@@ -157,8 +145,43 @@ public static class RuleEngine
             }
         }
 
-        return new RuleEngineResult(selectedRule);
+        var reason = selectedRule is null
+            ? $"Egyik vizsgált szabály feltételei sem teljesültek ({evaluatedRuleCount} szabály vizsgálata alapján); nem történt szabálykiválasztás."
+            : CreateSelectionReason(selectedRule.Rule, caseState);
+
+        return new RuleEngineResult(selectedRule, reason);
     }
+
+    private static string CreateSelectionReason(Rule rule, StructuredCaseState caseState)
+    {
+        var conditions = rule.Conditions!;
+        var explanations = new List<string>();
+
+        if (conditions.All is { Count: > 0 })
+        {
+            explanations.Add(
+                $"az összes kötelező feltétel teljesült ({string.Join("; ", conditions.All.Select(DescribeCondition))})");
+        }
+
+        if (conditions.Any is { Count: > 0 })
+        {
+            var matchedAlternatives = conditions.Any
+                .Where(condition => EvaluateCondition(condition, caseState))
+                .Select(DescribeCondition);
+            explanations.Add(
+                $"az alternatív feltételek közül legalább egy teljesült ({string.Join("; ", matchedAlternatives)})");
+        }
+
+        var matchReason = explanations.Count == 0
+            ? "a szabály feltétel nélküli, ezért illeszkedett"
+            : string.Join(", és ", explanations);
+
+        return $"A(z) {rule.Id} ({rule.Name}) szabály illeszkedett, mert {matchReason}. " +
+            $"A legmagasabb prioritású egyező szabályként ez került kiválasztásra (prioScore: {rule.PrioScore}).";
+    }
+
+    private static string DescribeCondition(Condition condition) =>
+        $"{condition.Field} {condition.Operator} {JsonSerializer.Serialize(condition.Value)}";
 
     private static bool CompareEquality(object? actual, object? expected, bool negate)
     {

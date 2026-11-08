@@ -79,4 +79,4 @@ public sealed class RuleOutcome
 
 public sealed record RuleEvaluationResult(Rule Rule, bool IsMatched);
 
-public sealed record RuleEngineResult(RuleEvaluationResult? SelectedRule);
+public sealed record RuleEngineResult(RuleEvaluationResult? SelectedRule, string Reason);

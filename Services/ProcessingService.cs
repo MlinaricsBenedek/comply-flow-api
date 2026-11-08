@@ -118,9 +118,7 @@ public class ProcessingService : IProcessingService
             var evaluation = RuleEngine.Evaluate(caseState, ruleSet.Rules);
             var selectedRule = evaluation.SelectedRule?.Rule;
             var decision = selectedRule?.Result.Decision ?? "NoMatch";
-            var reason = selectedRule is null
-                ? "No rule matched the preprocessed case."
-                : selectedRule.Name;
+            var reason = evaluation.Reason;
 
             processing.PreProcessing = new PreProcessing
             {
