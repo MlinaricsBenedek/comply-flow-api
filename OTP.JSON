@@ -356,8 +356,8 @@
         },
         "result": {
           "decision": "BankTransferFeesGuidance",
-          "action": "Banki ?tutal?si d?jakra vonatkoz? t?j?koztat?s.",
-          "nextStep": "K?rd be az ?tutal?s ?sszeg?t, t?pus?t, csatorn?j?t ?s a sz?mlacsomagot; ezut?n ellen?rizd a vonatkoz? aktu?lis d?jhirdetm?nyt.",
+          "action": "Az átutalási díj összevetése a megadott hirdetményi díjtétellel.",
+          "nextStep": "Ellenőrizd a tételes terhelést és az alkalmazandó hirdetményi feltételeket; eltérés esetén vizsgáld ki a panaszt.",
           "requiredElements": [
             "accountType",
             "accountCurrency",
@@ -367,6 +367,13 @@
             "transactionChannel",
             "isOwnAccountTransfer"
           ],
+          "transferFeeAssessment": {
+            "ratePercent": 0.45,
+            "minimumFeeHuf": 713,
+            "maximumFeeHuf": 3788,
+            "scope": "OTP HUF savings account; occasional domestic transfer to a non-own account via OTP InternetBank or MobilBank",
+            "effectiveFrom": "2026-07-01"
+          },
           "documents": [
             {
               "documentId": "OTP-SAVINGS-RATES-FEES-2026-07-01",
@@ -1100,8 +1107,8 @@
         },
         "result": {
           "decision": "BankTransferFeesGuidance",
-          "action": "Banki ?tutal?si d?jakra vonatkoz? t?j?koztat?s.",
-          "nextStep": "K?rd be az ?tutal?s ?sszeg?t, t?pus?t, csatorn?j?t ?s a sz?mlacsomagot; ezut?n ellen?rizd a vonatkoz? aktu?lis d?jhirdetm?nyt.",
+          "action": "Az átutalási díj összevetése a megadott hirdetményi díjtétellel.",
+          "nextStep": "Ellenőrizd a tételes terhelést és az alkalmazandó hirdetményi feltételeket; eltérés esetén vizsgáld ki a panaszt.",
           "requiredElements": [
             "accountType",
             "accountCurrency",
@@ -1111,6 +1118,13 @@
             "transactionChannel",
             "isOwnAccountTransfer"
           ],
+          "transferFeeAssessment": {
+            "ratePercent": 0.45,
+            "minimumFeeHuf": 713,
+            "maximumFeeHuf": 3788,
+            "scope": "OTP HUF savings account; occasional domestic transfer to a non-own account via OTP InternetBank or MobilBank",
+            "effectiveFrom": "2026-07-01"
+          },
           "documents": [
             {
               "documentId": "OTP-SAVINGS-RATES-FEES-2026-07-01",

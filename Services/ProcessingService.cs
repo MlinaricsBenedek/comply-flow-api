@@ -120,6 +120,10 @@ public class ProcessingService : IProcessingService
             var selectedRule = evaluation.SelectedRule?.Rule;
             var decision = selectedRule?.Result.Decision ?? "NoMatch";
             var reason = evaluation.Reason;
+            var feeAssessment = TransferFeeComplaintEvaluator.Evaluate(
+                configuration.Bank,
+                message.Content,
+                selectedRule);
 
             processing.PreProcessing = new PreProcessing
             {
@@ -135,7 +139,11 @@ public class ProcessingService : IProcessingService
                 RuleSetVersion = ruleSet.RuleSetVersion,
                 EvaluationTraceJson = JsonSerializer.Serialize(evaluation.EvaluationTrace)
             };
-            processing.ResponsePlan = CreateResponsePlan(selectedRule, decision, reason);
+            processing.ResponsePlan = CreateResponsePlan(
+                selectedRule,
+                decision,
+                reason,
+                feeAssessment);
             await _processingRepository.SaveChangesAsync(cancellationToken);
 
             var responseValidationRequirements = ResponseContentValidator.GetRequirements(selectedRule);
@@ -146,6 +154,7 @@ public class ProcessingService : IProcessingService
                 ["reason"] = reason,
                 ["rule_result"] = selectedRule?.Result,
                 ["bank"] = configuration.Bank,
+                ["complaint_assessment"] = feeAssessment,
                 ["response_plan"] = new
                 {
                     decision = processing.ResponsePlan.Decision,
@@ -161,6 +170,11 @@ public class ProcessingService : IProcessingService
                     validation_requirements = responseValidationRequirements
                 }
             };
+            if (feeAssessment is not null)
+            {
+                inputContext["customer_response_instruction"] =
+                    "Use the deterministic complaint_assessment as the sole source of the fee conclusion. Include its CustomerMessage verbatim. Do not claim a bank-system fault or apologize for one unless independently verified.";
+            }
 
             AiGenerationResult? generation = null;
             string responseText;
@@ -174,6 +188,7 @@ public class ProcessingService : IProcessingService
                     reason,
                     processing.ResponsePlan.Action,
                     processing.ResponsePlan.NextStep,
+                    feeAssessment?.CustomerMessage ?? string.Empty,
                     processing.ResponsePlan.RequiredElementsJson,
                     processing.ResponsePlan.ResponseStructureJson,
                     processing.ResponsePlan.SourcesJson);
@@ -197,7 +212,9 @@ public class ProcessingService : IProcessingService
                         modelName,
                         modelParameters),
                     cancellationToken);
-                responseText = generation.Response;
+                responseText = feeAssessment is null
+                    ? generation.Response
+                    : $"{generation.Response.Trim()}{Environment.NewLine}{Environment.NewLine}{feeAssessment.CustomerMessage}";
             }
             else
             {
@@ -482,7 +499,11 @@ public class ProcessingService : IProcessingService
             JsonValueKind.False or
             JsonValueKind.Null;
 
-    private static ResponsePlan CreateResponsePlan(Rule? selectedRule, string decision, string reason)
+    private static ResponsePlan CreateResponsePlan(
+        Rule? selectedRule,
+        string decision,
+        string reason,
+        TransferFeeComplaintAssessment? feeAssessment)
     {
         var resultData = selectedRule?.Result.AdditionalData
             ?? new Dictionary<string, JsonElement>();
@@ -490,6 +511,10 @@ public class ProcessingService : IProcessingService
             .Where(item => !string.Equals(item.Key, "requiredElements", StringComparison.OrdinalIgnoreCase))
             .ToDictionary(item => item.Key, item => item.Value);
         var requiredElements = GetRequiredElements(resultData, responseStructure);
+        if (feeAssessment is not null)
+        {
+            responseStructure["complaintAssessment"] = JsonSerializer.SerializeToElement(feeAssessment);
+        }
 
         var sources = selectedRule is null
             ? Array.Empty<string>()
@@ -502,8 +527,21 @@ public class ProcessingService : IProcessingService
         {
             Decision = decision,
             Reason = reason,
-            Action = selectedRule?.Result.Action ?? "Nincs alkalmazható szabály szerinti intézkedés.",
-            NextStep = selectedRule?.Result.NextStep ?? "Kérj pontosítást vagy további adatot az ügy megítéléséhez.",
+            Action = feeAssessment is null
+                ? selectedRule?.Result.Action ?? "Nincs alkalmazható szabály szerinti intézkedés."
+                : "Az átutalási díj összevetése a megadott hirdetményi díjtétellel.",
+            NextStep = feeAssessment?.Status switch
+            {
+                TransferFeeAssessmentStatus.InsufficientData =>
+                    $"Kérjük, pontosítsa: {string.Join(", ", feeAssessment.MissingInformation)}.",
+                TransferFeeAssessmentStatus.TariffMismatchReported =>
+                    "A tételes banki terhelés ellenőrzése és az esetleges eltérés kivizsgálása szükséges.",
+                TransferFeeAssessmentStatus.TariffBelowPublished =>
+                    "Ha más terhelési tételre vonatkozik a panasz, kérjük, küldje el a tételes számlakivonatot.",
+                TransferFeeAssessmentStatus.TariffMatches =>
+                    "Ha a terhelés más díjtételt is tartalmaz, annak tételes ellenőrzése szükséges.",
+                _ => selectedRule?.Result.NextStep ?? "Kérj pontosítást vagy további adatot az ügy megítéléséhez."
+            },
             RequiredElementsJson = JsonSerializer.Serialize(requiredElements),
             ResponseStructureJson = JsonSerializer.Serialize(responseStructure),
             SourcesJson = JsonSerializer.Serialize(sources)
