@@ -55,7 +55,7 @@ public static class TemplateResponseRenderer
             ["{{assessment}}"] = assessment,
             ["{{requiredElements}}"] = FormatStringArray(requiredElementsJson),
             ["{{responseStructure}}"] = FormatJsonObject(responseStructureJson),
-            ["{{sources}}"] = FormatStringArray(sourcesJson)
+            ["{{sources}}"] = FormatSources(sourcesJson)
         };
 
         var response = template;
@@ -87,6 +87,15 @@ public static class TemplateResponseRenderer
         return values.Count == 0
             ? "Nincs megadott elem."
             : string.Join(Environment.NewLine, values.Select(value => $"- {value}"));
+    }
+
+    private static string FormatSources(string json)
+    {
+        var sources = JsonSerializer.Deserialize<List<string>>(json)
+            ?? throw new InvalidDataException("A response template sources must be a JSON string array.");
+        return sources.Count == 0
+            ? "A rendelkezésre álló szabályok nem tartalmaznak ehhez a válaszhoz ellenőrzött forrást."
+            : string.Join(Environment.NewLine, sources.Select(value => $"- {value}"));
     }
 
     private static string FormatJsonObject(string json)

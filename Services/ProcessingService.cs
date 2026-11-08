@@ -116,6 +116,14 @@ public class ProcessingService : IProcessingService
             }
 
             var caseState = preprocessing.CaseState;
+            var category = preprocessing.Category;
+            if (string.Equals(configuration.Bank, "otp", StringComparison.OrdinalIgnoreCase) &&
+                IsCardDeliveryRequest(message.Content))
+            {
+                category = "CARD_DELIVERY";
+                caseState["category"] = category;
+            }
+
             var evaluation = RuleEngine.Evaluate(caseState, ruleSet.Rules);
             var selectedRule = evaluation.SelectedRule?.Rule;
             var decision = selectedRule?.Result.Decision ?? "NoMatch";
@@ -128,7 +136,7 @@ public class ProcessingService : IProcessingService
             processing.PreProcessing = new PreProcessing
             {
                 CleanedText = preprocessing.Message,
-                CaseType = preprocessing.Category ?? "Unknown",
+                CaseType = category ?? "Unknown",
                 StructuredCaseStateJson = JsonSerializer.Serialize(caseState)
             };
             processing.Rules = new Rules
@@ -207,15 +215,19 @@ public class ProcessingService : IProcessingService
                         inputContext,
                         preprocessing.Message,
                         preprocessing.Facts,
-                        preprocessing.Category,
+                        category,
                         configuration.PromptVersion,
                         modelName,
                         modelParameters),
                     cancellationToken);
-                var llmResponse = feeAssessment is null
-                    ? generation.Response
-                    : $"Tisztelt Ügyfelünk!{Environment.NewLine}{Environment.NewLine}{feeAssessment.CustomerMessage}{Environment.NewLine}{Environment.NewLine}Következő lépés: {processing.ResponsePlan.NextStep}";
-                responseText = AppendSourceCitation(llmResponse, selectedRule);
+                var llmResponse = feeAssessment is not null
+                    ? $"Tisztelt Ügyfelünk!{Environment.NewLine}{Environment.NewLine}{feeAssessment.CustomerMessage}{Environment.NewLine}{Environment.NewLine}Következő lépés: {processing.ResponsePlan.NextStep}"
+                    : IsCardDeliveryRule(selectedRule)
+                        ? $"Tisztelt Ügyfelünk!{Environment.NewLine}{Environment.NewLine}{processing.ResponsePlan.NextStep}"
+                        : generation.Response;
+                responseText = AppendSourceCitations(
+                    llmResponse,
+                    processing.ResponsePlan.SourcesJson);
             }
             else
             {
@@ -515,7 +527,8 @@ public class ProcessingService : IProcessingService
             .ToDictionary(item => item.Key, item => item.Value);
         var requiredElements = GetRequiredElements(resultData, responseStructure);
 
-        var sources = selectedRule is null
+        var sources = selectedRule is null ||
+            string.Equals(selectedRule.Id, "HU-BANKING-001", StringComparison.OrdinalIgnoreCase)
             ? Array.Empty<string>()
             : new[] { selectedRule.Source, selectedRule.EffectiveFrom }
                 .Where(value => !string.IsNullOrWhiteSpace(value))
@@ -547,22 +560,49 @@ public class ProcessingService : IProcessingService
         };
     }
 
-    private static string AppendSourceCitation(string response, Rule? selectedRule)
+    private static string AppendSourceCitations(string response, string sourcesJson)
     {
-        var source = selectedRule?.Source?.Trim();
-        if (string.IsNullOrWhiteSpace(source))
+        var sources = JsonSerializer.Deserialize<List<string>>(sourcesJson)
+            ?? throw new InvalidDataException("Response plan sources must be a JSON string array.");
+        if (sources.Count == 0)
         {
             return response;
         }
 
-        if (response.Contains("Források:", StringComparison.OrdinalIgnoreCase) &&
-            response.Contains(source, StringComparison.OrdinalIgnoreCase))
+        var missingSources = sources
+            .Where(source => !response.Contains(source, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (missingSources.Length == 0)
         {
             return response.Trim();
         }
 
-        return $"{response.Trim()}{Environment.NewLine}{Environment.NewLine}Források:{Environment.NewLine}- {source}";
+        return $"{response.Trim()}{Environment.NewLine}{Environment.NewLine}Források:{Environment.NewLine}" +
+            string.Join(Environment.NewLine, missingSources.Select(source => $"- {source}"));
     }
+
+    private static bool IsCardDeliveryRequest(string message)
+    {
+        var normalizedMessage = message.ToLowerInvariant();
+        var mentionsCard = normalizedMessage.Contains("bankkárty", StringComparison.Ordinal) ||
+            normalizedMessage.Contains("bankkartya", StringComparison.Ordinal);
+        var mentionsDelivery = normalizedMessage.Contains("postai", StringComparison.Ordinal) ||
+            normalizedMessage.Contains("kiszáll", StringComparison.Ordinal) ||
+            normalizedMessage.Contains("kiszall", StringComparison.Ordinal) ||
+            normalizedMessage.Contains("kézbes", StringComparison.Ordinal) ||
+            normalizedMessage.Contains("kezbes", StringComparison.Ordinal) ||
+            normalizedMessage.Contains("megérkez", StringComparison.Ordinal) ||
+            normalizedMessage.Contains("megerkez", StringComparison.Ordinal) ||
+            normalizedMessage.Contains("küldj", StringComparison.Ordinal) ||
+            normalizedMessage.Contains("kuldj", StringComparison.Ordinal);
+        return mentionsCard && mentionsDelivery;
+    }
+
+    private static bool IsCardDeliveryRule(Rule? rule) =>
+        string.Equals(
+            rule?.Id,
+            "HU-OTP-CARD-DELIVERY-001",
+            StringComparison.OrdinalIgnoreCase);
 
     private static IReadOnlyList<string> GetRequiredElements(
         IReadOnlyDictionary<string, JsonElement> resultData,

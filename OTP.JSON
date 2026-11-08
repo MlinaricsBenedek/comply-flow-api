@@ -401,6 +401,30 @@
         "source": "OTP Hirdetmény a lakossági Forint és Deviza megtakarítási számlák díjairól (érvényes 2026-07-01-től)"
       },
       {
+        "id": "HU-OTP-CARD-DELIVERY-001",
+        "name": "OTP bank card delivery guidance",
+        "prioScore": 400,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "CARD_DELIVERY"
+            }
+          ]
+        },
+        "result": {
+          "decision": "OtpCardDeliveryGuidance",
+          "action": "Tájékoztatás az OTP bankkártya kézbesítéséről.",
+          "nextStep": "A rendelkezésre álló szabályforrások nem tartalmaznak ellenőrzött kézbesítési határidőt. A pontos tájékoztatásért ellenőrizze az OTP hivatalos ügyintézési csatornáját. Ha további segítségre van szüksége, adja meg, hogy új, megújított vagy pótkártyáról van-e szó, és mikor igényelte.",
+          "requiredElements": [
+            "cardRequestType",
+            "cardRequestDate",
+            "deliveryMethod"
+          ]
+        }
+      },
+      {
         "id": "HU-BANKING-001",
         "name": "General Hungarian banking and transaction tax guidance",
         "prioScore": 200,
@@ -415,8 +439,8 @@
         },
         "result": {
           "decision": "HungarianBankingGuidance",
-          "action": "A relev?ns magyar banki szab?lyokr?l ?s d?jakr?l sz?l? t?j?koztat?s.",
-          "nextStep": "Tiszt?zd a konkr?t tranzakci?t ?s annak k?r?lm?nyeit; k?l?n?tsd el a jogszab?lyi terhet a banki d?jt?l, ?s ellen?rizd a kapcsol?d? forr?sokat.",
+          "action": "Általános banki tájékoztatás.",
+          "nextStep": "Kérjük, pontosítsa a banki kérdés vagy ügyintézés típusát, hogy a megfelelő tájékoztatást adhassuk.",
           "requiredElements": [
             "category",
             "transactionType",
@@ -1152,6 +1176,30 @@
         "source": "OTP Hirdetmény a lakossági Forint és Deviza megtakarítási számlák díjairól (érvényes 2026-07-01-től)"
       },
       {
+        "id": "HU-OTP-CARD-DELIVERY-001",
+        "name": "OTP bank card delivery guidance",
+        "prioScore": 400,
+        "conditions": {
+          "all": [
+            {
+              "field": "category",
+              "operator": "equals",
+              "value": "CARD_DELIVERY"
+            }
+          ]
+        },
+        "result": {
+          "decision": "OtpCardDeliveryGuidance",
+          "action": "Tájékoztatás az OTP bankkártya kézbesítéséről.",
+          "nextStep": "A rendelkezésre álló szabályforrások nem tartalmaznak ellenőrzött kézbesítési határidőt. A pontos tájékoztatásért ellenőrizze az OTP hivatalos ügyintézési csatornáját. Ha további segítségre van szüksége, adja meg, hogy új, megújított vagy pótkártyáról van-e szó, és mikor igényelte.",
+          "requiredElements": [
+            "cardRequestType",
+            "cardRequestDate",
+            "deliveryMethod"
+          ]
+        }
+      },
+      {
         "id": "HU-BANKING-001",
         "name": "General Hungarian banking and transaction tax guidance",
         "prioScore": 200,
@@ -1166,8 +1214,8 @@
         },
         "result": {
           "decision": "HungarianBankingGuidance",
-          "action": "A relev?ns magyar banki szab?lyokr?l ?s d?jakr?l sz?l? t?j?koztat?s.",
-          "nextStep": "Tiszt?zd a konkr?t tranzakci?t ?s annak k?r?lm?nyeit; k?l?n?tsd el a jogszab?lyi terhet a banki d?jt?l, ?s ellen?rizd a kapcsol?d? forr?sokat.",
+          "action": "Általános banki tájékoztatás.",
+          "nextStep": "Kérjük, pontosítsa a banki kérdés vagy ügyintézés típusát, hogy a megfelelő tájékoztatást adhassuk.",
           "requiredElements": [
             "category",
             "transactionType",
