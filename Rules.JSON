@@ -115,7 +115,7 @@
               "title": "2012. évi CXVI. törvény a pénzügyi tranzakciós illetékről",
               "sourceFile": "Pasted text #1.txt",
               "sourceSections": [
-                "3-7. ?"
+                "3-7. §"
               ],
               "scope": "A pénzügyi tranzakciós illeték jogszabály szerinti alapja és mértéke. Az illeték megfizetésére a törvényben meghatározott szolgáltató kötelezett; ez önmagában nem azonos az ügyfélnek felszámított banki díjjal.",
               "commonRates": {
@@ -140,9 +140,9 @@
               ]
             }
           ],
-          "responseInstructions": "Magyarul v?laszolj. K?l?nb?ztesd meg a jogszab?ly szerinti p?nz?gyi tranzakci?s illet?ket a bank ?gyf?lnek felsz?m?tott d?j?t?l. Az alkalmazand? alap ?s kiv?telek a m?velett?l ?s ?gyf?lt?l f?ggenek; k?rdezz r? a hi?nyz? adatokra, ne alkalmazz ?ltal?nos m?rt?ket kiv?telvizsg?lat n?lk?l."
+          "responseInstructions": "Magyarul válaszolj. Különböztesd meg a jogszabály szerinti pénzügyi tranzakciós illetéket a bank ügyfélnek felszámított díjától. Az alkalmazandó alap és kivételek a művelettől és ügyféltől függenek; kérdezz rá a hiányzó adatokra, ne alkalmazz általános mértéket kivételvizsgálat nélkül."
         },
-        "source": "2012. ?vi CXVI. t?rv?ny (3-7. ?)"
+        "source": "2012. évi CXVI. törvény (3-7. §)"
       },
       {
         "id": "HU-SAVINGS-INTEREST-001",
@@ -271,9 +271,9 @@
               }
             }
           ],
-          "responseInstructions": "Magyarul v?laszolj. K?rdezz r? a sz?mlat?pusra, p?nznemre ?s egyenlegre. A forint megtakar?t?si sz?ml?n a kamats?vok szerinti egyenlegr?szeket k?l?n kezeld; a Persely teljes egyenleg?re elt?r? szab?ly vonatkozik. Devizasz?mla aktu?lis kamat?t a mindenkor hat?lyos k?l?n kamathirdetm?ny n?lk?l ne ?ll?tsd biztosan; jelezd a hirdetm?ny 2026-07-01-i hat?ly?t ?s annak ellen?rz?si sz?ks?gess?g?t."
+          "responseInstructions": "Magyarul válaszolj. Kérdezz rá a számlatípusra, pénznemre és egyenlegre. A forint megtakarítási számlán a kamatsávok szerinti egyenlegrészeket külön kezeld; a Persely teljes egyenlegére eltérő szabály vonatkozik. Devizaszámla aktuális kamatát a mindenkor hatályos külön kamathirdetmény nélkül ne állítsd biztosan; jelezd a hirdetmény 2026-07-01-i hatályát és annak ellenőrzési szükségességét."
         },
-        "source": "OTP Hirdetm?ny a lakoss?gi Forint ?s Deviza megtakar?t?si sz?ml?k kamatair?l (?rv?nyes 2026-07-01-t?l)"
+        "source": "OTP Hirdetmény a lakossági Forint és Deviza megtakarítási számlák kamatairól (érvényes 2026-07-01-től)"
       },
       {
         "id": "HU-SAVINGS-TERMS-001",
@@ -329,9 +329,9 @@
               }
             }
           ],
-          "responseInstructions": "Magyarul v?laszolj, ?s a megfelel? forint, deviza vagy Persely sz?ml?ra vonatkoz? felt?teleket ismertesd. K?rdezz r? a hi?nyz? sz?mlat?pusra, ?letkorra, illet?s?gre vagy ?gyint?z?si csatorn?ra; ne ?ltal?nos?ts elt?r? term?kek szab?lyai k?z?tt. Jelezd az ?zletszab?lyzat 2026-08-27-i hat?ly?t."
+          "responseInstructions": "Magyarul válaszolj, és a megfelelő forint, deviza vagy Persely számlára vonatkozó feltételeket ismertesd. Kérdezz rá a hiányzó számlatípusra, életkorra, illetőségre vagy ügyintézési csatornára; ne általánosíts eltérő termékek szabályai között. Jelezd az üzletszabályzat 2026-08-27-i hatályát."
         },
-        "source": "OTP Lakoss?gi bet?ti ?zletszab?lyzat (hat?lyos 2026-08-27-t?l), V./B-V./D"
+        "source": "OTP Lakossági betéti üzletszabályzat (hatályos 2026-08-27-től), V./B-V./D"
       },
       {
         "id": "HU-BANK-TRANSFER-FEES-001",
@@ -363,7 +363,7 @@
               "title": "Hirdetmény a lakossági Forint és Deviza megtakarítási számlák, valamint a Persely számla kamatairól és költségeiről",
               "sourceFile": "Pasted text #2.txt",
               "sourceSections": [
-                "4. fejezet - megtakar?t?si sz?ml?k ?tutal?si d?jai"
+                "4. fejezet - megtakarítási számlák átutalási díjai"
               ],
               "effectiveFrom": "2026-07-01",
               "validity": "Visszavonásig; közzétéve 2026-04-30.",
@@ -376,12 +376,12 @@
                 "A hirdetményben meghatározott saját számlák közötti átutalás díjmentes; a saját számlák fogalmára és kivételeire a hirdetmény 12. lábjegyzete vonatkozik.",
                 "Forint megtakarítási számláról OTP InternetBank/MobilBank útján bankon belüli, nem saját számlára indított forint átutalás: 0,45% (713–3 788 Ft)."
               ],
-              "scopeLimitation": "A felsorolt d?jak kiz?r?lag a hirdetm?nyben megjel?lt lakoss?gi forint ?s deviza megtakar?t?si sz?ml?kra vonatkoznak. M?s sz?mlat?pus d?ja ebb?l nem ?llap?that? meg."
+              "scopeLimitation": "A felsorolt díjak kizárólag a hirdetményben megjelölt lakossági forint és deviza megtakarítási számlákra vonatkoznak. Más számlatípus díja ebből nem állapítható meg."
             }
           ],
-          "responseInstructions": "Magyarul v?laszolj. A rendelkez?sre ?ll? d?jadatok kiz?r?lag az OTP lakoss?gi forint ?s deviza megtakar?t?si sz?ml?kra vonatkoznak; m?s sz?mlat?pusra ne alkalmazd ?ket. K?rdezz r? a sz?mlat?pusra, p?nznemre, csatorn?ra ?s arra, hogy saj?t sz?ml?k k?z?tti-e az utal?s. A banki d?jat k?l?nb?ztesd meg a jogszab?lyi tranzakci?s illet?kt?l. M?s term?kn?l k?rd a megfelel? hat?lyos hirdetm?nyt vagy jelezd, hogy a d?j ezekb?l az adatokb?l nem ?llap?that? meg."
+          "responseInstructions": "Magyarul válaszolj. A rendelkezésre álló díjadatok kizárólag az OTP lakossági forint és deviza megtakarítási számlákra vonatkoznak; más számlatípusra ne alkalmazd őket. Kérdezz rá a számlatípusra, pénznemre, csatornára és arra, hogy saját számlák közötti-e az utalás. A banki díjat különböztesd meg a jogszabályi tranzakciós illetéktől. Más terméknél kérd a megfelelő hatályos hirdetményt vagy jelezd, hogy a díj ezekből az adatokból nem állapítható meg."
         },
-        "source": "OTP Hirdetm?ny a lakoss?gi Forint ?s Deviza megtakar?t?si sz?ml?k d?jair?l (?rv?nyes 2026-07-01-t?l)"
+        "source": "OTP Hirdetmény a lakossági Forint és Deviza megtakarítási számlák díjairól (érvényes 2026-07-01-től)"
       },
       {
         "id": "HU-BANKING-001",
@@ -839,7 +839,7 @@
               "title": "2012. évi CXVI. törvény a pénzügyi tranzakciós illetékről",
               "sourceFile": "Pasted text #1.txt",
               "sourceSections": [
-                "3-7. ?"
+                "3-7. §"
               ],
               "scope": "A pénzügyi tranzakciós illeték jogszabály szerinti alapja és mértéke. Az illeték megfizetésére a törvényben meghatározott szolgáltató kötelezett; ez önmagában nem azonos az ügyfélnek felszámított banki díjjal.",
               "commonRates": {
@@ -864,9 +864,9 @@
               ]
             }
           ],
-          "responseInstructions": "Magyarul v?laszolj. K?l?nb?ztesd meg a jogszab?ly szerinti p?nz?gyi tranzakci?s illet?ket a bank ?gyf?lnek felsz?m?tott d?j?t?l. Az alkalmazand? alap ?s kiv?telek a m?velett?l ?s ?gyf?lt?l f?ggenek; k?rdezz r? a hi?nyz? adatokra, ne alkalmazz ?ltal?nos m?rt?ket kiv?telvizsg?lat n?lk?l."
+          "responseInstructions": "Magyarul válaszolj. Különböztesd meg a jogszabály szerinti pénzügyi tranzakciós illetéket a bank ügyfélnek felszámított díjától. Az alkalmazandó alap és kivételek a művelettől és ügyféltől függenek; kérdezz rá a hiányzó adatokra, ne alkalmazz általános mértéket kivételvizsgálat nélkül."
         },
-        "source": "2012. ?vi CXVI. t?rv?ny (3-7. ?)"
+        "source": "2012. évi CXVI. törvény (3-7. §)"
       },
       {
         "id": "HU-SAVINGS-INTEREST-001",
@@ -995,9 +995,9 @@
               }
             }
           ],
-          "responseInstructions": "Magyarul v?laszolj. K?rdezz r? a sz?mlat?pusra, p?nznemre ?s egyenlegre. A forint megtakar?t?si sz?ml?n a kamats?vok szerinti egyenlegr?szeket k?l?n kezeld; a Persely teljes egyenleg?re elt?r? szab?ly vonatkozik. Devizasz?mla aktu?lis kamat?t a mindenkor hat?lyos k?l?n kamathirdetm?ny n?lk?l ne ?ll?tsd biztosan; jelezd a hirdetm?ny 2026-07-01-i hat?ly?t ?s annak ellen?rz?si sz?ks?gess?g?t."
+          "responseInstructions": "Magyarul válaszolj. Kérdezz rá a számlatípusra, pénznemre és egyenlegre. A forint megtakarítási számlán a kamatsávok szerinti egyenlegrészeket külön kezeld; a Persely teljes egyenlegére eltérő szabály vonatkozik. Devizaszámla aktuális kamatát a mindenkor hatályos külön kamathirdetmény nélkül ne állítsd biztosan; jelezd a hirdetmény 2026-07-01-i hatályát és annak ellenőrzési szükségességét."
         },
-        "source": "OTP Hirdetm?ny a lakoss?gi Forint ?s Deviza megtakar?t?si sz?ml?k kamatair?l (?rv?nyes 2026-07-01-t?l)"
+        "source": "OTP Hirdetmény a lakossági Forint és Deviza megtakarítási számlák kamatairól (érvényes 2026-07-01-től)"
       },
       {
         "id": "HU-SAVINGS-TERMS-001",
@@ -1053,9 +1053,9 @@
               }
             }
           ],
-          "responseInstructions": "Magyarul v?laszolj, ?s a megfelel? forint, deviza vagy Persely sz?ml?ra vonatkoz? felt?teleket ismertesd. K?rdezz r? a hi?nyz? sz?mlat?pusra, ?letkorra, illet?s?gre vagy ?gyint?z?si csatorn?ra; ne ?ltal?nos?ts elt?r? term?kek szab?lyai k?z?tt. Jelezd az ?zletszab?lyzat 2026-08-27-i hat?ly?t."
+          "responseInstructions": "Magyarul válaszolj, és a megfelelő forint, deviza vagy Persely számlára vonatkozó feltételeket ismertesd. Kérdezz rá a hiányzó számlatípusra, életkorra, illetőségre vagy ügyintézési csatornára; ne általánosíts eltérő termékek szabályai között. Jelezd az üzletszabályzat 2026-08-27-i hatályát."
         },
-        "source": "OTP Lakoss?gi bet?ti ?zletszab?lyzat (hat?lyos 2026-08-27-t?l), V./B-V./D"
+        "source": "OTP Lakossági betéti üzletszabályzat (hatályos 2026-08-27-től), V./B-V./D"
       },
       {
         "id": "HU-BANK-TRANSFER-FEES-001",
@@ -1087,7 +1087,7 @@
               "title": "Hirdetmény a lakossági Forint és Deviza megtakarítási számlák, valamint a Persely számla kamatairól és költségeiről",
               "sourceFile": "Pasted text #2.txt",
               "sourceSections": [
-                "4. fejezet - megtakar?t?si sz?ml?k ?tutal?si d?jai"
+                "4. fejezet - megtakarítási számlák átutalási díjai"
               ],
               "effectiveFrom": "2026-07-01",
               "validity": "Visszavonásig; közzétéve 2026-04-30.",
@@ -1100,12 +1100,12 @@
                 "A hirdetményben meghatározott saját számlák közötti átutalás díjmentes; a saját számlák fogalmára és kivételeire a hirdetmény 12. lábjegyzete vonatkozik.",
                 "Forint megtakarítási számláról OTP InternetBank/MobilBank útján bankon belüli, nem saját számlára indított forint átutalás: 0,45% (713–3 788 Ft)."
               ],
-              "scopeLimitation": "A felsorolt d?jak kiz?r?lag a hirdetm?nyben megjel?lt lakoss?gi forint ?s deviza megtakar?t?si sz?ml?kra vonatkoznak. M?s sz?mlat?pus d?ja ebb?l nem ?llap?that? meg."
+              "scopeLimitation": "A felsorolt díjak kizárólag a hirdetményben megjelölt lakossági forint és deviza megtakarítási számlákra vonatkoznak. Más számlatípus díja ebből nem állapítható meg."
             }
           ],
-          "responseInstructions": "Magyarul v?laszolj. A rendelkez?sre ?ll? d?jadatok kiz?r?lag az OTP lakoss?gi forint ?s deviza megtakar?t?si sz?ml?kra vonatkoznak; m?s sz?mlat?pusra ne alkalmazd ?ket. K?rdezz r? a sz?mlat?pusra, p?nznemre, csatorn?ra ?s arra, hogy saj?t sz?ml?k k?z?tti-e az utal?s. A banki d?jat k?l?nb?ztesd meg a jogszab?lyi tranzakci?s illet?kt?l. M?s term?kn?l k?rd a megfelel? hat?lyos hirdetm?nyt vagy jelezd, hogy a d?j ezekb?l az adatokb?l nem ?llap?that? meg."
+          "responseInstructions": "Magyarul válaszolj. A rendelkezésre álló díjadatok kizárólag az OTP lakossági forint és deviza megtakarítási számlákra vonatkoznak; más számlatípusra ne alkalmazd őket. Kérdezz rá a számlatípusra, pénznemre, csatornára és arra, hogy saját számlák közötti-e az utalás. A banki díjat különböztesd meg a jogszabályi tranzakciós illetéktől. Más terméknél kérd a megfelelő hatályos hirdetményt vagy jelezd, hogy a díj ezekből az adatokból nem állapítható meg."
         },
-        "source": "OTP Hirdetm?ny a lakoss?gi Forint ?s Deviza megtakar?t?si sz?ml?k d?jair?l (?rv?nyes 2026-07-01-t?l)"
+        "source": "OTP Hirdetmény a lakossági Forint és Deviza megtakarítási számlák díjairól (érvényes 2026-07-01-től)"
       },
       {
         "id": "HU-BANKING-001",
