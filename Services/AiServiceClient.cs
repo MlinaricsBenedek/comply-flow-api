@@ -94,13 +94,22 @@ public sealed class AiServiceClient(
             throw InvalidResponse("preprocessing", "The warning list is invalid.");
         }
 
+        if (payload.WarningDetails is not null &&
+            payload.WarningDetails.Any(detail =>
+                string.IsNullOrWhiteSpace(detail.Key) ||
+                string.IsNullOrWhiteSpace(detail.Value)))
+        {
+            throw InvalidResponse("preprocessing", "The warning details are invalid.");
+        }
+
         return new AiPreprocessingResult(
             payload.Message,
             payload.Facts,
             payload.Category,
             MapCaseState(payload),
             payload.PartialSuccess,
-            warnings);
+            warnings,
+            payload.WarningDetails);
     }
 
     public async Task<AiGenerationResult> GenerateAsync(
@@ -344,6 +353,7 @@ public sealed record AiPreprocessingApiResponse(
     [property: JsonPropertyName("success")] bool Success,
     [property: JsonPropertyName("partial_success")] bool PartialSuccess = false,
     [property: JsonPropertyName("warnings")] List<string>? Warnings = null,
+    [property: JsonPropertyName("warning_details")] Dictionary<string, string>? WarningDetails = null,
     [property: JsonPropertyName("error")] AiServiceError? Error = null);
 
 public sealed record AiPreprocessingResult(
@@ -352,7 +362,8 @@ public sealed record AiPreprocessingResult(
     string? Category,
     StructuredCaseState CaseState,
     bool PartialSuccess,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings,
+    IReadOnlyDictionary<string, string>? WarningDetails);
 
 public sealed record AiGenerationRequest(
     [property: JsonPropertyName("input_data")] Dictionary<string, object?> InputData,

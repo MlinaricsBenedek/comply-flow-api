@@ -106,9 +106,10 @@ public class ProcessingService : IProcessingService
             if (preprocessing.PartialSuccess)
             {
                 _logger.LogWarning(
-                    "Preprocessing for processing {ProcessingId} partially succeeded: {Warnings}",
+                    "Preprocessing for processing {ProcessingId} partially succeeded. Warnings: {Warnings}; details: {WarningDetails}",
                     processing.Id,
-                    string.Join(", ", preprocessing.Warnings));
+                    string.Join(", ", preprocessing.Warnings),
+                    JsonSerializer.Serialize(preprocessing.WarningDetails));
             }
 
             var caseState = preprocessing.CaseState;

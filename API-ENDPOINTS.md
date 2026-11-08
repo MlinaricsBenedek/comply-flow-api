@@ -346,11 +346,12 @@ A `models` lista nem lehet üres; minden modell neve kötelező és egyedi, vala
   "success": true,
   "partial_success": false,
   "warnings": [],
+  "warning_details": {},
   "error": null
 }
 ```
 
-Részleges siker esetén a `partial_success` értéke `true`, és a `warnings` lista nem lehet üres.
+Részleges siker esetén a `partial_success` értéke `true`, és a `warnings` lista nem lehet üres. A `warning_details` opcionális objektum; a figyelmeztetéskódokhoz tartozó részletes információkat tartalmazza.
 
 ### `POST {BaseUrl}/generate`
 
