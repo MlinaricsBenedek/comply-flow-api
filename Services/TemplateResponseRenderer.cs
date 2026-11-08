@@ -18,6 +18,8 @@ public static class TemplateResponseRenderer
         ResponseTemplateSet templateSet,
         string decision,
         string reason,
+        string action,
+        string nextStep,
         string requiredElementsJson,
         string responseStructureJson,
         string sourcesJson)
@@ -63,6 +65,8 @@ public static class TemplateResponseRenderer
         {
             ["{{decision}}"] = decision,
             ["{{reason}}"] = reason,
+            ["{{action}}"] = action,
+            ["{{nextStep}}"] = nextStep,
             ["{{requiredElements}}"] = FormatStringArray(requiredElementsJson),
             ["{{responseStructure}}"] = FormatJsonObject(responseStructureJson),
             ["{{sources}}"] = FormatStringArray(sourcesJson)

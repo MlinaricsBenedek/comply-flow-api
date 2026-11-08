@@ -150,6 +150,8 @@ public class ProcessingService : IProcessingService
                 {
                     decision = processing.ResponsePlan.Decision,
                     reason = processing.ResponsePlan.Reason,
+                    action = processing.ResponsePlan.Action,
+                    next_step = processing.ResponsePlan.NextStep,
                     required_elements = JsonSerializer.Deserialize<JsonElement>(
                         processing.ResponsePlan.RequiredElementsJson),
                     response_structure = JsonSerializer.Deserialize<JsonElement>(
@@ -190,6 +192,8 @@ public class ProcessingService : IProcessingService
                     matchingTemplateSets[0],
                     decision,
                     reason,
+                    processing.ResponsePlan.Action,
+                    processing.ResponsePlan.NextStep,
                     processing.ResponsePlan.RequiredElementsJson,
                     processing.ResponsePlan.ResponseStructureJson,
                     processing.ResponsePlan.SourcesJson);
@@ -363,6 +367,8 @@ public class ProcessingService : IProcessingService
                     : new ResponsePlanResultResponse(
                         processing.ResponsePlan.Decision,
                         processing.ResponsePlan.Reason,
+                        processing.ResponsePlan.Action,
+                        processing.ResponsePlan.NextStep,
                         processing.ResponsePlan.RequiredElementsJson,
                         processing.ResponsePlan.ResponseStructureJson,
                         processing.ResponsePlan.SourcesJson),
@@ -424,10 +430,12 @@ public class ProcessingService : IProcessingService
                 string.IsNullOrWhiteSpace(rule.Name) ||
                 rule.Conditions is null ||
                 rule.Result is null ||
-                string.IsNullOrWhiteSpace(rule.Result.Decision))
+                string.IsNullOrWhiteSpace(rule.Result.Decision) ||
+                string.IsNullOrWhiteSpace(rule.Result.Action) ||
+                string.IsNullOrWhiteSpace(rule.Result.NextStep))
             {
                 throw new InvalidDataException(
-                    $"The business rule set '{ruleSet.RuleSetVersion}' contains a rule with missing required fields.");
+                    $"The business rule set '{ruleSet.RuleSetVersion}' contains a rule with missing decision, action, or nextStep.");
             }
 
             ValidateConditions(rule, rule.Conditions.All);
@@ -514,6 +522,8 @@ public class ProcessingService : IProcessingService
         {
             Decision = decision,
             Reason = reason,
+            Action = selectedRule?.Result.Action ?? "Nincs alkalmazható szabály szerinti intézkedés.",
+            NextStep = selectedRule?.Result.NextStep ?? "Kérj pontosítást vagy további adatot az ügy megítéléséhez.",
             RequiredElementsJson = JsonSerializer.Serialize(requiredElements),
             ResponseStructureJson = JsonSerializer.Serialize(responseStructure),
             SourcesJson = JsonSerializer.Serialize(sources)

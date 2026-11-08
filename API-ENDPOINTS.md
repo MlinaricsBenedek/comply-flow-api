@@ -84,7 +84,7 @@ Az egyedi konfiguráció válasza a tárolt `bank` értéket is tartalmazza (`ot
   "name": "Default template",
   "bank": "otp",
   "ruleSetVersion": "v1",
-  "templateVersion": "template-v1"
+  "templateVersion": "template-v2"
 }
 ```
 
@@ -299,6 +299,8 @@ Az alábbi két GET útvonal ugyanazt az eredményt adja:
     "responsePlan": {
       "decision": "Approved",
       "reason": "Matched rule",
+      "action": "Provide the applicable guidance.",
+      "nextStep": "Ask for any missing case details.",
       "requiredElementsJson": "[]",
       "responseStructureJson": "{}",
       "sourcesJson": "[]"

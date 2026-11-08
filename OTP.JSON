@@ -17,6 +17,8 @@
         },
         "result": {
           "decision": "SavingsAccountFeesGuidance",
+          "action": "Sz?mlavezet?si ?s tranzakci?s d?jakra vonatkoz? t?j?koztat?s.",
+          "nextStep": "K?rd be a sz?mlat?pust, p?nznemet, tranzakci?t, csatorn?t, kivonati m?dot ?s kedvezm?nyfelt?teleket; sz?ks?g eset?n ellen?rizd az aktu?lis hirdetm?nyt.",
           "requiredElements": [
             "accountType",
             "accountCurrency",
@@ -103,6 +105,8 @@
         },
         "result": {
           "decision": "TransactionTaxGuidance",
+          "action": "A jogszab?ly szerinti tranzakci?s illet?kr?l sz?l? t?j?koztat?s.",
+          "nextStep": "Tiszt?zd a tranzakci? t?pus?t, ?sszeg?t ?s az alkalmazand? kiv?teleket; ne ?ll?ts ?ltal?nos m?rt?ket ezek ellen?rz?se n?lk?l.",
           "requiredElements": [
             "transactionType",
             "transactionAmount",
@@ -159,6 +163,8 @@
         },
         "result": {
           "decision": "SavingsAccountInterestGuidance",
+          "action": "Megtakar?t?si sz?mla kamatfelt?teleir?l sz?l? t?j?koztat?s.",
+          "nextStep": "K?rd be a sz?mlat?pust, p?nznemet ?s a relev?ns id?szakot; a kamatot az alkalmazand?, aktu?lis hirdetm?ny szerint ismertesd.",
           "requiredElements": [
             "accountType",
             "accountCurrency",
@@ -290,6 +296,8 @@
         },
         "result": {
           "decision": "SavingsAccountTermsGuidance",
+          "action": "A megtakar?t?si sz?mla felt?teleir?l sz?l? t?j?koztat?s.",
+          "nextStep": "Azonos?tsd a sz?mlat?pust ?s a k?rd?ses m?veletet; a v?laszt a vonatkoz? ?zletszab?lyzat alapj?n add meg.",
           "requiredElements": [
             "accountType",
             "accountHolderAge",
@@ -348,6 +356,8 @@
         },
         "result": {
           "decision": "BankTransferFeesGuidance",
+          "action": "Banki ?tutal?si d?jakra vonatkoz? t?j?koztat?s.",
+          "nextStep": "K?rd be az ?tutal?s ?sszeg?t, t?pus?t, csatorn?j?t ?s a sz?mlacsomagot; ezut?n ellen?rizd a vonatkoz? aktu?lis d?jhirdetm?nyt.",
           "requiredElements": [
             "accountType",
             "accountCurrency",
@@ -398,6 +408,8 @@
         },
         "result": {
           "decision": "HungarianBankingGuidance",
+          "action": "A relev?ns magyar banki szab?lyokr?l ?s d?jakr?l sz?l? t?j?koztat?s.",
+          "nextStep": "Tiszt?zd a konkr?t tranzakci?t ?s annak k?r?lm?nyeit; k?l?n?tsd el a jogszab?lyi terhet a banki d?jt?l, ?s ellen?rizd a kapcsol?d? forr?sokat.",
           "requiredElements": [
             "category",
             "transactionType",
@@ -610,6 +622,8 @@
         },
         "result": {
           "decision": "DeliveryIssueClarification",
+          "action": "A k?zbes?t?si panasz kivizsg?l?s?hoz sz?ks?ges adatok bek?r?se.",
+          "nextStep": "K?rd be a rendel?si ?s k?zbes?t?si adatokat; st?tuszt, hat?rid?t vagy jogosults?got csak ellen?rz?tt t?nyek alapj?n ?llap?ts meg.",
           "requiredElements": [
             "deliveryProvider",
             "trackingNumber",
@@ -636,6 +650,8 @@
         },
         "result": {
           "decision": "OtherIssueClarification",
+          "action": "A nem besorolt ?gy pontos?t?sa.",
+          "nextStep": "K?rdezd meg, mely szolg?ltat?sr?l vagy term?kr?l van sz?, ?s k?rd be a meg?t?l?shez sz?ks?ges t?nyeket.",
           "requiredElements": [
             "issueDescription",
             "relevantServiceOrProduct"
@@ -659,6 +675,8 @@
         },
         "result": {
           "decision": "RefundAndWarrantyGuidance",
+          "action": "A visszal?p?si, kell?kszavatoss?gi ?s j?t?ll?si lehet?s?gekr?l sz?l? felt?teles t?j?koztat?s.",
+          "nextStep": "Tiszt?zd a v?s?rl?s m?dj?t ?s d?tum?t, a term?ket, a hib?t, a k?rt megold?st ?s a jav?t?si el?zm?nyeket; ne ?g?rj automatikus visszat?r?t?st.",
           "requiredElements": [
             "purchaseChannel",
             "purchaseDate",
@@ -711,6 +729,8 @@
         "conditions": {},
         "result": {
           "decision": "ConsumerIssueClarification",
+          "action": "A fogyaszt?i ?gy t?pus?nak ?s k?r?lm?nyeinek pontos?t?sa.",
+          "nextStep": "K?rdezd meg a panasz t?rgy?t, a v?s?rl?s m?dj?t ?s d?tum?t, valamint a meg?t?l?shez sz?ks?ges tov?bbi t?nyeket.",
           "requiredElements": [
             "category",
             "issueDescription",
@@ -741,6 +761,8 @@
         },
         "result": {
           "decision": "SavingsAccountFeesGuidance",
+          "action": "Sz?mlavezet?si ?s tranzakci?s d?jakra vonatkoz? t?j?koztat?s.",
+          "nextStep": "K?rd be a sz?mlat?pust, p?nznemet, tranzakci?t, csatorn?t, kivonati m?dot ?s kedvezm?nyfelt?teleket; sz?ks?g eset?n ellen?rizd az aktu?lis hirdetm?nyt.",
           "requiredElements": [
             "accountType",
             "accountCurrency",
@@ -827,6 +849,8 @@
         },
         "result": {
           "decision": "TransactionTaxGuidance",
+          "action": "A jogszab?ly szerinti tranzakci?s illet?kr?l sz?l? t?j?koztat?s.",
+          "nextStep": "Tiszt?zd a tranzakci? t?pus?t, ?sszeg?t ?s az alkalmazand? kiv?teleket; ne ?ll?ts ?ltal?nos m?rt?ket ezek ellen?rz?se n?lk?l.",
           "requiredElements": [
             "transactionType",
             "transactionAmount",
@@ -883,6 +907,8 @@
         },
         "result": {
           "decision": "SavingsAccountInterestGuidance",
+          "action": "Megtakar?t?si sz?mla kamatfelt?teleir?l sz?l? t?j?koztat?s.",
+          "nextStep": "K?rd be a sz?mlat?pust, p?nznemet ?s a relev?ns id?szakot; a kamatot az alkalmazand?, aktu?lis hirdetm?ny szerint ismertesd.",
           "requiredElements": [
             "accountType",
             "accountCurrency",
@@ -1014,6 +1040,8 @@
         },
         "result": {
           "decision": "SavingsAccountTermsGuidance",
+          "action": "A megtakar?t?si sz?mla felt?teleir?l sz?l? t?j?koztat?s.",
+          "nextStep": "Azonos?tsd a sz?mlat?pust ?s a k?rd?ses m?veletet; a v?laszt a vonatkoz? ?zletszab?lyzat alapj?n add meg.",
           "requiredElements": [
             "accountType",
             "accountHolderAge",
@@ -1072,6 +1100,8 @@
         },
         "result": {
           "decision": "BankTransferFeesGuidance",
+          "action": "Banki ?tutal?si d?jakra vonatkoz? t?j?koztat?s.",
+          "nextStep": "K?rd be az ?tutal?s ?sszeg?t, t?pus?t, csatorn?j?t ?s a sz?mlacsomagot; ezut?n ellen?rizd a vonatkoz? aktu?lis d?jhirdetm?nyt.",
           "requiredElements": [
             "accountType",
             "accountCurrency",
@@ -1122,6 +1152,8 @@
         },
         "result": {
           "decision": "HungarianBankingGuidance",
+          "action": "A relev?ns magyar banki szab?lyokr?l ?s d?jakr?l sz?l? t?j?koztat?s.",
+          "nextStep": "Tiszt?zd a konkr?t tranzakci?t ?s annak k?r?lm?nyeit; k?l?n?tsd el a jogszab?lyi terhet a banki d?jt?l, ?s ellen?rizd a kapcsol?d? forr?sokat.",
           "requiredElements": [
             "category",
             "transactionType",
@@ -1334,6 +1366,8 @@
         },
         "result": {
           "decision": "DeliveryIssueClarification",
+          "action": "A k?zbes?t?si panasz kivizsg?l?s?hoz sz?ks?ges adatok bek?r?se.",
+          "nextStep": "K?rd be a rendel?si ?s k?zbes?t?si adatokat; st?tuszt, hat?rid?t vagy jogosults?got csak ellen?rz?tt t?nyek alapj?n ?llap?ts meg.",
           "requiredElements": [
             "deliveryProvider",
             "trackingNumber",
@@ -1360,6 +1394,8 @@
         },
         "result": {
           "decision": "OtherIssueClarification",
+          "action": "A nem besorolt ?gy pontos?t?sa.",
+          "nextStep": "K?rdezd meg, mely szolg?ltat?sr?l vagy term?kr?l van sz?, ?s k?rd be a meg?t?l?shez sz?ks?ges t?nyeket.",
           "requiredElements": [
             "issueDescription",
             "relevantServiceOrProduct"
@@ -1383,6 +1419,8 @@
         },
         "result": {
           "decision": "RefundAndWarrantyGuidance",
+          "action": "A visszal?p?si, kell?kszavatoss?gi ?s j?t?ll?si lehet?s?gekr?l sz?l? felt?teles t?j?koztat?s.",
+          "nextStep": "Tiszt?zd a v?s?rl?s m?dj?t ?s d?tum?t, a term?ket, a hib?t, a k?rt megold?st ?s a jav?t?si el?zm?nyeket; ne ?g?rj automatikus visszat?r?t?st.",
           "requiredElements": [
             "purchaseChannel",
             "purchaseDate",
@@ -1435,6 +1473,8 @@
         "conditions": {},
         "result": {
           "decision": "ConsumerIssueClarification",
+          "action": "A fogyaszt?i ?gy t?pus?nak ?s k?r?lm?nyeinek pontos?t?sa.",
+          "nextStep": "K?rdezd meg a panasz t?rgy?t, a v?s?rl?s m?dj?t ?s d?tum?t, valamint a meg?t?l?shez sz?ks?ges tov?bbi t?nyeket.",
           "requiredElements": [
             "category",
             "issueDescription",

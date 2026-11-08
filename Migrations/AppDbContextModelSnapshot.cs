@@ -304,10 +304,18 @@ namespace comply_flow_api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("varchar(max)");
+
                     b.Property<string>("Decision")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
+
+                    b.Property<string>("NextStep")
+                        .IsRequired()
+                        .HasColumnType("varchar(max)");
 
                     b.Property<int>("ProcessingId")
                         .HasColumnType("int");

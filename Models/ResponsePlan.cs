@@ -25,6 +25,14 @@ public class ResponsePlan
 
     [Required]
     [Column(TypeName = "varchar(max)")]
+    public string Action { get; set; } = string.Empty;
+
+    [Required]
+    [Column(TypeName = "varchar(max)")]
+    public string NextStep { get; set; } = string.Empty;
+
+    [Required]
+    [Column(TypeName = "varchar(max)")]
     public string RequiredElementsJson { get; set; } = string.Empty;
 
     [Required]

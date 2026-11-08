@@ -17,6 +17,8 @@
         },
         "result": {
           "decision": "RaiffeisenReflexAutomaticSavingsGuidance",
+          "action": "A Raiffeisen Reflex automatikus megtakar?t?s felt?teleir?l sz?l? t?j?koztat?s.",
+          "nextStep": "Ellen?rizd a kapcsolt sz?ml?t, k?rty?t, be?ll?tott ?sszeget ?s fedezetet; a m?k?d?st a hat?lyos kond?ci?s lista szerint ismertesd.",
           "requiredElements": [
             "program",
             "linkedRaiffeisenForintAccount",
@@ -80,6 +82,8 @@
         },
         "result": {
           "decision": "RaiffeisenSavingsInterestGuidance",
+          "action": "A Raiffeisen Megtakar?t?si Sz?mla kamatair?l sz?l? t?j?koztat?s.",
+          "nextStep": "Ellen?rizd a sz?mla p?nznem?t, egyenleg?t ?s a relev?ns id?szakot; hozamot csak a sz?ks?ges felt?telek ismeret?ben sz?molj.",
           "requiredElements": [
             "accountProduct",
             "balanceHuf",
@@ -141,6 +145,8 @@
         },
         "result": {
           "decision": "RaiffeisenSavingsAccountTermsGuidance",
+          "action": "A Raiffeisen Megtakar?t?si Sz?mla felt?teleir?l sz?l? t?j?koztat?s.",
+          "nextStep": "Azonos?tsd a k?rd?ses sz?ml?t ?s m?veletet; v?laszolj a vonatkoz? ?zletszab?lyzat alapj?n.",
           "requiredElements": [
             "accountProduct",
             "requestedOperation",
@@ -224,6 +230,8 @@
         },
         "result": {
           "decision": "RaiffeisenSavingsAccountFeesGuidance",
+          "action": "A Raiffeisen Megtakar?t?si Sz?mla d?jair?l sz?l? t?j?koztat?s.",
+          "nextStep": "K?rd be a tranzakci? t?pus?t, csatorn?j?t ?s a sz?ml?ra vonatkoz? adatokat; az ?sszegeket a hat?lyos kond?ci?s lista alapj?n add meg.",
           "requiredElements": [
             "accountProduct",
             "transactionType",
@@ -378,6 +386,8 @@
         },
         "result": {
           "decision": "RaiffeisenSavingsTransferFeeClarification",
+          "action": "Az ?tutal?si d?j meg?llap?t?s?hoz sz?ks?ges adatok bek?r?se.",
+          "nextStep": "Tiszt?zd az ?tutal?s t?pus?t, ir?ny?t, ?sszeg?t ?s csatorn?j?t, majd ellen?rizd a megfelel? hat?lyos kond?ci?s list?t.",
           "requiredElements": [
             "sourceAccountProduct",
             "transactionAmount",
@@ -410,6 +420,8 @@
         "conditions": {},
         "result": {
           "decision": "RaiffeisenSavingsClarification",
+          "action": "A Raiffeisen megtakar?t?si k?rd?s pontos?t?sa.",
+          "nextStep": "K?rd be a sz?mlacsomagot, az ?rintett m?veletet ?s az aktu?lis kond?ci?s list?hoz sz?ks?ges adatokat.",
           "requiredElements": [
             "category",
             "accountProduct",

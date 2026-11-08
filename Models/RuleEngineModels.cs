@@ -73,6 +73,12 @@ public sealed class RuleOutcome
     [JsonPropertyName("decision")]
     public required string Decision { get; set; }
 
+    [JsonPropertyName("action")]
+    public required string Action { get; set; }
+
+    [JsonPropertyName("nextStep")]
+    public required string NextStep { get; set; }
+
     [JsonExtensionData]
     public Dictionary<string, System.Text.Json.JsonElement> AdditionalData { get; set; } = [];
 }
