@@ -214,7 +214,7 @@ public class ProcessingService : IProcessingService
                     cancellationToken);
                 responseText = feeAssessment is null
                     ? generation.Response
-                    : $"{generation.Response.Trim()}{Environment.NewLine}{Environment.NewLine}{feeAssessment.CustomerMessage}";
+                    : $"Tisztelt Ügyfelünk!{Environment.NewLine}{Environment.NewLine}{feeAssessment.CustomerMessage}";
             }
             else
             {
@@ -508,13 +508,11 @@ public class ProcessingService : IProcessingService
         var resultData = selectedRule?.Result.AdditionalData
             ?? new Dictionary<string, JsonElement>();
         var responseStructure = resultData
-            .Where(item => !string.Equals(item.Key, "requiredElements", StringComparison.OrdinalIgnoreCase))
+            .Where(item =>
+                !string.Equals(item.Key, "requiredElements", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(item.Key, "transferFeeAssessment", StringComparison.OrdinalIgnoreCase))
             .ToDictionary(item => item.Key, item => item.Value);
         var requiredElements = GetRequiredElements(resultData, responseStructure);
-        if (feeAssessment is not null)
-        {
-            responseStructure["complaintAssessment"] = JsonSerializer.SerializeToElement(feeAssessment);
-        }
 
         var sources = selectedRule is null
             ? Array.Empty<string>()

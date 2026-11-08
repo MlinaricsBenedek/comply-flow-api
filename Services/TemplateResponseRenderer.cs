@@ -162,5 +162,7 @@ public static class TemplateResponseRenderer
 
     private static bool IsInternalProperty(string name) =>
         string.Equals(name, "documents", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(name, "responseInstructions", StringComparison.OrdinalIgnoreCase);
+        string.Equals(name, "responseInstructions", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(name, "transferFeeAssessment", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(name, "complaintAssessment", StringComparison.OrdinalIgnoreCase);
 }

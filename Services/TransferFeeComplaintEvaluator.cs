@@ -134,7 +134,7 @@ public static partial class TransferFeeComplaintEvaluator
                 difference,
                 [],
                 difference > 0
-                    ? $"A megadott adatok és a 2026. július 1-jétől hatályos OTP-hirdetmény alapján a {transferAmount.Value.ToString("N0", CultureInfo.GetCultureInfo("hu-HU"))} Ft-os utalás díja {expectedFee.ToString("N0", CultureInfo.GetCultureInfo("hu-HU"))} Ft. Ön {chargedFee.Value.ToString("N0", CultureInfo.GetCultureInfo("hu-HU"))} Ft terhelést jelzett, ami {difference.ToString("N0", CultureInfo.GetCultureInfo("hu-HU"))} Ft-tal magasabb. A díjjal kapcsolatos kifogás a megadott tarifához képest megalapozottnak tűnik, ezért a tételes terhelés kivizsgálása indokolt. A banki rendszer hibája a közölt adatokból önmagában nem igazolható; elnézést csak a hibás terhelés ellenőrzése után indokolt kérni."
+                    ? $"A megadott adatok és a 2026. július 1-jétől hatályos OTP-hirdetmény alapján a {transferAmount.Value.ToString("N0", CultureInfo.GetCultureInfo("hu-HU"))} Ft-os utalás díja {expectedFee.ToString("N0", CultureInfo.GetCultureInfo("hu-HU"))} Ft. Ön {chargedFee.Value.ToString("N0", CultureInfo.GetCultureInfo("hu-HU"))} Ft terhelést jelzett, ami {difference.ToString("N0", CultureInfo.GetCultureInfo("hu-HU"))} Ft-tal magasabb. A díjjal kapcsolatos kifogás a megadott tarifához képest megalapozottnak tűnik, ezért kérjük, vegye fel a kapcsolatot az OTP hivatalos, ellenőrzött ügyfélszolgálati csatornáján, és kérje a tételes terhelés kivizsgálását. A banki rendszer hibája a közölt adatokból önmagában nem igazolható; elnézést csak a hibás terhelés ellenőrzése után indokolt kérni."
                     : $"A megadott adatok és a 2026. július 1-jétől hatályos OTP-hirdetmény alapján a {transferAmount.Value.ToString("N0", CultureInfo.GetCultureInfo("hu-HU"))} Ft-os utalás díja {expectedFee.ToString("N0", CultureInfo.GetCultureInfo("hu-HU"))} Ft, Ön pedig {chargedFee.Value.ToString("N0", CultureInfo.GetCultureInfo("hu-HU"))} Ft terhelést jelzett. A jelzett összeg alacsonyabb a hirdetmény alapján számított díjnál, ezért a túlszámlázásra vonatkozó kifogást a megadott adatok nem támasztják alá. Az ettől eltérő terhelési tételek ellenőrzéséhez a tételes számlakivonat szükséges.");
         }
 
@@ -194,35 +194,52 @@ public static partial class TransferFeeComplaintEvaluator
 
     private static MoneyValueKind ClassifyMoneyAmount(string message, Match amountMatch)
     {
-        var start = Math.Max(0, amountMatch.Index - 100);
-        var length = Math.Min(message.Length, amountMatch.Index + amountMatch.Length + 100) - start;
+        var separators = new[] { '.', ';', '!', '?', '\r', '\n' };
+        var previousSeparator = message.LastIndexOfAny(separators, amountMatch.Index);
+        var start = previousSeparator < 0 ? 0 : previousSeparator + 1;
+        var nextSeparator = message.IndexOfAny(separators, amountMatch.Index + amountMatch.Length);
+        var end = nextSeparator < 0 ? message.Length : nextSeparator;
+        var length = end - start;
         var context = message.Substring(start, length);
         var amountStart = amountMatch.Index - start;
         var amountEnd = amountStart + amountMatch.Length;
-        var nearestKind = MoneyValueKind.Other;
-        var nearestDistance = int.MaxValue;
+        var expectedDistance = GetNearestMarkerDistance(ExpectedFeeMarkers(), context, amountStart, amountEnd);
+        var chargedDistance = GetNearestMarkerDistance(ChargedFeeMarkers(), context, amountStart, amountEnd);
+        var transferDistance = GetNearestMarkerDistance(TransferMarkers(), context, amountStart, amountEnd);
 
-        ConsiderMarkers(TransferMarkers(), MoneyValueKind.Transfer);
-        ConsiderMarkers(ExpectedFeeMarkers(), MoneyValueKind.ExpectedFee);
-        ConsiderMarkers(ChargedFeeMarkers(), MoneyValueKind.ChargedFee);
-        return nearestKind;
-
-        void ConsiderMarkers(Regex markers, MoneyValueKind kind)
+        if (expectedDistance <= chargedDistance && expectedDistance <= transferDistance)
         {
-            foreach (Match marker in markers.Matches(context))
-            {
-                var distance = marker.Index >= amountEnd
-                    ? marker.Index - amountEnd
-                    : amountStart >= marker.Index + marker.Length
-                        ? amountStart - (marker.Index + marker.Length)
-                        : 0;
-                if (distance < nearestDistance)
-                {
-                    nearestDistance = distance;
-                    nearestKind = kind;
-                }
-            }
+            return MoneyValueKind.ExpectedFee;
         }
+
+        if (chargedDistance <= transferDistance)
+        {
+            return MoneyValueKind.ChargedFee;
+        }
+
+        return transferDistance < int.MaxValue
+            ? MoneyValueKind.Transfer
+            : MoneyValueKind.Other;
+    }
+
+    private static int GetNearestMarkerDistance(
+        Regex markers,
+        string context,
+        int amountStart,
+        int amountEnd)
+    {
+        var nearestDistance = int.MaxValue;
+        foreach (Match marker in markers.Matches(context))
+        {
+            var distance = marker.Index >= amountEnd
+                ? marker.Index - amountEnd
+                : amountStart >= marker.Index + marker.Length
+                    ? amountStart - (marker.Index + marker.Length)
+                    : 0;
+            nearestDistance = Math.Min(nearestDistance, distance);
+        }
+
+        return nearestDistance;
     }
 
     private enum MoneyValueKind
@@ -268,7 +285,7 @@ public static partial class TransferFeeComplaintEvaluator
     private static partial Regex MoneyAmount();
 
     [GeneratedRegex(
-        @"utal\w*|megb[ií]z[aá]s\w*",
+        @"(?:át)?utal(?:tam|t|tunk|tok|ni)|(?:át)?utalás\b|megb[ií]z[aá]s\w*",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex TransferMarkers();
 

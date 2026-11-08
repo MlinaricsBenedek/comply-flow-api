@@ -2,13 +2,13 @@
   {
     "templateVersion": "template-v1",
     "templates": {
-      "default": "Tisztelt Ügyfelünk!\n\nDöntés: {{decision}}\n\nIndoklás: {{reason}}\n\nIntézkedés: {{action}}\n\nKövetkező lépés: {{nextStep}}\n\n{{assessment}}\n\n{{responseStructure}}\n\nForrások:\n{{sources}}"
+      "default": "Tisztelt Ügyfelünk!\n\nKövetkező lépés: {{nextStep}}\n\n{{assessment}}\n\n{{responseStructure}}\n\nForrások:\n{{sources}}"
     }
   },
   {
     "templateVersion": "template-v2",
     "templates": {
-      "default": "Tisztelt Ügyfelünk!\n\nDöntés: {{decision}}\n\nIndoklás: {{reason}}\n\nIntézkedés: {{action}}\n\nKövetkező lépés: {{nextStep}}\n\n{{assessment}}\n\n{{responseStructure}}\n\nForrások:\n{{sources}}"
+      "default": "Tisztelt Ügyfelünk!\n\nKövetkező lépés: {{nextStep}}\n\n{{assessment}}\n\n{{responseStructure}}\n\nForrások:\n{{sources}}"
     }
   }
 ]
