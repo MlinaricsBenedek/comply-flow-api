@@ -212,9 +212,10 @@ public class ProcessingService : IProcessingService
                         modelName,
                         modelParameters),
                     cancellationToken);
-                responseText = feeAssessment is null
+                var llmResponse = feeAssessment is null
                     ? generation.Response
-                    : $"Tisztelt Ügyfelünk!{Environment.NewLine}{Environment.NewLine}{feeAssessment.CustomerMessage}";
+                    : $"Tisztelt Ügyfelünk!{Environment.NewLine}{Environment.NewLine}{feeAssessment.CustomerMessage}{Environment.NewLine}{Environment.NewLine}Következő lépés: {processing.ResponsePlan.NextStep}";
+                responseText = AppendSourceCitation(llmResponse, selectedRule);
             }
             else
             {
@@ -533,7 +534,7 @@ public class ProcessingService : IProcessingService
                 TransferFeeAssessmentStatus.InsufficientData =>
                     $"Kérjük, pontosítsa: {string.Join(", ", feeAssessment.MissingInformation)}.",
                 TransferFeeAssessmentStatus.TariffMismatchReported =>
-                    "A tételes banki terhelés ellenőrzése és az esetleges eltérés kivizsgálása szükséges.",
+                    "A díjeltérés kivizsgálásához az ügyintézőt a +36302526016 telefonszámon vagy az example@gmail.com e-mail-címen érheti el. Ezek személyes kapcsolattartói elérhetőségek, nem az OTP hivatalos ügyfélszolgálati elérhetőségei.",
                 TransferFeeAssessmentStatus.TariffBelowPublished =>
                     "Ha más terhelési tételre vonatkozik a panasz, kérjük, küldje el a tételes számlakivonatot.",
                 TransferFeeAssessmentStatus.TariffMatches =>
@@ -544,6 +545,23 @@ public class ProcessingService : IProcessingService
             ResponseStructureJson = JsonSerializer.Serialize(responseStructure),
             SourcesJson = JsonSerializer.Serialize(sources)
         };
+    }
+
+    private static string AppendSourceCitation(string response, Rule? selectedRule)
+    {
+        var source = selectedRule?.Source?.Trim();
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return response;
+        }
+
+        if (response.Contains("Források:", StringComparison.OrdinalIgnoreCase) &&
+            response.Contains(source, StringComparison.OrdinalIgnoreCase))
+        {
+            return response.Trim();
+        }
+
+        return $"{response.Trim()}{Environment.NewLine}{Environment.NewLine}Források:{Environment.NewLine}- {source}";
     }
 
     private static IReadOnlyList<string> GetRequiredElements(
