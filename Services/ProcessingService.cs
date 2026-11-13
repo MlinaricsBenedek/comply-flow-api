@@ -128,10 +128,15 @@ public class ProcessingService : IProcessingService
             var selectedRule = evaluation.SelectedRule?.Rule;
             var decision = selectedRule?.Result.Decision ?? "NoMatch";
             var reason = evaluation.Reason;
-            var feeAssessment = TransferFeeComplaintEvaluator.Evaluate(
-                configuration.Bank,
-                message.Content,
-                selectedRule);
+            var feeAssessment = string.Equals(
+                    selectedRule?.Result.Decision,
+                    "ClaimValid",
+                    StringComparison.Ordinal)
+                ? TransferFeeComplaintEvaluator.Evaluate(
+                    configuration.Bank,
+                    message.Content,
+                    selectedRule)
+                : null;
 
             processing.PreProcessing = new PreProcessing
             {
@@ -155,17 +160,18 @@ public class ProcessingService : IProcessingService
             await _processingRepository.SaveChangesAsync(cancellationToken);
 
             var responseValidationRequirements = ResponseContentValidator.GetRequirements(selectedRule);
+            var ruleDecision = selectedRule?.Result.Decision;
             var inputContext = new Dictionary<string, object?>
             {
                 ["case_state"] = caseState,
-                ["decision"] = decision,
+                ["decision"] = ruleDecision,
                 ["reason"] = reason,
                 ["rule_result"] = selectedRule?.Result,
                 ["bank"] = configuration.Bank,
                 ["complaint_assessment"] = feeAssessment,
                 ["response_plan"] = new
                 {
-                    decision = processing.ResponsePlan.Decision,
+                    decision = ruleDecision,
                     reason = processing.ResponsePlan.Reason,
                     action = processing.ResponsePlan.Action,
                     next_step = processing.ResponsePlan.NextStep,
@@ -203,12 +209,17 @@ public class ProcessingService : IProcessingService
             }
             else if (string.Equals(configuration.GenerationMode, "Llm", StringComparison.OrdinalIgnoreCase))
             {
-                var availableModels = await _aiServiceClient.GetModelsAsync(cancellationToken);
-                var modelName = ResolveModelName(configuration.ModelName, availableModels);
-                var modelParameters = configuration.ModelParametersJson is null
-                    ? null
-                    : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
-                        configuration.ModelParametersJson);
+                string? modelName = null;
+                Dictionary<string, JsonElement>? modelParameters = null;
+                if (RequiresLlmModel(ruleDecision))
+                {
+                    var availableModels = await _aiServiceClient.GetModelsAsync(cancellationToken);
+                    modelName = ResolveModelName(configuration.ModelName, availableModels);
+                    modelParameters = configuration.ModelParametersJson is null
+                        ? null
+                        : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+                            configuration.ModelParametersJson);
+                }
 
                 generation = await _aiServiceClient.GenerateAsync(
                     new AiGenerationRequest(
@@ -216,6 +227,7 @@ public class ProcessingService : IProcessingService
                         preprocessing.Message,
                         preprocessing.Facts,
                         category,
+                        ruleDecision,
                         configuration.PromptVersion,
                         modelName,
                         modelParameters),
@@ -274,7 +286,7 @@ public class ProcessingService : IProcessingService
                 TemplateVersion = configuration.TemplateVersion,
                 PromptVersion = generation?.PromptVersion,
                 ModelName = generation?.ModelName,
-                ModelParametersJson = generation is null
+                ModelParametersJson = generation?.ModelParameters is null
                     ? null
                     : JsonSerializer.Serialize(generation.ModelParameters),
                 InputContextJson = JsonSerializer.Serialize(inputContext),
@@ -293,16 +305,19 @@ public class ProcessingService : IProcessingService
                 var errorType = exception is AiServiceException aiServiceException
                     ? aiServiceException.FailureKind.ToString()
                     : exception.GetType().Name;
+                var persistedErrorMessage = exception is AiServiceException aiException
+                    ? GetProcessingErrorMessage(aiException)
+                    : exception.Message;
                 processing.Fail(
                     errorType,
-                    exception.Message,
+                    persistedErrorMessage,
                     completionWasNotPersisted);
                 try
                 {
                     var failureSaved = await _processingRepository.MarkFailedAsync(
                         processing.Id,
                         errorType,
-                        exception.Message,
+                        persistedErrorMessage,
                         processing.FinishedAt!.Value,
                         CancellationToken.None);
                     if (!failureSaved)
@@ -581,6 +596,34 @@ public class ProcessingService : IProcessingService
             string.Join(Environment.NewLine, missingSources.Select(source => $"- {source}"));
     }
 
+    private static string GetProcessingErrorMessage(AiServiceException exception)
+    {
+        var message = exception.FailureKind switch
+        {
+            AiServiceFailureKind.Timeout =>
+                "A válasz előállítása időtúllépés miatt nem sikerült.",
+            AiServiceFailureKind.Unavailable =>
+                "A válaszszolgáltatás átmenetileg nem érhető el.",
+            AiServiceFailureKind.ConfigurationError =>
+                "A válasz előállításához szükséges szolgáltatás-beállítás érvénytelen.",
+            _ => "A válaszszolgáltatás nem tudta feldolgozni a kérést."
+        };
+        var identifiers = new List<string>();
+        if (!string.IsNullOrWhiteSpace(exception.ErrorCode))
+        {
+            identifiers.Add($"hibakód: {exception.ErrorCode}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(exception.CorrelationId))
+        {
+            identifiers.Add($"azonosító: {exception.CorrelationId}");
+        }
+
+        return identifiers.Count == 0
+            ? message
+            : $"{message} ({string.Join(", ", identifiers)}).";
+    }
+
     private static bool IsCardDeliveryRequest(string message)
     {
         var normalizedMessage = message.ToLowerInvariant();
@@ -603,6 +646,11 @@ public class ProcessingService : IProcessingService
             rule?.Id,
             "HU-OTP-CARD-DELIVERY-001",
             StringComparison.OrdinalIgnoreCase);
+
+    private static bool RequiresLlmModel(string? ruleDecision) =>
+        string.Equals(ruleDecision, "ClaimValid", StringComparison.Ordinal) ||
+        string.Equals(ruleDecision, "ClaimInvalid", StringComparison.Ordinal) ||
+        string.Equals(ruleDecision, "BankTransferFeesGuidance", StringComparison.Ordinal);
 
     private static IReadOnlyList<string> GetRequiredElements(
         IReadOnlyDictionary<string, JsonElement> resultData,

@@ -402,23 +402,25 @@ Részleges siker esetén a `partial_success` értéke `true`, és a `warnings` l
 {
   "input_data": {
     "case_state": {},
-    "decision": "Approved",
+    "decision": "ClaimValid",
     "reason": "Matched rule",
     "rule_result": {},
     "bank": "otp",
     "response_plan": {
-      "decision": "Approved",
+      "decision": "ClaimValid",
       "reason": "Matched rule",
       "required_elements": [],
       "response_structure": {},
-      "sources": []
+      "sources": [],
+      "validation_requirements": null
     }
   },
   "message": "A feldolgozott üzenet",
   "facts": {
     "amount": ["100"]
   },
-  "category": "Example",
+  "category": "BANK_TRANSFER_FEES",
+  "rule_decision": "ClaimValid",
   "prompt_name": "prompt-v1",
   "model_name": "model-name",
   "model_parameters": {
@@ -427,7 +429,7 @@ Részleges siker esetén a `partial_success` értéke `true`, és a `warnings` l
 }
 ```
 
-`response_plan` a szabálymotor teljes választervét adja át az LLM-nek. A template generációs mód nem hívja ezt az AI-végpontot.
+`rule_decision` a szabálymotor döntését változtatás nélkül adja át; szabálykiválasztás hiányában `null`. A `response_plan` kizárólag az `input_data` objektum része. Ismeretlen vagy hiányzó döntést a .NET nem alakít pozitív/negatív döntéssé. Olyan döntésnél, amely nem igényel LLM-modellt, a .NET kihagyja a `/models` lekérést, és `model_name`/`model_parameters` nélkül (null értékkel) hívja a `/generate` végpontot. A template generációs mód nem hívja ezt az AI-végpontot.
 
 **Sikeres válasz body:**
 
@@ -448,6 +450,23 @@ Részleges siker esetén a `partial_success` értéke `true`, és a `warnings` l
 ```
 
 A `reference_similarity` és a hozzá tartozó `reference_similarity_metric` együtt szerepelhetnek, vagy mindkettő hiányozhat/null lehet.
+HTTP 200 esetén a nem üres `response` sikeres válasz. A Python semleges válaszánál `model_name` lehet `null`, ilyenkor a .NET a választ sikeresen feldolgozza és megjeleníti; a modellhez, promptverzióhoz és modellparaméterekhez tartozó metaadatok is lehetnek null értékűek.
+
+Példa sikeres semleges válaszra, modellhívás nélkül:
+
+```json
+{
+  "response": "A rendelkezésre álló adatok alapján nem született döntés.",
+  "prompt_version": null,
+  "model_name": null,
+  "model_id": null,
+  "model_parameters": null,
+  "success": true,
+  "reference_similarity": null,
+  "reference_similarity_metric": null,
+  "error": null
+}
+```
 
 ### AI-szolgáltatás hibái
 
@@ -460,6 +479,8 @@ Az AI-szolgáltatás hibát jelző válaszának `error` objektuma:
   "correlation_id": "correlation-id"
 }
 ```
+
+HTTP 400, 404 és 422 kérés-, modell- vagy promptkonfigurációs hibát jelez; 503 a szolgáltatás elérhetetlenségét, 504 időtúllépést jelent. A .NET ezeket hibaállapotként kezeli, nem válaszként jeleníti meg a hiba JSON-ját. Az API általános, nem technikai hibaüzenetet ad vissza; az AI `error.code` és `error.correlation_id` értékei diagnosztikai metaadatként kerülnek átadásra.
 
 A `code`, `message` és `correlation_id` mezők opcionálisak lehetnek. Nem sikeres HTTP-válasznál a kliens a HTTP-státuszt és — ha elérhető — a hibaválaszt, illetve a `x-correlation-id` fejlécet használja a hiba feldolgozásához.
 
