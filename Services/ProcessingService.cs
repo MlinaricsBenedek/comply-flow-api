@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 using comply_flow_api.Models;
 using comply_flow_api.Models.dtos.ProcessDtos;
@@ -209,12 +210,35 @@ public class ProcessingService : IProcessingService
             }
             else if (string.Equals(configuration.GenerationMode, "Llm", StringComparison.OrdinalIgnoreCase))
             {
+                if (selectedRule is null ||
+                    string.IsNullOrWhiteSpace(selectedRule.Id) ||
+                    string.IsNullOrWhiteSpace(selectedRule.Result.CustomerDecision) ||
+                    string.IsNullOrWhiteSpace(selectedRule.Result.CustomerReason))
+                {
+                    throw new InvalidDataException(
+                        "The selected rule must provide an ID, customer decision and customer reason for AI generation.");
+                }
+
+                var customerDecision = selectedRule.Result.CustomerDecision;
+                var customerReason = selectedRule.Result.CustomerReason;
+                if (string.Equals(ruleDecision, "BankTransferFeesGuidance", StringComparison.Ordinal))
+                {
+                    var assessment = TransferFeeComplaintEvaluator.Evaluate(
+                        configuration.Bank, message.Content, selectedRule, requireTransactionDate: true)
+                        ?? throw new InvalidDataException(
+                            "No transfer fee evaluator is available for the selected guidance rule.");
+                    (customerDecision, customerReason) = GetTransferFeeFacts(assessment);
+                }
+
                 string? modelName = null;
                 Dictionary<string, JsonElement>? modelParameters = null;
                 if (RequiresLlmModel(ruleDecision))
                 {
-                    var availableModels = await _aiServiceClient.GetModelsAsync(cancellationToken);
-                    modelName = ResolveModelName(configuration.ModelName, availableModels);
+                    if (!string.IsNullOrWhiteSpace(configuration.ModelName))
+                    {
+                        var availableModels = await _aiServiceClient.GetModelsAsync(cancellationToken);
+                        modelName = ResolveModelName(configuration.ModelName, availableModels);
+                    }
                     modelParameters = configuration.ModelParametersJson is null
                         ? null
                         : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
@@ -227,7 +251,9 @@ public class ProcessingService : IProcessingService
                         preprocessing.Message,
                         preprocessing.Facts,
                         category,
-                        ruleDecision,
+                        customerDecision,
+                        customerReason,
+                        [selectedRule.Id],
                         configuration.PromptVersion,
                         modelName,
                         modelParameters),
@@ -547,7 +573,8 @@ public class ProcessingService : IProcessingService
             ? Array.Empty<string>()
             : new[] { selectedRule.Source, selectedRule.EffectiveFrom }
                 .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Select(value => value!)
+                .Select(value => value!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
         return new ResponsePlan
@@ -575,6 +602,43 @@ public class ProcessingService : IProcessingService
         };
     }
 
+    private static (string Decision, string Reason) GetTransferFeeFacts(
+        TransferFeeComplaintAssessment assessment)
+    {
+        if (assessment.Status == TransferFeeAssessmentStatus.InsufficientData)
+        {
+            if (assessment.MissingInformation.Count == 0)
+            {
+                throw new InvalidDataException("A transfer fee assessment must identify missing information.");
+            }
+
+            return ("Rule Not Found",
+                "A díj összevetéséhez nem áll rendelkezésre elegendő adat: " +
+                string.Join(", ", assessment.MissingInformation) + ".");
+        }
+
+        if (assessment.ExpectedFeeHuf is not decimal expected ||
+            assessment.ChargedFeeHuf is not decimal charged)
+        {
+            throw new InvalidDataException("A completed transfer fee assessment must contain both fees.");
+        }
+
+        var decision = assessment.Status switch
+        {
+            TransferFeeAssessmentStatus.TariffMismatchReported =>
+                "A közölt terhelés magasabb a szabály szerint számított díjnál.",
+            TransferFeeAssessmentStatus.TariffBelowPublished =>
+                "A közölt terhelés alacsonyabb a szabály szerint számított díjnál.",
+            TransferFeeAssessmentStatus.TariffMatches =>
+                "A közölt terhelés megegyezik a szabály szerint számított díjjal.",
+            _ => throw new InvalidDataException("The transfer fee assessment status is invalid.")
+        };
+        var culture = CultureInfo.GetCultureInfo("hu-HU");
+        return (decision,
+            $"A megadott adatok alapján a szabály szerinti díj {expected.ToString("0.##", culture)} Ft, " +
+            $"a közölt terhelés {charged.ToString("0.##", culture)} Ft.");
+    }
+
     private static string AppendSourceCitations(string response, string sourcesJson)
     {
         var sources = JsonSerializer.Deserialize<List<string>>(sourcesJson)
@@ -585,6 +649,9 @@ public class ProcessingService : IProcessingService
         }
 
         var missingSources = sources
+            .Select(source => source.Trim())
+            .Where(source => source.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .Where(source => !response.Contains(source, StringComparison.OrdinalIgnoreCase))
             .ToArray();
         if (missingSources.Length == 0)

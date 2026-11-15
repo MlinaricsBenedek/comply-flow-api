@@ -73,6 +73,12 @@ public sealed class RuleOutcome
     [JsonPropertyName("decision")]
     public required string Decision { get; set; }
 
+    [JsonPropertyName("customerDecision")]
+    public string? CustomerDecision { get; set; }
+
+    [JsonPropertyName("customerReason")]
+    public string? CustomerReason { get; set; }
+
     [JsonPropertyName("action")]
     public required string Action { get; set; }
 

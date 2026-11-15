@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Tests\**\*.cs" />
     <None Update="OTP.JSON" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Update="Raiffeisen.JSON" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Update="ResponseTemplates.JSON" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

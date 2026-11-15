@@ -402,13 +402,13 @@ Részleges siker esetén a `partial_success` értéke `true`, és a `warnings` l
 {
   "input_data": {
     "case_state": {},
-    "decision": "ClaimValid",
-    "reason": "Matched rule",
+    "decision": "BankTransferFeesGuidance",
+    "reason": "A szabály illeszkedésének technikai leírása",
     "rule_result": {},
     "bank": "otp",
     "response_plan": {
-      "decision": "ClaimValid",
-      "reason": "Matched rule",
+      "decision": "BankTransferFeesGuidance",
+      "reason": "A szabály illeszkedésének technikai leírása",
       "required_elements": [],
       "response_structure": {},
       "sources": [],
@@ -420,16 +420,17 @@ Részleges siker esetén a `partial_success` értéke `true`, és a `warnings` l
     "amount": ["100"]
   },
   "category": "BANK_TRANSFER_FEES",
-  "rule_decision": "ClaimValid",
+  "rule_decision": "A közölt terhelés magasabb a szabály szerint számított díjnál.",
+  "rule_reason": "A megadott adatok alapján a szabály szerinti díj 900 Ft, a közölt terhelés 1000 Ft.",
+  "matched_rules": ["HU-BANK-TRANSFER-FEES-001"],
   "prompt_name": "prompt-v1",
-  "model_name": "model-name",
   "model_parameters": {
     "temperature": 0.2
   }
 }
 ```
 
-`rule_decision` a szabálymotor döntését változtatás nélkül adja át; szabálykiválasztás hiányában `null`. A `response_plan` kizárólag az `input_data` objektum része. Ismeretlen vagy hiányzó döntést a .NET nem alakít pozitív/negatív döntéssé. Olyan döntésnél, amely nem igényel LLM-modellt, a .NET kihagyja a `/models` lekérést, és `model_name`/`model_parameters` nélkül (null értékkel) hívja a `/generate` végpontot. A template generációs mód nem hívja ezt az AI-végpontot.
+`rule_decision` és `rule_reason` általában a kiválasztott szabály `customerDecision` és `customerReason` mezőiből származik; `matched_rules` a ténylegesen alkalmazott, kiválasztott szabály azonosítóját tartalmazza. OTP átutalási díjnál e két mező a megadott körülmények és a szabály szerinti tarifa összevetésének eredményét tartalmazza, a közölt adatokat igaznak feltételezve. Ha az összevetés nem lehetséges, a `rule_decision` értéke `Rule Not Found`, a `rule_reason` felsorolja a hiányzó adatokat; ez nem jelenti azt, hogy az alkalmazott szabály nem létezik vagy a panasz megalapozatlan. A dátumot jelenleg az `átutalás napja: ÉÉÉÉ-HH-NN` vagy `átutalás dátuma: ÉÉÉÉ-HH-NN` alakban ismeri fel. Ha nincs kiválasztott szabály vagy hiányzik a szabály azonosítója, ügyfélnek szánt döntése vagy indoka, az LLM-feldolgozás hibával leáll. A technikai döntés és illeszkedési indok az `input_data` része marad. A `response_plan` kizárólag az `input_data` objektum része. Ha nincs konfigurált modellnév, a kérés nem tartalmaz `model_name` mezőt, és a Python alapértelmezett modellje érvényesül. Kifejezetten konfigurált modell esetén a .NET ellenőrzi a `/models` választ. A template generációs mód nem hívja ezt az AI-végpontot.
 
 **Sikeres válasz body:**
 
@@ -483,6 +484,9 @@ Az AI-szolgáltatás hibát jelző válaszának `error` objektuma:
 HTTP 400, 404 és 422 kérés-, modell- vagy promptkonfigurációs hibát jelez; 503 a szolgáltatás elérhetetlenségét, 504 időtúllépést jelent. A .NET ezeket hibaállapotként kezeli, nem válaszként jeleníti meg a hiba JSON-ját. Az API általános, nem technikai hibaüzenetet ad vissza; az AI `error.code` és `error.correlation_id` értékei diagnosztikai metaadatként kerülnek átadásra.
 
 A `code`, `message` és `correlation_id` mezők opcionálisak lehetnek. Nem sikeres HTTP-válasznál a kliens a HTTP-státuszt és — ha elérhető — a hibaválaszt, illetve a `x-correlation-id` fejlécet használja a hiba feldolgozásához.
+FastAPI típusú 422-es `detail` lista esetén a diagnosztikai hibaüzenet a hibás mezők útvonalát tartalmazza, a beküldött értékeket nem.
+
+A generálási folyamat célzott tesztjei a projekt gyökeréből futtathatók: `dotnet run --project Tests\GenerationTests.csproj`.
 
 ## Nem definiált publikus végpont
 

@@ -30,7 +30,8 @@ public static partial class TransferFeeComplaintEvaluator
     public static TransferFeeComplaintAssessment? Evaluate(
         string bank,
         string message,
-        Rule? selectedRule)
+        Rule? selectedRule,
+        bool requireTransactionDate = false)
     {
         if (!string.Equals(bank, "otp", StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(selectedRule?.Id, RuleId, StringComparison.OrdinalIgnoreCase))
@@ -55,6 +56,30 @@ public static partial class TransferFeeComplaintEvaluator
             !ContainsInternalNonOwnTransfer(normalizedMessage))
         {
             missingInformation.Add("hogy eseti, OTP-n belüli, nem saját számlára indított utalásról van-e szó");
+        }
+
+        if (requireTransactionDate)
+        {
+            if (ConflictingTransferDetails().IsMatch(normalizedMessage) ||
+                NegativeMoney().IsMatch(normalizedMessage))
+            {
+                missingInformation.Add("az ellentmondásos számla- és átutalási adatok pontosítása");
+            }
+
+            var tariffEffectiveFrom = GetTariffEffectiveFrom(selectedRule!);
+            var dates = TransferDate().Matches(normalizedMessage);
+            if (dates.Count != 1 ||
+                !DateOnly.TryParseExact(
+                    dates[0].Groups["date"].Value,
+                    "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var transactionDate) ||
+                transactionDate < tariffEffectiveFrom ||
+                transactionDate > DateOnly.FromDateTime(DateTime.UtcNow))
+            {
+                missingInformation.Add("a díjhirdetmény hatálya alá eső átutalás dátuma");
+            }
         }
 
         var moneyValues = FindMoneyValues(message);
@@ -89,6 +114,11 @@ public static partial class TransferFeeComplaintEvaluator
         if (chargedFee is null)
         {
             missingInformation.Add("a ténylegesen levont átutalási díj");
+        }
+
+        if (requireTransactionDate && (transferAmount <= 0 || chargedFee < 0))
+        {
+            missingInformation.Add("az átutalás és a terhelés érvényes összege");
         }
 
         if (missingInformation.Count > 0)
@@ -167,6 +197,21 @@ public static partial class TransferFeeComplaintEvaluator
         }
 
         return (ratePercent, minimumFeeHuf, maximumFeeHuf);
+    }
+
+    private static DateOnly GetTariffEffectiveFrom(Rule rule)
+    {
+        if (!rule.Result.AdditionalData.TryGetValue("transferFeeAssessment", out var tariff) ||
+            tariff.ValueKind != JsonValueKind.Object ||
+            !tariff.TryGetProperty("effectiveFrom", out var effectiveFrom) ||
+            effectiveFrom.ValueKind != JsonValueKind.String ||
+            !DateOnly.TryParseExact(effectiveFrom.GetString(), "yyyy-MM-dd",
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        {
+            throw new InvalidDataException($"Rule '{rule.Id}' has no valid tariff effective date.");
+        }
+
+        return date;
     }
 
     private static List<(decimal Amount, MoneyValueKind Kind)> FindMoneyValues(string message)
@@ -298,4 +343,17 @@ public static partial class TransferFeeComplaintEvaluator
         @"sz[aá]m[ií]t\w*|v[aá]r\w*|kellett\s+volna",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex ExpectedFeeMarkers();
+
+    [GeneratedRegex(
+        @"\b(?:at)?utalas\s+(?:napja|datuma)\s*[:=]\s*(?<date>\d{4}-\d{2}-\d{2})\b",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex TransferDate();
+
+    [GeneratedRegex(
+        @"\bnem\s+(?:(?:otp|egy|a|az)\s+)*(?:(?:forint|huf)\s+megtakaritasi\s+szamla|eseti|mobil\s*bank|internet\s*bank|otp-n\s+belul|bankon\s+belul)\b",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex ConflictingTransferDetails();
+
+    [GeneratedRegex(@"-\s*\d[\d\s.,]*\s*(?:ft\b|forint\b)", RegexOptions.CultureInvariant)]
+    private static partial Regex NegativeMoney();
 }
