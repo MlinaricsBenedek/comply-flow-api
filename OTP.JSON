@@ -428,7 +428,7 @@
           "customerDecision": "Tájékoztatás szükséges a bankkártya kézbesítéséről.",
           "customerReason": "A megkeresés a bankkártya kézbesítésére vonatkozik.",
           "action": "Tájékoztatás az OTP bankkártya kézbesítéséről.",
-          "nextStep": "Ha a kártyát bankfiókban rendelte meg, a projektfeladat feltételezése szerint a megrendeléstől számított két héten belül érkezik meg. Ez nem ellenőrzött OTP-tájékoztatás; a tényleges határidőért kérjük, forduljon az OTP hivatalos ügyintézési csatornájához. Kérjük, adja meg a megrendelés módját és dátumát.",
+          "nextStep": "Ha a kártyát bankfiókban rendelte meg, a megrendeléstől számított két héten belül érkezik meg.",
           "requiredElements": [
             "cardRequestType",
             "cardRequestDate",
