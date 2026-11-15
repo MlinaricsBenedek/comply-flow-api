@@ -336,6 +336,8 @@ Az eredmény egyes részei még nem állnak rendelkezésre, ezért `null` érté
 
 A hiba részleges eredményekkel együtt is visszaadható. Az `availabilityMessage` feldolgozási állapottól és az eredmények elérhetőségétől függően tájékoztató szöveget tartalmazhat, vagy `null` lehet.
 
+Az OTP bankkártya-kézbesítési szabály két héten belüli határideje kizárólag projektfeladat-feltételezés, bankfióki megrendelés esetére; nem ellenőrzött OTP-tájékoztatás.
+
 ## Külső AI-szolgáltatás
 
 Az alábbi relatív útvonalakat az alkalmazás az `AiService:BaseUrl` konfigurációs értékhez fűzi hozzá. Ezeket az alkalmazás hívja; nem publikus, az API-kliensek által közvetlenül meghívandó végpontok.

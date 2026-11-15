@@ -428,7 +428,7 @@
           "customerDecision": "Tájékoztatás szükséges a bankkártya kézbesítéséről.",
           "customerReason": "A megkeresés a bankkártya kézbesítésére vonatkozik.",
           "action": "Tájékoztatás az OTP bankkártya kézbesítéséről.",
-          "nextStep": "A rendelkezésre álló szabályforrások nem tartalmaznak ellenőrzött kézbesítési határidőt. A pontos tájékoztatásért ellenőrizze az OTP hivatalos ügyintézési csatornáját. Ha további segítségre van szüksége, adja meg, hogy új, megújított vagy pótkártyáról van-e szó, és mikor igényelte.",
+          "nextStep": "Ha a kártyát bankfiókban rendelte meg, a projektfeladat feltételezése szerint a megrendeléstől számított két héten belül érkezik meg. Ez nem ellenőrzött OTP-tájékoztatás; a tényleges határidőért kérjük, forduljon az OTP hivatalos ügyintézési csatornájához. Kérjük, adja meg a megrendelés módját és dátumát.",
           "requiredElements": [
             "cardRequestType",
             "cardRequestDate",
@@ -1225,7 +1225,7 @@
           "customerDecision": "Tájékoztatás szükséges a bankkártya kézbesítéséről.",
           "customerReason": "A megkeresés a bankkártya kézbesítésére vonatkozik.",
           "action": "Tájékoztatás az OTP bankkártya kézbesítéséről.",
-          "nextStep": "A rendelkezésre álló szabályforrások nem tartalmaznak ellenőrzött kézbesítési határidőt. A pontos tájékoztatásért ellenőrizze az OTP hivatalos ügyintézési csatornáját. Ha további segítségre van szüksége, adja meg, hogy új, megújított vagy pótkártyáról van-e szó, és mikor igényelte.",
+          "nextStep": "Ha a kártyát bankfiókban rendelte meg, a projektfeladat feltételezése szerint a megrendeléstől számított két héten belül érkezik meg. Ez nem ellenőrzött OTP-tájékoztatás; a tényleges határidőért kérjük, forduljon az OTP hivatalos ügyintézési csatornájához. Kérjük, adja meg a megrendelés módját és dátumát.",
           "requiredElements": [
             "cardRequestType",
             "cardRequestDate",

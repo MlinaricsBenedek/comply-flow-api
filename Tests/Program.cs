@@ -143,13 +143,24 @@ static Task CustomerTexts()
 
 static async Task DifferentRule()
 {
-    var rule = LoadRule("HU-OTP-CARD-DELIVERY-001");
-    using var fixture = new Fixture(RuleSet(rule), "CARD_DELIVERY");
-    await fixture.Run();
-    using var json = JsonDocument.Parse(fixture.Handler.GenerationBody!);
-    Check(json.RootElement.GetProperty("rule_decision").GetString() == (string?)rule["result"]!["customerDecision"], "other decision");
-    Check(json.RootElement.GetProperty("rule_reason").GetString() == (string?)rule["result"]!["customerReason"], "other reason");
-    Check(json.RootElement.GetProperty("matched_rules")[0].GetString() == (string?)rule["id"], "other rule ID");
+    var versions = JsonNode.Parse(File.ReadAllText("OTP.JSON"))!.AsArray();
+    foreach (var version in versions)
+    {
+        var rule = version!["rules"]!.AsArray()
+            .Select(node => node!.AsObject())
+            .Single(item => (string?)item["id"] == "HU-OTP-CARD-DELIVERY-001")
+            .DeepClone().AsObject();
+        using var fixture = new Fixture(RuleSet(rule), "CARD_DELIVERY");
+        var processing = await fixture.Run();
+        using var json = JsonDocument.Parse(fixture.Handler.GenerationBody!);
+        Check(json.RootElement.GetProperty("rule_decision").GetString() == (string?)rule["result"]!["customerDecision"], "other decision");
+        Check(json.RootElement.GetProperty("rule_reason").GetString() == (string?)rule["result"]!["customerReason"], "other reason");
+        Check(json.RootElement.GetProperty("matched_rules")[0].GetString() == (string?)rule["id"], "other rule ID");
+        var response = processing.Response!.ResponseText;
+        Check(response.Contains("Ha a kártyát bankfiókban") &&
+            response.Contains("megrendeléstől számított két héten belül") &&
+            response.Contains("nem ellenőrzött OTP-tájékoztatás"), "branch delivery assumption");
+    }
 }
 
 static async Task ExplicitModel()
