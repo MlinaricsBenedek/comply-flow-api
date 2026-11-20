@@ -59,6 +59,12 @@ namespace comply_flow_api.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
+                    b.Property<double?>("RetrievalMinSimilarity")
+                        .HasColumnType("float");
+
+                    b.Property<int?>("RetrievalTopK")
+                        .HasColumnType("int");
+
                     b.Property<string>("TemplateVersion")
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
@@ -274,6 +280,9 @@ namespace comply_flow_api.Migrations
                     b.Property<string>("PromptVersion")
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
+
+                    b.Property<string>("RagSourcesJson")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ResponseText")
                         .IsRequired()

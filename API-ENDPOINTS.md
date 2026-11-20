@@ -110,6 +110,23 @@ A `name`, `bank`, `promptVersion`, `modelName` és `modelParameters` mező köte
 
 **Sikeres válasz — `201 Created`:** a létrehozott konfiguráció `ConfigurationResponse` alakban, az előző példában leírt mezőkkel. A válasz `Location` fejlécében a konfiguráció lekérdezési útvonala található.
 
+#### `POST /api/configurations/rag`
+
+```json
+{
+  "name": "RAG OTP",
+  "bank": "otp",
+  "retrievalTopK": 5,
+  "retrievalMinSimilarity": 0.4,
+  "modelName": "model-name",
+  "modelParameters": { "max_new_tokens": 180, "do_sample": false }
+}
+```
+
+Csak a `name` és a `bank` kötelező; a bank `otp` vagy `raiffeisen`. A `retrievalTopK` pozitív egész, a `retrievalMinSimilarity` 0 és 1 közötti szám. A retrieval- és modellbeállítások elhagyhatók: ilyenkor a Python-szolgáltatás alapértelmezései érvényesülnek. A megadott modellnevet az API a Python `/models` listáján ellenőrzi. A válasz `201 Created`, `generationMode: "Rag"` értékkel. Az új adatbázismezőkhöz az `AddRagPipeline` migráció alkalmazása szükséges.
+
+A konfiguráció az üzenet létrehozásakor a szokásos `configurationId` mezővel választható ki. A RAG-folyamat preprocessing után közvetlenül a `/generate-rag` végpontot hívja, nem használ szabálymotort vagy választervet.
+
 ### Beszélgetések és üzenetek
 
 #### `GET /api/conversations`
@@ -321,7 +338,11 @@ Az alábbi két GET útvonal ugyanazt az eredményt adja:
 }
 ```
 
-Az eredmény egyes részei még nem állnak rendelkezésre, ezért `null` értékűek lehetnek. Ha egyetlen eredményrész sem érhető el, a `results` értéke `null`, a `resultsAvailable` pedig `false`. A `ruleDecision.reason` az alkalmazott szabály azonosítóját, a teljesült feltételeket és a prioritás szerinti kiválasztás okát írja le; a `ruleDecision.evaluationTrace` minden vizsgált szabályhoz visszaadja a találati/kiválasztási állapotot és a feltételek külön eredményét. A nyomvonal nem tartalmaz tényleges ügyadat-értékeket. A `Rules` rekordban tárolt indoklás a választerv `reason` mezőjében is megjelenik. Ha nincs egyezés, az indoklás ezt és a vizsgált szabályok számát jelzi. Feldolgozási hiba esetén az `error` alakja:
+Az eredmény egyes részei még nem állnak rendelkezésre, ezért `null` értékűek lehetnek. Ha egyetlen eredményrész sem érhető el, a `results` értéke `null`, a `resultsAvailable` pedig `false`. A `ruleDecision.reason` az alkalmazott szabály azonosítóját, a teljesült feltételeket és a prioritás szerinti kiválasztás okát írja le; a `ruleDecision.evaluationTrace` minden vizsgált szabályhoz visszaadja a találati/kiválasztási állapotot és a feltételek külön eredményét. A nyomvonal nem tartalmaz tényleges ügyadat-értékeket. A `Rules` rekordban tárolt indoklás a választerv `reason` mezőjében is megjelenik. Ha nincs egyezés, az indoklás ezt és a vizsgált szabályok számát jelzi.
+
+RAG esetén a `ruleDecision` és `responsePlan` `null`, a `response.sources` pedig a visszakeresett dokumentumrészleteket tartalmazza: `sourceId`, `documentName`, `chunkIndex`, `text`, `startChar`, `endChar` és `similarity`. A források az adatbázisban is megmaradnak.
+
+Feldolgozási hiba esetén az `error` alakja:
 
 ```json
 {
@@ -391,6 +412,23 @@ A `models` lista nem lehet üres; minden modell neve kötelező és egyedi, vala
 ```
 
 Részleges siker esetén a `partial_success` értéke `true`, és a `warnings` lista nem lehet üres. A `warning_details` opcionális objektum; a figyelmeztetéskódokhoz tartozó részletes információkat tartalmazza.
+
+### `POST {BaseUrl}/generate-rag`
+
+```json
+{
+  "message": "A feldolgozott üzenet",
+  "bank": "OTP",
+  "facts": { "amount": ["100"] },
+  "category": "BANK_TRANSFER_FEES",
+  "retrieval_top_k": 5,
+  "retrieval_min_similarity": 0.4,
+  "model_name": null,
+  "model_parameters": null
+}
+```
+
+Az üzenet, tények és kategória a preprocessing eredménye; a bank értéke `OTP` vagy `Raiffeisen`. A sikeres válasz a generált `response` és modellmetaadatok mellett `sources` listát is tartalmazhat, a `reference_similarity` és `reference_similarity_metric` párossal együtt. Hibák kezelése megegyezik a többi AI-végpontéval.
 
 ### `POST {BaseUrl}/generate`
 

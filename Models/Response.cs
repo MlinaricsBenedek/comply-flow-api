@@ -41,6 +41,8 @@ public class Response
     [Column(TypeName = "varchar(max)")]
     public string? InputContextJson { get; set; }
 
+    public string? RagSourcesJson { get; set; }
+
     [Required]
     public int ProcessingTimeMs { get; set; }
 }

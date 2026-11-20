@@ -14,4 +14,6 @@ public sealed record ConfigurationResponse(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? PromptVersion,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ModelName,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    Dictionary<string, JsonElement>? ModelParameters);
+    Dictionary<string, JsonElement>? ModelParameters,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? RetrievalTopK = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double? RetrievalMinSimilarity = null);

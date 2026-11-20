@@ -13,6 +13,9 @@ public interface IConfigurationService
     Task<ConfigurationResponse> CreateLlmAsync(
         RequestLlmConfiguration request,
         CancellationToken cancellationToken);
+    Task<ConfigurationResponse> CreateRagAsync(
+        RequestRagConfiguration request,
+        CancellationToken cancellationToken);
     Task<IReadOnlyList<ConfigurationSummaryResponse>> GetAllAsync(CancellationToken cancellationToken);
     Task<ConfigurationResponse?> GetByIdAsync(int id, CancellationToken cancellationToken);
 }
@@ -71,6 +74,28 @@ public class ConfigurationService : IConfigurationService
         return ToResponse(configuration);
     }
 
+    public async Task<ConfigurationResponse> CreateRagAsync(
+        RequestRagConfiguration request,
+        CancellationToken cancellationToken)
+    {
+        if (request.ModelName is not null && string.IsNullOrWhiteSpace(request.ModelName))
+            throw new ArgumentException("Model name cannot be whitespace.", nameof(request));
+
+        var configuration = new Configuration
+        {
+            Name = request.Name.Trim(),
+            Bank = request.Bank,
+            GenerationMode = "Rag",
+            RetrievalTopK = request.RetrievalTopK,
+            RetrievalMinSimilarity = request.RetrievalMinSimilarity,
+            ModelName = request.ModelName?.Trim(),
+            ModelParametersJson = request.ModelParameters is null ? null : JsonSerializer.Serialize(request.ModelParameters),
+            CreatedAt = DateTime.UtcNow
+        };
+        await _configurationRepository.AddAsync(configuration, cancellationToken);
+        return ToResponse(configuration);
+    }
+
     public async Task<IReadOnlyList<ConfigurationSummaryResponse>> GetAllAsync(
         CancellationToken cancellationToken)
     {
@@ -98,5 +123,7 @@ public class ConfigurationService : IConfigurationService
         configuration.ModelName,
         configuration.ModelParametersJson is null
             ? null
-            : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(configuration.ModelParametersJson));
+            : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(configuration.ModelParametersJson),
+        configuration.RetrievalTopK,
+        configuration.RetrievalMinSimilarity);
 }

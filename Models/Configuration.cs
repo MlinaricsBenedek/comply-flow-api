@@ -38,6 +38,10 @@ public class Configuration
     [Column(TypeName = "varchar(max)")]
     public string? ModelParametersJson { get; set; }
 
+    public int? RetrievalTopK { get; set; }
+
+    public double? RetrievalMinSimilarity { get; set; }
+
     [Required]
     [Column(TypeName = "datetime")]
     public DateTime CreatedAt { get; set; }

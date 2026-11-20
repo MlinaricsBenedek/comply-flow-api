@@ -1,4 +1,5 @@
 using comply_flow_api.Models;
+using System.Text.Json.Serialization;
 
 namespace comply_flow_api.Models.dtos.ProcessDtos;
 
@@ -47,7 +48,18 @@ public sealed record GeneratedResponseResultResponse(
     string? TemplateVersion,
     string? PromptVersion,
     string? ModelName,
-    int ProcessingTimeMs);
+    int ProcessingTimeMs,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    IReadOnlyList<RagSourceResponse>? Sources = null);
+
+public sealed record RagSourceResponse(
+    string? SourceId,
+    string? DocumentName,
+    int? ChunkIndex,
+    string? Text,
+    int? StartChar,
+    int? EndChar,
+    decimal? Similarity);
 
 public sealed record EvaluationResultResponse(
     string Metric,

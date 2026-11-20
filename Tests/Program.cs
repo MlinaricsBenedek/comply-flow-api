@@ -21,7 +21,10 @@ var tests = new (string Name, Func<Task> Run)[]
     ("Explicit model selection", ExplicitModel),
     ("Missing rule data fails", MissingRuleData),
     ("Duplicate sources", DuplicateSources),
-    ("Python 422 validation error", ValidationError)
+    ("Python 422 validation error", ValidationError),
+    ("RAG pipeline and retrieved sources", RagPipeline),
+    ("RAG errors are persisted", RagFailure),
+    ("Invalid RAG sources fail", RagInvalidSources)
 };
 var failures = 0;
 foreach (var (name, run) in tests)
@@ -202,7 +205,7 @@ static async Task DuplicateSources()
     Check(processing.Response!.ResponseText.Split("Ellenőrzött hivatkozás").Length == 2, "duplicate LLM citations");
 
     var templates = new ResponseTemplateSet { TemplateVersion = "test", Templates = new() { ["default"] = "{{sources}}" } };
-    var rendered = TemplateResponseRenderer.Render(templates, "x", "x", "x", "x", "", "[]", "{}", "[\"Forrás\", \" forrás \"]");
+    var rendered = TemplateResponseRenderer.Render(templates, "x", "x", "x", "[]", "{}", "[\"Forrás\", \" forrás \"]");
     Check(rendered.Split(Environment.NewLine).Length == 1, "duplicate template citations");
 }
 
@@ -217,6 +220,46 @@ static async Task ValidationError()
     Check(!exception.Message.Contains("secret-value"), "input value leaked");
     Check(exception.CorrelationId == "trace-422", "correlation");
     Check(fixture.Repository.Failed, "failure persisted");
+}
+
+static async Task RagPipeline()
+{
+    using var fixture = new Fixture("invalid rules", "BANK_TRANSFER_FEES", mode: "Rag");
+    var processing = await fixture.Run();
+    using var request = JsonDocument.Parse(fixture.Handler.GenerationBody!);
+    var root = request.RootElement;
+    Check(fixture.Handler.GenerationPath == "/generate-rag", "wrong endpoint");
+    Check(root.GetProperty("message").GetString() == "Tesztüzenet", "preprocessed message");
+    Check(root.GetProperty("bank").GetString() == "OTP", "bank spelling");
+    Check(root.GetProperty("facts").ValueKind == JsonValueKind.Object, "facts missing");
+    Check(root.GetProperty("category").GetString() == "BANK_TRANSFER_FEES", "category missing");
+    Check(root.GetProperty("retrieval_top_k").GetInt32() == 3, "top k");
+    Check(root.GetProperty("retrieval_min_similarity").GetDouble() == 0.4, "similarity");
+    Check(!root.TryGetProperty("input_data", out _), "legacy payload leaked");
+    Check(processing.Status == ProcessingStatus.Completed && processing.Rules is null && processing.ResponsePlan is null,
+        "RAG must not use the rule pipeline");
+    Check(processing.Response!.ResponseText == "RAG válasz.", "response");
+    var result = await fixture.GetResult();
+    Check(result!.Results!.Response!.Sources!.Single().DocumentName == "Hirdetmény", "stored sources");
+    Check(result.Results.EvaluationResults.Single().Score == 0.8m, "similarity metric");
+}
+
+static async Task RagFailure()
+{
+    using var fixture = new Fixture("invalid rules", "BANK_TRANSFER_FEES", mode: "Rag");
+    fixture.Handler.FailGeneration = true;
+    var exception = await Throws<AiServiceException>(() => fixture.Run());
+    Check(exception.Endpoint == "generate-rag", "error endpoint");
+    Check(fixture.Repository.Failed, "failure not persisted");
+}
+
+static async Task RagInvalidSources()
+{
+    using var fixture = new Fixture("invalid rules", "BANK_TRANSFER_FEES", mode: "Rag");
+    fixture.Handler.InvalidRagSources = true;
+    var exception = await Throws<AiServiceException>(() => fixture.Run());
+    Check(exception.FailureKind == AiServiceFailureKind.InvalidResponse, "invalid response not detected");
+    Check(fixture.Repository.Failed, "failure not persisted");
 }
 
 static void Check(bool condition, string message)
@@ -238,7 +281,7 @@ sealed class Fixture : IDisposable
     public FakeHandler Handler { get; }
     public FakeProcessingRepository Repository { get; } = new();
 
-    public Fixture(string rules, string category, string? modelName = null)
+    public Fixture(string rules, string category, string? modelName = null, string mode = "Llm")
     {
         Handler = new FakeHandler(category);
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
@@ -248,12 +291,15 @@ sealed class Fixture : IDisposable
         var logger = new PayloadFileLogger(new TestEnvironment(), config, NullLogger<PayloadFileLogger>.Instance);
         var client = new AiServiceClient(new HttpClient(Handler) { BaseAddress = new Uri("http://localhost/") },
             Options.Create(new AiServiceOptions()), logger, new HttpContextAccessor());
-        _service = new ProcessingService(new FakeConfigurationRepository(modelName), Repository, client,
+        _service = new ProcessingService(new FakeConfigurationRepository(modelName, mode), Repository, client,
             new FakeTextFileService(rules), NullLogger<ProcessingService>.Instance);
     }
 
     public async Task<Processing> Run(string message = "Tesztüzenet") =>
         (await _service.CreateForMessageAsync(new Message { ConversationId = 1, Content = message }, 1, CancellationToken.None)).Processing!;
+
+    public Task<comply_flow_api.Models.dtos.ProcessDtos.ProcessingResultResponse?> GetResult() =>
+        _service.GetResultAsync(1, CancellationToken.None);
 
     public void Dispose() => File.Delete(_logPath);
 }
@@ -261,8 +307,10 @@ sealed class Fixture : IDisposable
 sealed class FakeHandler(string category) : HttpMessageHandler
 {
     public string? GenerationBody { get; private set; }
+    public string? GenerationPath { get; private set; }
     public bool ModelsCalled { get; private set; }
     public bool FailGeneration { get; set; }
+    public bool InvalidRagSources { get; set; }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
@@ -274,8 +322,13 @@ sealed class FakeHandler(string category) : HttpMessageHandler
             ModelsCalled = true;
             return Json(HttpStatusCode.OK, "{\"success\":true,\"models\":[{\"name\":\"model\",\"is_default\":true}]}");
         }
-        if (path != "/generate") throw new Exception($"Unexpected endpoint {path}");
+        if (path is not ("/generate" or "/generate-rag")) throw new Exception($"Unexpected endpoint {path}");
+        GenerationPath = path;
         GenerationBody = await request.Content!.ReadAsStringAsync(cancellationToken);
+        if (path == "/generate-rag" && InvalidRagSources)
+            return Json(HttpStatusCode.OK, "{\"success\":true,\"response\":\"Válasz\",\"prompt_version\":\"rag-v1\",\"model_parameters\":{},\"sources\":[{\"source_id\":\"s1\"}]}");
+        if (path == "/generate-rag" && !FailGeneration)
+            return Json(HttpStatusCode.OK, "{\"success\":true,\"response\":\"RAG válasz.\",\"prompt_version\":\"rag-v1\",\"model_name\":null,\"model_id\":null,\"model_parameters\":{},\"reference_similarity\":0.8,\"reference_similarity_metric\":\"token_f1\",\"sources\":[{\"source_id\":\"s1\",\"document_name\":\"Hirdetmény\",\"chunk_index\":0,\"text\":\"részlet\",\"start_char\":0,\"end_char\":7,\"similarity\":0.9}]}");
         if (!FailGeneration) return Json(HttpStatusCode.OK, "{\"success\":true,\"response\":\"Válasz.\"}");
         var response = Json(HttpStatusCode.UnprocessableEntity, "{\"detail\":[{\"loc\":[\"body\",\"rule_reason\"],\"msg\":\"invalid\",\"input\":\"secret-value\"}]}");
         response.Headers.Add("x-correlation-id", "trace-422");
@@ -286,12 +339,14 @@ sealed class FakeHandler(string category) : HttpMessageHandler
         new(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
 }
 
-sealed class FakeConfigurationRepository(string? modelName) : IConfigurationRepository
+sealed class FakeConfigurationRepository(string? modelName, string mode) : IConfigurationRepository
 {
     public Task<comply_flow_api.Models.Configuration?> GetByIdAsync(int id, CancellationToken token) =>
         Task.FromResult<comply_flow_api.Models.Configuration?>(new() {
-            Bank = "otp", RuleSetVersion = "test", GenerationMode = "Llm",
+            Bank = "otp", GenerationMode = mode,
             ModelName = modelName,
+            RetrievalTopK = mode == "Rag" ? 3 : null,
+            RetrievalMinSimilarity = mode == "Rag" ? 0.4 : null,
             ModelParametersJson = "{\"max_new_tokens\":180,\"do_sample\":false}"
         });
     public Task AddAsync(comply_flow_api.Models.Configuration configuration, CancellationToken token) => throw new NotSupportedException();
@@ -301,7 +356,8 @@ sealed class FakeConfigurationRepository(string? modelName) : IConfigurationRepo
 sealed class FakeProcessingRepository : IProcessingRepository
 {
     public bool Failed { get; private set; }
-    public Task AddAsync(Processing processing, CancellationToken token) => Task.CompletedTask;
+    private Processing? _processing;
+    public Task AddAsync(Processing processing, CancellationToken token) { _processing = processing; return Task.CompletedTask; }
     public Task SaveChangesAsync(CancellationToken token) => Task.CompletedTask;
     public Task<bool> MarkFailedAsync(int id, string type, string message, DateTime finishedAt, CancellationToken token)
     {
@@ -309,7 +365,7 @@ sealed class FakeProcessingRepository : IProcessingRepository
         return Task.FromResult(true);
     }
     public Task<Processing?> GetByIdAsync(int id, CancellationToken token) => throw new NotSupportedException();
-    public Task<Processing?> GetResultByIdAsync(int id, CancellationToken token) => throw new NotSupportedException();
+    public Task<Processing?> GetResultByIdAsync(int id, CancellationToken token) => Task.FromResult(_processing);
 }
 
 sealed class FakeTextFileService(string rules) : ITextFileService
