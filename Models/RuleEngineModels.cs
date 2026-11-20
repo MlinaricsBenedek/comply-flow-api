@@ -61,9 +61,6 @@ public sealed class Rule
 
 public sealed class RuleSetDocument
 {
-    [JsonPropertyName("ruleSetVersion")]
-    public required string RuleSetVersion { get; set; }
-
     [JsonPropertyName("rules")]
     public required List<Rule> Rules { get; set; }
 }

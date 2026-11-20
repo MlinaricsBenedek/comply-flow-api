@@ -32,7 +32,6 @@ public sealed record RuleDecisionResultResponse(
     string Decision,
     string Reason,
     string Bank,
-    string RuleSetVersion,
     IReadOnlyList<RuleEvaluationTrace> EvaluationTrace);
 
 public sealed record ResponsePlanResultResponse(

@@ -81,25 +81,11 @@ public class ProcessingService : IProcessingService
                 cancellationToken);
             var ruleSets = JsonSerializer.Deserialize<List<RuleSetDocument>>(ruleSetJson)
                 ?? throw new InvalidOperationException("The business rules file is empty or invalid.");
-            if (ruleSets.Count == 0 || ruleSets.Any(ruleSet => ruleSet is null))
+            if (ruleSets.Count != 1 || ruleSets[0] is null)
             {
-                throw new InvalidDataException("The business rules file contains no valid rule sets.");
+                throw new InvalidDataException("The business rules file must contain exactly one valid rule set.");
             }
-
-            var matchingRuleSets = ruleSets
-                .Where(ruleSet => string.Equals(
-                    ruleSet.RuleSetVersion,
-                    configuration.RuleSetVersion,
-                    StringComparison.Ordinal))
-                .ToList();
-            if (matchingRuleSets.Count != 1)
-            {
-                throw new InvalidOperationException(
-                    matchingRuleSets.Count == 0
-                        ? $"No business rule set was found for configured version '{configuration.RuleSetVersion}'."
-                        : $"Multiple business rule sets were found for configured version '{configuration.RuleSetVersion}'.");
-            }
-            var ruleSet = matchingRuleSets[0];
+            var ruleSet = ruleSets[0];
             ValidateRuleSet(ruleSet);
 
             var preprocessing = await _aiServiceClient.PreprocessAsync(
@@ -144,7 +130,6 @@ public class ProcessingService : IProcessingService
                 Decision = decision,
                 Reason = reason,
                 Bank = configuration.Bank,
-                RuleSetVersion = ruleSet.RuleSetVersion,
                 EvaluationTraceJson = JsonSerializer.Serialize(evaluation.EvaluationTrace)
             };
             processing.ResponsePlan = CreateResponsePlan(
@@ -369,7 +354,6 @@ public class ProcessingService : IProcessingService
                         processing.Rules.Decision,
                         processing.Rules.Reason,
                         processing.Rules.Bank,
-                        processing.Rules.RuleSetVersion,
                         JsonSerializer.Deserialize<IReadOnlyList<RuleEvaluationTrace>>(
                             processing.Rules.EvaluationTraceJson) ?? []),
                 processing.ResponsePlan is null
@@ -426,11 +410,9 @@ public class ProcessingService : IProcessingService
 
     private static void ValidateRuleSet(RuleSetDocument ruleSet)
     {
-        if (string.IsNullOrWhiteSpace(ruleSet.RuleSetVersion) ||
-            ruleSet.Rules is null ||
-            ruleSet.Rules.Count == 0)
+        if (ruleSet.Rules is null || ruleSet.Rules.Count == 0)
         {
-            throw new InvalidDataException("The selected business rule set is missing its version or rules.");
+            throw new InvalidDataException("The business rule set contains no rules.");
         }
 
         foreach (var rule in ruleSet.Rules)
@@ -445,7 +427,7 @@ public class ProcessingService : IProcessingService
                 string.IsNullOrWhiteSpace(rule.Result.NextStep))
             {
                 throw new InvalidDataException(
-                    $"The business rule set '{ruleSet.RuleSetVersion}' contains a rule with missing decision, action, or nextStep.");
+                    "The business rule set contains a rule with missing decision, action, or nextStep.");
             }
 
             ValidateConditions(rule, rule.Conditions.All);

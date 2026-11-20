@@ -1,6 +1,5 @@
 [
   {
-    "ruleSetVersion": "2.0",
     "rules": [
       {
         "id": "RB-REFLEX-AUTOMATIC-SAVINGS-001",

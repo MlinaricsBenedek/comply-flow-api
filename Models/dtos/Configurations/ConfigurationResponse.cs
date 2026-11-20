@@ -9,7 +9,6 @@ public sealed record ConfigurationResponse(
     int Id,
     string Name,
     string Bank,
-    string RuleSetVersion,
     string GenerationMode,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? TemplateVersion,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? PromptVersion,

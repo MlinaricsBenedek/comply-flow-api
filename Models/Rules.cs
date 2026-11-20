@@ -24,11 +24,6 @@ public class Rules
     public string Reason { get; set; } = string.Empty;
 
     [Required]
-    [StringLength(50)]
-    [Column(TypeName = "varchar(50)")]
-    public string RuleSetVersion { get; set; } = string.Empty;
-
-    [Required]
     [StringLength(20)]
     [Column(TypeName = "varchar(20)")]
     public string Bank { get; set; } = string.Empty;

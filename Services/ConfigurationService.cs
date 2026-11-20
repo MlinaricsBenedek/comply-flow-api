@@ -41,7 +41,6 @@ public class ConfigurationService : IConfigurationService
         {
             Name = request.Name.Trim(),
             Bank = request.Bank,
-            RuleSetVersion = request.RuleSetVersion.Trim(),
             GenerationMode = "Template",
             TemplateVersion = templateVersion,
             CreatedAt = DateTime.UtcNow
@@ -60,7 +59,6 @@ public class ConfigurationService : IConfigurationService
         {
             Name = request.Name.Trim(),
             Bank = request.Bank,
-            RuleSetVersion = request.RuleSetVersion.Trim(),
             GenerationMode = "Llm",
             PromptVersion = request.PromptVersion.Trim(),
             ModelName = request.ModelName.Trim(),
@@ -94,7 +92,6 @@ public class ConfigurationService : IConfigurationService
         configuration.Id,
         configuration.Name,
         configuration.Bank,
-        configuration.RuleSetVersion,
         configuration.GenerationMode,
         configuration.TemplateVersion,
         configuration.PromptVersion,

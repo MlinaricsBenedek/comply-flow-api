@@ -60,7 +60,6 @@ Az API a bejövő JSON-kéréseket és az AI-szolgáltatás felé elküldött JS
   "id": 1,
   "name": "Default LLM",
   "bank": "otp",
-  "ruleSetVersion": "v1",
   "generationMode": "Llm",
   "promptVersion": "prompt-v1",
   "modelName": "model-name",
@@ -83,12 +82,11 @@ Az egyedi konfiguráció válasza a tárolt `bank` értéket is tartalmazza (`ot
 {
   "name": "Default template",
   "bank": "otp",
-  "ruleSetVersion": "v1",
   "templateVersion": "template-v2"
 }
 ```
 
-A `name`, `bank`, `ruleSetVersion` és `templateVersion` mező kötelező. A `bank` értéke `otp` vagy `raiffeisen`; a `name` legfeljebb 100, a verziómezők legfeljebb 50 karakter hosszúak lehetnek. A `templateVersion` értékének pontosan egyeznie kell a `ResponseTemplates.JSON` fájlban szereplő verzióval (jelenleg `template-v1` vagy `template-v2`); ismeretlen verzió esetén `400 Bad Request` érkezik.
+A `name`, `bank` és `templateVersion` mező kötelező. A `bank` értéke `otp` vagy `raiffeisen`; a `name` legfeljebb 100, a `templateVersion` legfeljebb 50 karakter hosszú lehet. A `templateVersion` értékének pontosan egyeznie kell a `ResponseTemplates.JSON` fájlban szereplő verzióval (jelenleg `template-v1` vagy `template-v2`); ismeretlen verzió esetén `400 Bad Request` érkezik.
 
 **Sikeres válasz — `201 Created`:** a létrehozott konfiguráció `ConfigurationResponse` alakban, az előző példában leírt mezőkkel. A válasz `Location` fejlécében a konfiguráció lekérdezési útvonala található.
 
@@ -100,7 +98,6 @@ A `name`, `bank`, `ruleSetVersion` és `templateVersion` mező kötelező. A `ba
 {
   "name": "Default LLM",
   "bank": "otp",
-  "ruleSetVersion": "v1",
   "promptVersion": "prompt-v1",
   "modelName": "model-name",
   "modelParameters": {
@@ -109,7 +106,7 @@ A `name`, `bank`, `ruleSetVersion` és `templateVersion` mező kötelező. A `ba
 }
 ```
 
-A `name`, `bank`, `ruleSetVersion`, `promptVersion`, `modelName` és `modelParameters` mező kötelező. A `bank` értéke `otp` vagy `raiffeisen`. A `name` legfeljebb 100, a `ruleSetVersion` és `promptVersion` legfeljebb 50, a `modelName` legfeljebb 100 karakter hosszú lehet.
+A `name`, `bank`, `promptVersion`, `modelName` és `modelParameters` mező kötelező. A `bank` értéke `otp` vagy `raiffeisen`. A `name` legfeljebb 100, a `promptVersion` legfeljebb 50, a `modelName` legfeljebb 100 karakter hosszú lehet.
 
 **Sikeres válasz — `201 Created`:** a létrehozott konfiguráció `ConfigurationResponse` alakban, az előző példában leírt mezőkkel. A válasz `Location` fejlécében a konfiguráció lekérdezési útvonala található.
 
@@ -273,7 +270,6 @@ Az alábbi két GET útvonal ugyanazt az eredményt adja:
       "decision": "Approved",
       "reason": "Matched rule",
       "bank": "otp",
-      "ruleSetVersion": "v1",
       "evaluationTrace": [
         {
           "ruleId": "HU-EXAMPLE-001",

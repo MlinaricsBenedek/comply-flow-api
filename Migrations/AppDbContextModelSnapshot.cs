@@ -59,11 +59,6 @@ namespace comply_flow_api.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
-                    b.Property<string>("RuleSetVersion")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
                     b.Property<string>("TemplateVersion")
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
@@ -372,11 +367,6 @@ namespace comply_flow_api.Migrations
                     b.Property<string>("Reason")
                         .IsRequired()
                         .HasColumnType("varchar(max)");
-
-                    b.Property<string>("RuleSetVersion")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
 
                     b.HasKey("Id");
 

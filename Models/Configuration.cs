@@ -19,11 +19,6 @@ public class Configuration
     public string Bank { get; set; } = string.Empty;
 
     [Required]
-    [StringLength(50)]
-    [Column(TypeName = "varchar(50)")]
-    public string RuleSetVersion { get; set; } = string.Empty;
-
-    [Required]
     [StringLength(30)]
     [Column(TypeName = "varchar(30)")]
     public string GenerationMode { get; set; } = string.Empty;
