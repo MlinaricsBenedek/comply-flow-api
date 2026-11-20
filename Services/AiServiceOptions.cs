@@ -11,11 +11,11 @@ public sealed class AiServiceOptions
     public string BaseUrl { get; set; } = string.Empty;
 
     [Range(1, 3600)]
-    public int ModelsTimeoutSeconds { get; set; } = 10;
+    public int ModelsTimeoutSeconds { get; set; } = 600;
 
     [Range(1, 3600)]
-    public int PreprocessingTimeoutSeconds { get; set; } = 60;
+    public int PreprocessingTimeoutSeconds { get; set; } = 600;
 
     [Range(1, 3600)]
-    public int GenerationTimeoutSeconds { get; set; } = 180;
+    public int GenerationTimeoutSeconds { get; set; } = 600;
 }

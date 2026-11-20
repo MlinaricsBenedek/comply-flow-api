@@ -142,7 +142,7 @@ A válasz fő mezői: `id`, `status`, `createdAt`, `startedAt`, `finishedAt`, `i
 
 ## 6. Külső AI-szolgáltatás API
 
-Az útvonalak az `AiService:BaseUrl` abszolút HTTP(S) URL-hez fűződnek. A BaseUrl konfiguráció kötelező és induláskor validálódik. A `HttpClient` általános timeoutja végtelen; a hívások saját megszakítási ideje konfigurálható, 1–3600 másodperc közötti értékkel. Alapértelmezés: `/models` 10 mp, `/preprocessing` 60 mp, `/generate` 180 mp.
+Az útvonalak az `AiService:BaseUrl` abszolút HTTP(S) URL-hez fűződnek. A BaseUrl konfiguráció kötelező és induláskor validálódik. A `HttpClient` általános timeoutja végtelen; a hívások saját megszakítási ideje konfigurálható, 1–3600 másodperc közötti értékkel. Alapértelmezés: `/models`, `/preprocessing`, `/generate` és `/generate-rag` hívásonként 600 mp (10 perc). A Python-szolgáltatás vagy egy köztes rendszer ennél korábban is jelezhet időtúllépést.
 
 | Metódus és útvonal | Küldött adatok | Várt válasz és alkalmazáslogika |
 |---|---|---|
