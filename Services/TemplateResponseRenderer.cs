@@ -95,7 +95,11 @@ public static class TemplateResponseRenderer
             ?? throw new InvalidDataException("A response template sources must be a JSON string array.");
         return sources.Count == 0
             ? "A rendelkezésre álló szabályok nem tartalmaznak ehhez a válaszhoz ellenőrzött forrást."
-            : string.Join(Environment.NewLine, sources.Select(value => $"- {value}"));
+            : string.Join(Environment.NewLine, sources
+                .Select(value => value.Trim())
+                .Where(value => value.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(value => $"- {value}"));
     }
 
     private static string FormatJsonObject(string json)

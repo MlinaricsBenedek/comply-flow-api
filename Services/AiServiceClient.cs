@@ -120,6 +120,15 @@ public sealed class AiServiceClient(
         AiGenerationRequest request,
         CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(request.RuleDecision) ||
+            string.IsNullOrWhiteSpace(request.RuleReason) ||
+            request.MatchedRules is not { Count: > 0 } ||
+            request.MatchedRules.Any(string.IsNullOrWhiteSpace))
+        {
+            throw new InvalidDataException(
+                "AI generation requires a customer decision, customer reason and applied rule IDs.");
+        }
+
         var payload = await SendAsync<AiGenerationApiResponse>(
             token => PostJsonAsync("generate", request, token),
             "generate",
@@ -136,10 +145,10 @@ public sealed class AiServiceClient(
         }
 
         if (string.IsNullOrWhiteSpace(payload.Response) ||
-            string.IsNullOrWhiteSpace(payload.PromptVersion) ||
-            string.IsNullOrWhiteSpace(payload.ModelName) ||
-            string.IsNullOrWhiteSpace(payload.ModelId) ||
-            payload.ModelParameters is null ||
+            payload.ModelName is not null &&
+                (string.IsNullOrWhiteSpace(payload.PromptVersion) ||
+                 string.IsNullOrWhiteSpace(payload.ModelId) ||
+                 payload.ModelParameters is null) ||
             payload.ReferenceSimilarity.HasValue !=
                 !string.IsNullOrWhiteSpace(payload.ReferenceSimilarityMetric) ||
             payload.ReferenceSimilarity is < 0 or > 1 ||
@@ -235,7 +244,8 @@ public sealed class AiServiceClient(
             AiServiceFailureKind.RemoteFailure,
             endpoint,
             $"The AI service '{endpoint}' failed. {details}",
-            correlationId: error?.CorrelationId);
+            correlationId: error?.CorrelationId,
+            errorCode: error?.Code);
     }
 
     private static AiServiceException CreateHttpError(
@@ -245,20 +255,55 @@ public sealed class AiServiceClient(
         string body)
     {
         AiServiceError? error = null;
+        string? validationDetails = null;
         try
         {
-            error = JsonSerializer.Deserialize<AiServiceErrorEnvelope>(body, ResponseJsonOptions)?.Error;
+            using var document = JsonDocument.Parse(body);
+            var root = document.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (root.TryGetProperty("error", out var errorElement) &&
+                    errorElement.ValueKind == JsonValueKind.Object)
+                {
+                    error = errorElement.Deserialize<AiServiceError>(ResponseJsonOptions);
+                }
+
+                if (statusCode == HttpStatusCode.UnprocessableEntity &&
+                    root.TryGetProperty("detail", out var detail) &&
+                    detail.ValueKind == JsonValueKind.Array)
+                {
+                    var fields = detail.EnumerateArray()
+                        .Where(item => item.ValueKind == JsonValueKind.Object)
+                        .Select(item => item.TryGetProperty("loc", out var location) &&
+                            location.ValueKind == JsonValueKind.Array
+                                ? string.Join(".", location.EnumerateArray()
+                                    .Where(part => part.ValueKind is JsonValueKind.String or JsonValueKind.Number)
+                                    .Select(part => part.ToString()))
+                                : string.Empty)
+                        .Where(location => !string.IsNullOrWhiteSpace(location))
+                        .Distinct(StringComparer.Ordinal)
+                        .ToArray();
+                    if (fields.Length > 0)
+                    {
+                        validationDetails = $"Validation failed for: {string.Join(", ", fields)}.";
+                    }
+                }
+            }
         }
         catch (JsonException)
         {
         }
 
         var correlationId = error?.CorrelationId ?? responseCorrelationId;
-        var message = error?.Message ?? $"HTTP {(int)statusCode} ({statusCode}).";
+        var message = error?.Message ?? validationDetails ?? $"HTTP {(int)statusCode} ({statusCode}).";
         var failureKind = statusCode is HttpStatusCode.RequestTimeout or HttpStatusCode.GatewayTimeout
             ? AiServiceFailureKind.Timeout
-            : (int)statusCode >= 500
+            : statusCode == HttpStatusCode.ServiceUnavailable
                 ? AiServiceFailureKind.Unavailable
+                : statusCode is HttpStatusCode.BadRequest or
+                    HttpStatusCode.NotFound or
+                    HttpStatusCode.UnprocessableEntity
+                    ? AiServiceFailureKind.ConfigurationError
                 : AiServiceFailureKind.HttpError;
 
         return new AiServiceException(
@@ -268,7 +313,8 @@ public sealed class AiServiceClient(
             (string.IsNullOrWhiteSpace(error?.Code) ? string.Empty : $" Code: {error.Code}.") +
             (string.IsNullOrWhiteSpace(correlationId) ? string.Empty : $" Correlation ID: {correlationId}."),
             statusCode,
-            correlationId);
+            correlationId,
+            errorCode: error?.Code);
     }
 
     private static AiServiceException InvalidResponse(
@@ -310,6 +356,7 @@ public enum AiServiceFailureKind
 {
     Unavailable,
     Timeout,
+    ConfigurationError,
     HttpError,
     RemoteFailure,
     InvalidResponse
@@ -323,6 +370,7 @@ public sealed class AiServiceException : Exception
         string message,
         HttpStatusCode? statusCode = null,
         string? correlationId = null,
+        string? errorCode = null,
         Exception? innerException = null)
         : base(message, innerException)
     {
@@ -330,12 +378,14 @@ public sealed class AiServiceException : Exception
         Endpoint = endpoint;
         StatusCode = statusCode;
         CorrelationId = correlationId;
+        ErrorCode = errorCode;
     }
 
     public AiServiceFailureKind FailureKind { get; }
     public string Endpoint { get; }
     public HttpStatusCode? StatusCode { get; }
     public string? CorrelationId { get; }
+    public string? ErrorCode { get; }
 }
 
 public sealed record AiModelOption(
@@ -375,8 +425,12 @@ public sealed record AiGenerationRequest(
     [property: JsonPropertyName("message")] string Message,
     [property: JsonPropertyName("facts")] Dictionary<string, List<string>> Facts,
     [property: JsonPropertyName("category")] string? Category,
+    [property: JsonPropertyName("rule_decision")] string RuleDecision,
+    [property: JsonPropertyName("rule_reason")] string RuleReason,
+    [property: JsonPropertyName("matched_rules")] IReadOnlyList<string> MatchedRules,
     [property: JsonPropertyName("prompt_name")] string? PromptName,
-    [property: JsonPropertyName("model_name")] string ModelName,
+    [property: JsonPropertyName("model_name")]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ModelName,
     [property: JsonPropertyName("model_parameters")] Dictionary<string, JsonElement>? ModelParameters);
 
 public sealed record AiGenerationApiResponse(
@@ -392,10 +446,10 @@ public sealed record AiGenerationApiResponse(
 
 public sealed record AiGenerationResult(
     string Response,
-    string PromptVersion,
-    string ModelName,
-    string ModelId,
-    Dictionary<string, JsonElement> ModelParameters,
+    string? PromptVersion,
+    string? ModelName,
+    string? ModelId,
+    Dictionary<string, JsonElement>? ModelParameters,
     decimal? ReferenceSimilarity,
     string? ReferenceSimilarityMetric);
 

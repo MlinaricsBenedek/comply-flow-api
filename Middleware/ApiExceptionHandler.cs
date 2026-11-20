@@ -45,9 +45,17 @@ public sealed class ApiExceptionHandler(
                 ? "The request is invalid."
                 : null);
 
-        if (exception is AiServiceException { CorrelationId: not null } aiException)
+        if (exception is AiServiceException aiException)
         {
-            problem.Extensions["aiCorrelationId"] = aiException.CorrelationId;
+            if (!string.IsNullOrWhiteSpace(aiException.ErrorCode))
+            {
+                problem.Extensions["aiErrorCode"] = aiException.ErrorCode;
+            }
+
+            if (!string.IsNullOrWhiteSpace(aiException.CorrelationId))
+            {
+                problem.Extensions["aiCorrelationId"] = aiException.CorrelationId;
+            }
         }
 
         httpContext.Response.StatusCode = statusCode;
@@ -68,6 +76,8 @@ public sealed class ApiExceptionHandler(
                 (StatusCodes.Status504GatewayTimeout, "AI service timed out.", "ai_service_timeout"),
             AiServiceException { FailureKind: AiServiceFailureKind.Unavailable } =>
                 (StatusCodes.Status503ServiceUnavailable, "AI service is unavailable.", "ai_service_unavailable"),
+            AiServiceException { FailureKind: AiServiceFailureKind.ConfigurationError } =>
+                (StatusCodes.Status502BadGateway, "AI service configuration failed.", "ai_service_configuration_error"),
             AiServiceException =>
                 (StatusCodes.Status502BadGateway, "AI service request failed.", "ai_service_failure"),
             ArgumentException =>

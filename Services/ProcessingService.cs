@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 using comply_flow_api.Models;
 using comply_flow_api.Models.dtos.ProcessDtos;
@@ -114,10 +115,15 @@ public class ProcessingService : IProcessingService
             var selectedRule = evaluation.SelectedRule?.Rule;
             var decision = selectedRule?.Result.Decision ?? "NoMatch";
             var reason = evaluation.Reason;
-            var feeAssessment = TransferFeeComplaintEvaluator.Evaluate(
-                configuration.Bank,
-                message.Content,
-                selectedRule);
+            var feeAssessment = string.Equals(
+                    selectedRule?.Result.Decision,
+                    "ClaimValid",
+                    StringComparison.Ordinal)
+                ? TransferFeeComplaintEvaluator.Evaluate(
+                    configuration.Bank,
+                    message.Content,
+                    selectedRule)
+                : null;
 
             processing.PreProcessing = new PreProcessing
             {
@@ -140,17 +146,18 @@ public class ProcessingService : IProcessingService
             await _processingRepository.SaveChangesAsync(cancellationToken);
 
             var responseValidationRequirements = ResponseContentValidator.GetRequirements(selectedRule);
+            var ruleDecision = selectedRule?.Result.Decision;
             var inputContext = new Dictionary<string, object?>
             {
                 ["case_state"] = caseState,
-                ["decision"] = decision,
+                ["decision"] = ruleDecision,
                 ["reason"] = reason,
                 ["rule_result"] = selectedRule?.Result,
                 ["bank"] = configuration.Bank,
                 ["complaint_assessment"] = feeAssessment,
                 ["response_plan"] = new
                 {
-                    decision = processing.ResponsePlan.Decision,
+                    decision = ruleDecision,
                     reason = processing.ResponsePlan.Reason,
                     action = processing.ResponsePlan.Action,
                     next_step = processing.ResponsePlan.NextStep,
@@ -188,12 +195,40 @@ public class ProcessingService : IProcessingService
             }
             else if (string.Equals(configuration.GenerationMode, "Llm", StringComparison.OrdinalIgnoreCase))
             {
-                var availableModels = await _aiServiceClient.GetModelsAsync(cancellationToken);
-                var modelName = ResolveModelName(configuration.ModelName, availableModels);
-                var modelParameters = configuration.ModelParametersJson is null
-                    ? null
-                    : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
-                        configuration.ModelParametersJson);
+                if (selectedRule is null ||
+                    string.IsNullOrWhiteSpace(selectedRule.Id) ||
+                    string.IsNullOrWhiteSpace(selectedRule.Result.CustomerDecision) ||
+                    string.IsNullOrWhiteSpace(selectedRule.Result.CustomerReason))
+                {
+                    throw new InvalidDataException(
+                        "The selected rule must provide an ID, customer decision and customer reason for AI generation.");
+                }
+
+                var customerDecision = selectedRule.Result.CustomerDecision;
+                var customerReason = selectedRule.Result.CustomerReason;
+                if (string.Equals(ruleDecision, "BankTransferFeesGuidance", StringComparison.Ordinal))
+                {
+                    var assessment = TransferFeeComplaintEvaluator.Evaluate(
+                        configuration.Bank, message.Content, selectedRule, requireTransactionDate: true)
+                        ?? throw new InvalidDataException(
+                            "No transfer fee evaluator is available for the selected guidance rule.");
+                    (customerDecision, customerReason) = GetTransferFeeFacts(assessment);
+                }
+
+                string? modelName = null;
+                Dictionary<string, JsonElement>? modelParameters = null;
+                if (RequiresLlmModel(ruleDecision))
+                {
+                    if (!string.IsNullOrWhiteSpace(configuration.ModelName))
+                    {
+                        var availableModels = await _aiServiceClient.GetModelsAsync(cancellationToken);
+                        modelName = ResolveModelName(configuration.ModelName, availableModels);
+                    }
+                    modelParameters = configuration.ModelParametersJson is null
+                        ? null
+                        : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+                            configuration.ModelParametersJson);
+                }
 
                 generation = await _aiServiceClient.GenerateAsync(
                     new AiGenerationRequest(
@@ -201,6 +236,9 @@ public class ProcessingService : IProcessingService
                         preprocessing.Message,
                         preprocessing.Facts,
                         category,
+                        customerDecision,
+                        customerReason,
+                        [selectedRule.Id],
                         configuration.PromptVersion,
                         modelName,
                         modelParameters),
@@ -259,7 +297,7 @@ public class ProcessingService : IProcessingService
                 TemplateVersion = configuration.TemplateVersion,
                 PromptVersion = generation?.PromptVersion,
                 ModelName = generation?.ModelName,
-                ModelParametersJson = generation is null
+                ModelParametersJson = generation?.ModelParameters is null
                     ? null
                     : JsonSerializer.Serialize(generation.ModelParameters),
                 InputContextJson = JsonSerializer.Serialize(inputContext),
@@ -278,16 +316,19 @@ public class ProcessingService : IProcessingService
                 var errorType = exception is AiServiceException aiServiceException
                     ? aiServiceException.FailureKind.ToString()
                     : exception.GetType().Name;
+                var persistedErrorMessage = exception is AiServiceException aiException
+                    ? GetProcessingErrorMessage(aiException)
+                    : exception.Message;
                 processing.Fail(
                     errorType,
-                    exception.Message,
+                    persistedErrorMessage,
                     completionWasNotPersisted);
                 try
                 {
                     var failureSaved = await _processingRepository.MarkFailedAsync(
                         processing.Id,
                         errorType,
-                        exception.Message,
+                        persistedErrorMessage,
                         processing.FinishedAt!.Value,
                         CancellationToken.None);
                     if (!failureSaved)
@@ -514,7 +555,8 @@ public class ProcessingService : IProcessingService
             ? Array.Empty<string>()
             : new[] { selectedRule.Source, selectedRule.EffectiveFrom }
                 .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Select(value => value!)
+                .Select(value => value!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
         return new ResponsePlan
@@ -542,6 +584,43 @@ public class ProcessingService : IProcessingService
         };
     }
 
+    private static (string Decision, string Reason) GetTransferFeeFacts(
+        TransferFeeComplaintAssessment assessment)
+    {
+        if (assessment.Status == TransferFeeAssessmentStatus.InsufficientData)
+        {
+            if (assessment.MissingInformation.Count == 0)
+            {
+                throw new InvalidDataException("A transfer fee assessment must identify missing information.");
+            }
+
+            return ("Rule Not Found",
+                "A díj összevetéséhez nem áll rendelkezésre elegendő adat: " +
+                string.Join(", ", assessment.MissingInformation) + ".");
+        }
+
+        if (assessment.ExpectedFeeHuf is not decimal expected ||
+            assessment.ChargedFeeHuf is not decimal charged)
+        {
+            throw new InvalidDataException("A completed transfer fee assessment must contain both fees.");
+        }
+
+        var decision = assessment.Status switch
+        {
+            TransferFeeAssessmentStatus.TariffMismatchReported =>
+                "A közölt terhelés magasabb a szabály szerint számított díjnál.",
+            TransferFeeAssessmentStatus.TariffBelowPublished =>
+                "A közölt terhelés alacsonyabb a szabály szerint számított díjnál.",
+            TransferFeeAssessmentStatus.TariffMatches =>
+                "A közölt terhelés megegyezik a szabály szerint számított díjjal.",
+            _ => throw new InvalidDataException("The transfer fee assessment status is invalid.")
+        };
+        var culture = CultureInfo.GetCultureInfo("hu-HU");
+        return (decision,
+            $"A megadott adatok alapján a szabály szerinti díj {expected.ToString("0.##", culture)} Ft, " +
+            $"a közölt terhelés {charged.ToString("0.##", culture)} Ft.");
+    }
+
     private static string AppendSourceCitations(string response, string sourcesJson)
     {
         var sources = JsonSerializer.Deserialize<List<string>>(sourcesJson)
@@ -552,6 +631,9 @@ public class ProcessingService : IProcessingService
         }
 
         var missingSources = sources
+            .Select(source => source.Trim())
+            .Where(source => source.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .Where(source => !response.Contains(source, StringComparison.OrdinalIgnoreCase))
             .ToArray();
         if (missingSources.Length == 0)
@@ -561,6 +643,34 @@ public class ProcessingService : IProcessingService
 
         return $"{response.Trim()}{Environment.NewLine}{Environment.NewLine}Források:{Environment.NewLine}" +
             string.Join(Environment.NewLine, missingSources.Select(source => $"- {source}"));
+    }
+
+    private static string GetProcessingErrorMessage(AiServiceException exception)
+    {
+        var message = exception.FailureKind switch
+        {
+            AiServiceFailureKind.Timeout =>
+                "A válasz előállítása időtúllépés miatt nem sikerült.",
+            AiServiceFailureKind.Unavailable =>
+                "A válaszszolgáltatás átmenetileg nem érhető el.",
+            AiServiceFailureKind.ConfigurationError =>
+                "A válasz előállításához szükséges szolgáltatás-beállítás érvénytelen.",
+            _ => "A válaszszolgáltatás nem tudta feldolgozni a kérést."
+        };
+        var identifiers = new List<string>();
+        if (!string.IsNullOrWhiteSpace(exception.ErrorCode))
+        {
+            identifiers.Add($"hibakód: {exception.ErrorCode}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(exception.CorrelationId))
+        {
+            identifiers.Add($"azonosító: {exception.CorrelationId}");
+        }
+
+        return identifiers.Count == 0
+            ? message
+            : $"{message} ({string.Join(", ", identifiers)}).";
     }
 
     private static bool IsCardDeliveryRequest(string message)
@@ -585,6 +695,11 @@ public class ProcessingService : IProcessingService
             rule?.Id,
             "HU-OTP-CARD-DELIVERY-001",
             StringComparison.OrdinalIgnoreCase);
+
+    private static bool RequiresLlmModel(string? ruleDecision) =>
+        string.Equals(ruleDecision, "ClaimValid", StringComparison.Ordinal) ||
+        string.Equals(ruleDecision, "ClaimInvalid", StringComparison.Ordinal) ||
+        string.Equals(ruleDecision, "BankTransferFeesGuidance", StringComparison.Ordinal);
 
     private static IReadOnlyList<string> GetRequiredElements(
         IReadOnlyDictionary<string, JsonElement> resultData,
