@@ -18,16 +18,6 @@
           "decision": "SavingsAccountFeesGuidance",
           "customerDecision": "Tájékoztatás szükséges a megtakarítási számla díjairól.",
           "customerReason": "A megkeresés a megtakarítási számla díjaira vonatkozik.",
-          "action": "Sz?mlavezet?si ?s tranzakci?s d?jakra vonatkoz? t?j?koztat?s.",
-          "nextStep": "K?rd be a sz?mlat?pust, p?nznemet, tranzakci?t, csatorn?t, kivonati m?dot ?s kedvezm?nyfelt?teleket; sz?ks?g eset?n ellen?rizd az aktu?lis hirdetm?nyt.",
-          "requiredElements": [
-            "accountType",
-            "accountCurrency",
-            "transactionType",
-            "transactionChannel",
-            "statementDeliveryMethod",
-            "discountEligibility"
-          ],
           "documents": [
             {
               "documentId": "OTP-SAVINGS-RATES-FEES-2026-07-01",
@@ -108,14 +98,6 @@
           "decision": "TransactionTaxGuidance",
           "customerDecision": "Tájékoztatás szükséges a pénzügyi tranzakciós illetékről.",
           "customerReason": "A megkeresés a tranzakciós illetékre vonatkozik.",
-          "action": "A jogszab?ly szerinti tranzakci?s illet?kr?l sz?l? t?j?koztat?s.",
-          "nextStep": "Tiszt?zd a tranzakci? t?pus?t, ?sszeg?t ?s az alkalmazand? kiv?teleket; ne ?ll?ts ?ltal?nos m?rt?ket ezek ellen?rz?se n?lk?l.",
-          "requiredElements": [
-            "transactionType",
-            "transactionAmount",
-            "transactionCurrency",
-            "accountHolderType"
-          ],
           "documents": [
             {
               "documentId": "HU-TRANSACTION-TAX-2012-CXVI",
@@ -168,14 +150,6 @@
           "decision": "SavingsAccountInterestGuidance",
           "customerDecision": "Tájékoztatás szükséges a megtakarítási számla kamatairól.",
           "customerReason": "A megkeresés a megtakarítási számla kamataira vonatkozik.",
-          "action": "Megtakar?t?si sz?mla kamatfelt?teleir?l sz?l? t?j?koztat?s.",
-          "nextStep": "K?rd be a sz?mlat?pust, p?nznemet ?s a relev?ns id?szakot; a kamatot az alkalmazand?, aktu?lis hirdetm?ny szerint ismertesd.",
-          "requiredElements": [
-            "accountType",
-            "accountCurrency",
-            "balanceAmount",
-            "balanceCurrency"
-          ],
           "documents": [
             {
               "documentId": "OTP-SAVINGS-RATES-FEES-2026-07-01",
@@ -303,15 +277,6 @@
           "decision": "SavingsAccountTermsGuidance",
           "customerDecision": "Tájékoztatás szükséges a megtakarítási számla feltételeiről.",
           "customerReason": "A megkeresés a megtakarítási számla feltételeire vonatkozik.",
-          "action": "A megtakar?t?si sz?mla felt?teleir?l sz?l? t?j?koztat?s.",
-          "nextStep": "Azonos?tsd a sz?mlat?pust ?s a k?rd?ses m?veletet; a v?laszt a vonatkoz? ?zletszab?lyzat alapj?n add meg.",
-          "requiredElements": [
-            "accountType",
-            "accountHolderAge",
-            "accountHolderResidency",
-            "accountChannel",
-            "accountAction"
-          ],
           "documents": [
             {
               "documentId": "OTP-RETAIL-DEPOSIT-TERMS-2026-08-27",
@@ -365,17 +330,6 @@
           "decision": "BankTransferFeesGuidance",
           "customerDecision": "Az átutalási díj összevetése szükséges a hirdetményi díjtétellel.",
           "customerReason": "A megkeresés az átutalási díjra vonatkozik; a tételes terhelést és az alkalmazandó feltételeket ellenőrizni kell.",
-          "action": "Az átutalási díj összevetése a megadott hirdetményi díjtétellel.",
-          "nextStep": "Ellenőrizd a tételes terhelést és az alkalmazandó hirdetményi feltételeket; eltérés esetén vizsgáld ki a panaszt.",
-          "requiredElements": [
-            "accountType",
-            "accountCurrency",
-            "transactionType",
-            "transactionAmount",
-            "transactionCurrency",
-            "transactionChannel",
-            "isOwnAccountTransfer"
-          ],
           "transferFeeAssessment": {
             "ratePercent": 0.45,
             "minimumFeeHuf": 713,
@@ -425,14 +379,7 @@
         "result": {
           "decision": "OtpCardDeliveryGuidance",
           "customerDecision": "Tájékoztatás szükséges a bankkártya kézbesítéséről.",
-          "customerReason": "A megkeresés a bankkártya kézbesítésére vonatkozik.",
-          "action": "Tájékoztatás az OTP bankkártya kézbesítéséről.",
-          "nextStep": "Ha a kártyát bankfiókban rendelte meg, a projektfeladat feltételezése szerint a megrendeléstől számított két héten belül érkezik meg. Ez nem ellenőrzött OTP-tájékoztatás; a tényleges határidőért kérjük, forduljon az OTP hivatalos ügyintézési csatornájához. Kérjük, adja meg a megrendelés módját és dátumát.",
-          "requiredElements": [
-            "cardRequestType",
-            "cardRequestDate",
-            "deliveryMethod"
-          ]
+          "customerReason": "A megkeresés a bankkártya kézbesítésére vonatkozik."
         }
       },
       {
@@ -452,19 +399,6 @@
           "decision": "HungarianBankingGuidance",
           "customerDecision": "Általános banki tájékoztatás szükséges.",
           "customerReason": "A megkeresés banki ügyre vonatkozik.",
-          "action": "Általános banki tájékoztatás.",
-          "nextStep": "Kérjük, pontosítsa a banki kérdés vagy ügyintézés típusát, hogy a megfelelő tájékoztatást adhassuk.",
-          "requiredElements": [
-            "category",
-            "transactionType",
-            "transactionAmount",
-            "transactionCurrency",
-            "accountType",
-            "accountCurrency",
-            "accountChannel",
-            "accountHolderAge",
-            "accountHolderResidency"
-          ],
           "documents": [
             {
               "documentId": "HU-TRANSACTION-TAX-2012-CXVI",
@@ -668,15 +602,6 @@
           "decision": "DeliveryIssueClarification",
           "customerDecision": "A kézbesítési ügy pontosítása szükséges.",
           "customerReason": "A megkeresés kézbesítési ügyre vonatkozik.",
-          "action": "A k?zbes?t?si panasz kivizsg?l?s?hoz sz?ks?ges adatok bek?r?se.",
-          "nextStep": "K?rd be a rendel?si ?s k?zbes?t?si adatokat; st?tuszt, hat?rid?t vagy jogosults?got csak ellen?rz?tt t?nyek alapj?n ?llap?ts meg.",
-          "requiredElements": [
-            "deliveryProvider",
-            "trackingNumber",
-            "orderDate",
-            "expectedDeliveryDate",
-            "issueDescription"
-          ],
           "responseInstructions": "Magyarul válaszolj. Kérd be a hiányzó rendelési és kézbesítési adatokat. Ne találj ki kézbesítési határidőt, státuszt vagy kártérítési jogosultságot; ezeket csak a megadott adatok és az alkalmazandó feltételek alapján értékeld."
         },
         "source": "Python preprocessing category contract: DELIVERY"
@@ -698,12 +623,6 @@
           "decision": "OtherIssueClarification",
           "customerDecision": "Az ügy pontosítása szükséges.",
           "customerReason": "A megkeresés az egyéb ügyek közé került besorolásra.",
-          "action": "A nem besorolt ?gy pontos?t?sa.",
-          "nextStep": "K?rdezd meg, mely szolg?ltat?sr?l vagy term?kr?l van sz?, ?s k?rd be a meg?t?l?shez sz?ks?ges t?nyeket.",
-          "requiredElements": [
-            "issueDescription",
-            "relevantServiceOrProduct"
-          ],
           "responseInstructions": "Magyarul válaszolj. Kérdezd meg, pontosan milyen szolgáltatással vagy termékkel kapcsolatos az ügy, és kérd be a megítéléséhez szükséges tényeket. Ne következtess jogokra, határidőkre vagy díjakra."
         },
         "source": "Python preprocessing category contract: OTHER"
@@ -725,17 +644,6 @@
           "decision": "RefundAndWarrantyGuidance",
           "customerDecision": "Feltételes tájékoztatás szükséges a visszalépési, kellékszavatossági és jótállási lehetőségekről.",
           "customerReason": "A megkeresés visszatérítéssel vagy jótállással kapcsolatos ügyre vonatkozik.",
-          "action": "A visszal?p?si, kell?kszavatoss?gi ?s j?t?ll?si lehet?s?gekr?l sz?l? felt?teles t?j?koztat?s.",
-          "nextStep": "Tiszt?zd a v?s?rl?s m?dj?t ?s d?tum?t, a term?ket, a hib?t, a k?rt megold?st ?s a jav?t?si el?zm?nyeket; ne ?g?rj automatikus visszat?r?t?st.",
-          "requiredElements": [
-            "purchaseChannel",
-            "purchaseDate",
-            "productName",
-            "productPrice",
-            "defectDescription",
-            "requestedRemedy",
-            "repairHistory"
-          ],
           "onlineWithdrawal": {
             "scope": "Applies to qualifying distance/off-premises consumer contracts; statutory exceptions must be checked.",
             "withdrawalPeriodDays": 14,
@@ -781,14 +689,6 @@
           "decision": "ConsumerIssueClarification",
           "customerDecision": "A fogyasztói ügy pontosítása szükséges.",
           "customerReason": "A megfelelő tájékoztatáshoz az ügy körülményeinek pontosítása szükséges.",
-          "action": "A fogyaszt?i ?gy t?pus?nak ?s k?r?lm?nyeinek pontos?t?sa.",
-          "nextStep": "K?rdezd meg a panasz t?rgy?t, a v?s?rl?s m?dj?t ?s d?tum?t, valamint a meg?t?l?shez sz?ks?ges tov?bbi t?nyeket.",
-          "requiredElements": [
-            "category",
-            "issueDescription",
-            "purchaseChannel",
-            "purchaseDate"
-          ],
           "responseInstructions": "Answer in Hungarian and ask for the issue type and facts needed to assess it. Do not invent banking or postal data, deadlines, legal eligibility, or refund amounts. Do not charge a fee."
         },
         "source": "NJT 45/2014: https://njt.hu/jogszabaly/2014-45-20-22 (20, 23-25); 373/2021: https://njt.hu/jogszabaly/2021-373-20-22 (11-13); 151/2003: https://njt.hu/jogszabaly/2003-151-20-22 (2, 5)"

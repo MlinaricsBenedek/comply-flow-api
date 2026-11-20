@@ -9,8 +9,6 @@ public static class TemplateResponseRenderer
         ResponseTemplateSet templateSet,
         string decision,
         string reason,
-        string action,
-        string nextStep,
         string assessment,
         string requiredElementsJson,
         string responseStructureJson,
@@ -50,8 +48,6 @@ public static class TemplateResponseRenderer
         {
             ["{{decision}}"] = decision,
             ["{{reason}}"] = reason,
-            ["{{action}}"] = action,
-            ["{{nextStep}}"] = nextStep,
             ["{{assessment}}"] = assessment,
             ["{{requiredElements}}"] = FormatStringArray(requiredElementsJson),
             ["{{responseStructure}}"] = FormatJsonObject(responseStructureJson),

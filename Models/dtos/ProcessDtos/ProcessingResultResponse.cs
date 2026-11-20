@@ -37,8 +37,6 @@ public sealed record RuleDecisionResultResponse(
 public sealed record ResponsePlanResultResponse(
     string Decision,
     string Reason,
-    string Action,
-    string NextStep,
     string RequiredElementsJson,
     string ResponseStructureJson,
     string SourcesJson);

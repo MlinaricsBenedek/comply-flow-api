@@ -141,8 +141,7 @@ public class ProcessingService : IProcessingService
             processing.ResponsePlan = CreateResponsePlan(
                 selectedRule,
                 decision,
-                reason,
-                feeAssessment);
+                reason);
             await _processingRepository.SaveChangesAsync(cancellationToken);
 
             var responseValidationRequirements = ResponseContentValidator.GetRequirements(selectedRule);
@@ -159,8 +158,6 @@ public class ProcessingService : IProcessingService
                 {
                     decision = ruleDecision,
                     reason = processing.ResponsePlan.Reason,
-                    action = processing.ResponsePlan.Action,
-                    next_step = processing.ResponsePlan.NextStep,
                     required_elements = JsonSerializer.Deserialize<JsonElement>(
                         processing.ResponsePlan.RequiredElementsJson),
                     response_structure = JsonSerializer.Deserialize<JsonElement>(
@@ -186,8 +183,6 @@ public class ProcessingService : IProcessingService
                         cancellationToken),
                     decision,
                     reason,
-                    processing.ResponsePlan.Action,
-                    processing.ResponsePlan.NextStep,
                     feeAssessment?.CustomerMessage ?? string.Empty,
                     processing.ResponsePlan.RequiredElementsJson,
                     processing.ResponsePlan.ResponseStructureJson,
@@ -206,10 +201,12 @@ public class ProcessingService : IProcessingService
 
                 var customerDecision = selectedRule.Result.CustomerDecision;
                 var customerReason = selectedRule.Result.CustomerReason;
-                if (string.Equals(ruleDecision, "BankTransferFeesGuidance", StringComparison.Ordinal))
+                if (string.Equals(ruleDecision, "BankTransferFeesGuidance", StringComparison.Ordinal) ||
+                    string.Equals(ruleDecision, "RaiffeisenSavingsTransferFeeClarification", StringComparison.Ordinal))
                 {
+                    var requireDate = string.Equals(configuration.Bank, "otp", StringComparison.OrdinalIgnoreCase);
                     var assessment = TransferFeeComplaintEvaluator.Evaluate(
-                        configuration.Bank, message.Content, selectedRule, requireTransactionDate: true)
+                        configuration.Bank, message.Content, selectedRule, requireTransactionDate: requireDate)
                         ?? throw new InvalidDataException(
                             "No transfer fee evaluator is available for the selected guidance rule.");
                     (customerDecision, customerReason) = GetTransferFeeFacts(assessment);
@@ -244,10 +241,8 @@ public class ProcessingService : IProcessingService
                         modelParameters),
                     cancellationToken);
                 var llmResponse = feeAssessment is not null
-                    ? $"Tisztelt Ügyfelünk!{Environment.NewLine}{Environment.NewLine}{feeAssessment.CustomerMessage}{Environment.NewLine}{Environment.NewLine}Következő lépés: {processing.ResponsePlan.NextStep}"
-                    : IsCardDeliveryRule(selectedRule)
-                        ? $"Tisztelt Ügyfelünk!{Environment.NewLine}{Environment.NewLine}{processing.ResponsePlan.NextStep}"
-                        : generation.Response;
+                    ? $"Tisztelt Ügyfelünk!{Environment.NewLine}{Environment.NewLine}{feeAssessment.CustomerMessage}"
+                    : generation.Response;
                 responseText = AppendSourceCitations(
                     llmResponse,
                     processing.ResponsePlan.SourcesJson);
@@ -402,8 +397,6 @@ public class ProcessingService : IProcessingService
                     : new ResponsePlanResultResponse(
                         processing.ResponsePlan.Decision,
                         processing.ResponsePlan.Reason,
-                        processing.ResponsePlan.Action,
-                        processing.ResponsePlan.NextStep,
                         processing.ResponsePlan.RequiredElementsJson,
                         processing.ResponsePlan.ResponseStructureJson,
                         processing.ResponsePlan.SourcesJson),
@@ -463,12 +456,10 @@ public class ProcessingService : IProcessingService
                 string.IsNullOrWhiteSpace(rule.Name) ||
                 rule.Conditions is null ||
                 rule.Result is null ||
-                string.IsNullOrWhiteSpace(rule.Result.Decision) ||
-                string.IsNullOrWhiteSpace(rule.Result.Action) ||
-                string.IsNullOrWhiteSpace(rule.Result.NextStep))
+                string.IsNullOrWhiteSpace(rule.Result.Decision))
             {
                 throw new InvalidDataException(
-                    "The business rule set contains a rule with missing decision, action, or nextStep.");
+                    "The business rule set contains a rule with missing decision.");
             }
 
             ValidateConditions(rule, rule.Conditions.All);
@@ -538,8 +529,7 @@ public class ProcessingService : IProcessingService
     private static ResponsePlan CreateResponsePlan(
         Rule? selectedRule,
         string decision,
-        string reason,
-        TransferFeeComplaintAssessment? feeAssessment)
+        string reason)
     {
         var resultData = selectedRule?.Result.AdditionalData
             ?? new Dictionary<string, JsonElement>();
@@ -563,21 +553,6 @@ public class ProcessingService : IProcessingService
         {
             Decision = decision,
             Reason = reason,
-            Action = feeAssessment is null
-                ? selectedRule?.Result.Action ?? "Nincs alkalmazható szabály szerinti intézkedés."
-                : "Az átutalási díj összevetése a megadott hirdetményi díjtétellel.",
-            NextStep = feeAssessment?.Status switch
-            {
-                TransferFeeAssessmentStatus.InsufficientData =>
-                    $"Kérjük, pontosítsa: {string.Join(", ", feeAssessment.MissingInformation)}.",
-                TransferFeeAssessmentStatus.TariffMismatchReported =>
-                    "A díjeltérés kivizsgálásához az ügyintézőt a +36302526016 telefonszámon vagy az example@gmail.com e-mail-címen érheti el. Ezek személyes kapcsolattartói elérhetőségek, nem az OTP hivatalos ügyfélszolgálati elérhetőségei.",
-                TransferFeeAssessmentStatus.TariffBelowPublished =>
-                    "Ha más terhelési tételre vonatkozik a panasz, kérjük, küldje el a tételes számlakivonatot.",
-                TransferFeeAssessmentStatus.TariffMatches =>
-                    "Ha a terhelés más díjtételt is tartalmaz, annak tételes ellenőrzése szükséges.",
-                _ => selectedRule?.Result.NextStep ?? "Kérj pontosítást vagy további adatot az ügy megítéléséhez."
-            },
             RequiredElementsJson = JsonSerializer.Serialize(requiredElements),
             ResponseStructureJson = JsonSerializer.Serialize(responseStructure),
             SourcesJson = JsonSerializer.Serialize(sources)
@@ -699,7 +674,8 @@ public class ProcessingService : IProcessingService
     private static bool RequiresLlmModel(string? ruleDecision) =>
         string.Equals(ruleDecision, "ClaimValid", StringComparison.Ordinal) ||
         string.Equals(ruleDecision, "ClaimInvalid", StringComparison.Ordinal) ||
-        string.Equals(ruleDecision, "BankTransferFeesGuidance", StringComparison.Ordinal);
+        string.Equals(ruleDecision, "BankTransferFeesGuidance", StringComparison.Ordinal) ||
+        string.Equals(ruleDecision, "RaiffeisenSavingsTransferFeeClarification", StringComparison.Ordinal);
 
     private static IReadOnlyList<string> GetRequiredElements(
         IReadOnlyDictionary<string, JsonElement> resultData,
