@@ -1,6 +1,5 @@
 [
   {
-    "ruleSetVersion": "2.0",
     "rules": [
       {
         "id": "RB-REFLEX-AUTOMATIC-SAVINGS-001",
@@ -19,16 +18,6 @@
           "decision": "RaiffeisenReflexAutomaticSavingsGuidance",
           "customerDecision": "Tájékoztatás szükséges az automatikus megtakarítás feltételeiről.",
           "customerReason": "A megkeresés az automatikus megtakarításra vonatkozik.",
-          "action": "A Raiffeisen Reflex automatikus megtakar?t?s felt?teleir?l sz?l? t?j?koztat?s.",
-          "nextStep": "Ellen?rizd a kapcsolt sz?ml?t, k?rty?t, be?ll?tott ?sszeget ?s fedezetet; a m?k?d?st a hat?lyos kond?ci?s lista szerint ismertesd.",
-          "requiredElements": [
-            "program",
-            "linkedRaiffeisenForintAccount",
-            "linkedCardType",
-            "cardTransactionType",
-            "chosenSavingsAmount",
-            "availableFunds"
-          ],
           "documents": [
             {
               "documentId": "RAIFFEISEN-REFLEX-CONDITIONS-2026-07-01",
@@ -86,14 +75,6 @@
           "decision": "RaiffeisenSavingsInterestGuidance",
           "customerDecision": "Tájékoztatás szükséges a megtakarítási számla kamatairól.",
           "customerReason": "A megkeresés a megtakarítási számla kamataira vonatkozik.",
-          "action": "A Raiffeisen Megtakar?t?si Sz?mla kamatair?l sz?l? t?j?koztat?s.",
-          "nextStep": "Ellen?rizd a sz?mla p?nznem?t, egyenleg?t ?s a relev?ns id?szakot; hozamot csak a sz?ks?ges felt?telek ismeret?ben sz?molj.",
-          "requiredElements": [
-            "accountProduct",
-            "balanceHuf",
-            "interestPeriod",
-            "effectiveDate"
-          ],
           "documents": [
             {
               "documentId": "RAIFFEISEN-REFLEX-CONDITIONS-2026-07-01",
@@ -151,14 +132,6 @@
           "decision": "RaiffeisenSavingsAccountTermsGuidance",
           "customerDecision": "Tájékoztatás szükséges a megtakarítási számla feltételeiről.",
           "customerReason": "A megkeresés a megtakarítási számla feltételeire vonatkozik.",
-          "action": "A Raiffeisen Megtakar?t?si Sz?mla felt?teleir?l sz?l? t?j?koztat?s.",
-          "nextStep": "Azonos?tsd a k?rd?ses sz?ml?t ?s m?veletet; v?laszolj a vonatkoz? ?zletszab?lyzat alapj?n.",
-          "requiredElements": [
-            "accountProduct",
-            "requestedOperation",
-            "transactionChannel",
-            "transactionDirection"
-          ],
           "documents": [
             {
               "documentId": "RAIFFEISEN-REFLEX-CONDITIONS-2026-07-01",
@@ -238,17 +211,6 @@
           "decision": "RaiffeisenSavingsAccountFeesGuidance",
           "customerDecision": "Tájékoztatás szükséges a megtakarítási számla díjairól.",
           "customerReason": "A megkeresés a megtakarítási számla díjaira vonatkozik.",
-          "action": "A Raiffeisen Megtakar?t?si Sz?mla d?jair?l sz?l? t?j?koztat?s.",
-          "nextStep": "K?rd be a tranzakci? t?pus?t, csatorn?j?t ?s a sz?ml?ra vonatkoz? adatokat; az ?sszegeket a hat?lyos kond?ci?s lista alapj?n add meg.",
-          "requiredElements": [
-            "accountProduct",
-            "transactionType",
-            "transactionAmount",
-            "transactionChannel",
-            "beneficiaryBank",
-            "ownAccountStatus",
-            "effectiveDate"
-          ],
           "documents": [
             {
               "documentId": "RAIFFEISEN-REFLEX-CONDITIONS-2026-07-01",
@@ -382,7 +344,7 @@
       {
         "id": "RB-BANK-TRANSFER-FEES-001",
         "name": "Raiffeisen savings account transfer fee clarification",
-        "prioScore": 250,
+        "prioScore": 300,
         "conditions": {
           "all": [
             {
@@ -396,16 +358,13 @@
           "decision": "RaiffeisenSavingsTransferFeeClarification",
           "customerDecision": "Az átutalási díj megállapításához további adatok szükségesek.",
           "customerReason": "A megkeresés az átutalási díjra vonatkozik, amelynek megállapításához az átutalás adatait tisztázni kell.",
-          "action": "Az ?tutal?si d?j meg?llap?t?s?hoz sz?ks?ges adatok bek?r?se.",
-          "nextStep": "Tiszt?zd az ?tutal?s t?pus?t, ir?ny?t, ?sszeg?t ?s csatorn?j?t, majd ellen?rizd a megfelel? hat?lyos kond?ci?s list?t.",
-          "requiredElements": [
-            "sourceAccountProduct",
-            "transactionAmount",
-            "transactionCurrency",
-            "transactionChannel",
-            "beneficiaryBank",
-            "ownAccountStatus"
-          ],
+          "transferFeeAssessment": {
+            "ratePercent": 0.5,
+            "minimumFeeHuf": 798,
+            "maximumFeeHuf": 20250,
+            "scope": "Raiffeisen Megtakarítási Számla; occasional domestic transfer to a non-own account via Raiffeisen MobilBank",
+            "effectiveFrom": "2026-07-01"
+          },
           "documents": [
             {
               "documentId": "RAIFFEISEN-REFLEX-CONDITIONS-2026-07-01",
@@ -426,22 +385,12 @@
       {
         "id": "RB-REFLEX-CLARIFICATION-001",
         "name": "Clarify unsupported Raiffeisen savings questions",
-        "prioScore": -100,
+        "prioScore": 300,
         "conditions": {},
         "result": {
           "decision": "RaiffeisenSavingsClarification",
           "customerDecision": "A megtakarítási kérdés pontosítása szükséges.",
           "customerReason": "A megfelelő tájékoztatáshoz a számlacsomag és az érintett művelet adatai szükségesek.",
-          "action": "A Raiffeisen megtakar?t?si k?rd?s pontos?t?sa.",
-          "nextStep": "K?rd be a sz?mlacsomagot, az ?rintett m?veletet ?s az aktu?lis kond?ci?s list?hoz sz?ks?ges adatokat.",
-          "requiredElements": [
-            "category",
-            "accountProduct",
-            "question",
-            "transactionType",
-            "transactionChannel",
-            "transactionAmount"
-          ],
           "responseInstructions": "Magyarul válaszolj. A rendelkezésre álló források a Raiffeisen Reflex Megtakarítási Programot és a Raiffeisen Megtakarítási Számlát ismertetik. Kérd el a terméket és a kérdéshez szükséges tényeket. Ne adj meg nem szereplő banki díjat, kamatot, szolgáltatási feltételt vagy aktuális jogszabályi állapotot. Ha a kérdéshez másik kondíciós lista szükséges, jelezd, hogy az nem része a rendelkezésre álló dokumentumoknak."
         },
         "source": "Raiffeisen Lakossági Kondíciós Lista – Raiffeisen Reflex Megtakarítási Program (hatályos 2026-07-01-től); Raiffeisen Lakossági Üzletszabályzat (hatályos 2026-03-28-tól)"

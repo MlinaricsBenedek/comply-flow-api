@@ -14,9 +14,5 @@ public sealed class RequestTemplateConfiguration
 
     [Required]
     [StringLength(50)]
-    public required string RuleSetVersion { get; init; }
-
-    [Required]
-    [StringLength(50)]
     public required string TemplateVersion { get; init; }
 }

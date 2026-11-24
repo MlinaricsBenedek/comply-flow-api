@@ -59,10 +59,11 @@ namespace comply_flow_api.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
-                    b.Property<string>("RuleSetVersion")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                    b.Property<double?>("RetrievalMinSimilarity")
+                        .HasColumnType("float");
+
+                    b.Property<int?>("RetrievalTopK")
+                        .HasColumnType("int");
 
                     b.Property<string>("TemplateVersion")
                         .HasMaxLength(50)
@@ -280,6 +281,9 @@ namespace comply_flow_api.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
+                    b.Property<string>("RagSourcesJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ResponseText")
                         .IsRequired()
                         .HasColumnType("varchar(max)");
@@ -304,18 +308,10 @@ namespace comply_flow_api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasColumnType("varchar(max)");
-
                     b.Property<string>("Decision")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
-
-                    b.Property<string>("NextStep")
-                        .IsRequired()
-                        .HasColumnType("varchar(max)");
 
                     b.Property<int>("ProcessingId")
                         .HasColumnType("int");
@@ -372,11 +368,6 @@ namespace comply_flow_api.Migrations
                     b.Property<string>("Reason")
                         .IsRequired()
                         .HasColumnType("varchar(max)");
-
-                    b.Property<string>("RuleSetVersion")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
 
                     b.HasKey("Id");
 

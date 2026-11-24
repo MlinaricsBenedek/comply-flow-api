@@ -30,8 +30,8 @@ Az üzenet a beszélgetéshez, szerephez (`Role`), tartalomhoz és UTC létrehoz
 
 Két létrehozási mód van:
 
-- `Template`: `Name`, `Bank`, `RuleSetVersion`, `TemplateVersion`.
-- `Llm`: `Name`, `Bank`, `RuleSetVersion`, `PromptVersion`, `ModelName`, `ModelParameters`.
+- `Template`: `Name`, `Bank`, `TemplateVersion`.
+- `Llm`: `Name`, `Bank`, `PromptVersion`, `ModelName`, `ModelParameters`.
 
 A szöveges értékek tárolás előtt trimmelődnek. Az LLM paraméter-szótár JSON-szövegként kerül az adatbázisba. A konfiguráció generációs módja és időbélyege szerveroldali érték (`Template`/`Llm`, UTC). A konfiguráció csak feldolgozási futáskor kapcsolódik a `Processing` rekordhoz; létrehozáskor a hivatkozott szabálykészlet vagy AI-modell meglétét nem ellenőrzi a rendszer.
 
@@ -60,11 +60,11 @@ Más státuszátmenet tiltott. A kezdési és befejezési UTC időpontot az átm
 ### 4.2 Processing lépései
 
 1. A Processing `Processing` státuszba lép, elmentődik a `StartedAt`.
-2. A konfiguráció `Bank` értéke alapján a `TextFileService` beolvassa az `OTP.JSON` vagy `Raiffeisen.JSON` fájlt a konfigurált üzleti szabálykönyvtárból. A JSON-nak verziózott szabálykészlet-listának kell lennie.
-3. A `ProcessingService` a kiválasztott fájlon belül a konfiguráció `RuleSetVersion` értékével pontos, kis-/nagybetű-érzékeny egyezést keres. Pontosan egy szabálykészlet szükséges; hiányzó vagy többszörös egyezés hibát okoz. A kiválasztott készlet alapvető szerkezeti, feltétel- és eredményvalidáción esik át.
+2. A konfiguráció `Bank` értéke alapján a `TextFileService` beolvassa az `OTP.JSON` vagy `Raiffeisen.JSON` fájlt a konfigurált üzleti szabálykönyvtárból. A JSON-nak pontosan egy szabálykészletet tartalmazó listának kell lennie.
+3. A `ProcessingService` ellenőrzi, hogy pontosan egy szabálykészlet létezik, majd a készlet alapvető szerkezeti, feltétel- és eredményvalidáción esik át.
 4. A szolgáltatás elküldi az eredeti üzenetet és a konfigurációban kiválasztott bankot (`otp` vagy `raiffeisen`) az AI-szolgáltatás `/preprocessing` végpontjára. A válasz tisztított üzenetet, kategóriát, tényeket és opcionális részleges sikerre vonatkozó figyelmeztetéseket tartalmaz. A részleges siker figyelmeztetései alkalmazáslogba kerülnek.
 5. A kategória és tények `StructuredCaseState` állapotot alkotnak. A kategória `category` mezőként kerül bele; az egyértékű tény lista skalárként, a többelemes lista tömbként kerül be. A RuleEngine kiértékeli a kiválasztott szabálykészlet szabályait.
-6. A legmagasabb prioritású egyező szabály adja a döntést és a determinisztikus indoklást. Az indoklás rögzíti a kiválasztott szabály azonosítóját és nevét, a teljesült kötelező és alternatív feltételeket, valamint a prioritás alapján történt kiválasztást; feltétel nélküli szabálynál ezt külön jelzi. Ha nincs egyező szabály, az indoklás rögzíti, hogy a vizsgált szabályok feltételei nem teljesültek, és megadja a vizsgált szabályok számát. Minden vizsgált szabály és feltétel kiértékelési nyomvonala, a döntés, indoklás, alkalmazott bank és szabálykészlet-verzió, valamint a választerv adatbázisba mentődik. A nyomvonal feltételenként rögzíti az elvárt értéket, a mező jelenlétét és az egyezés állapotát; a tényleges ügyadat-értékeket nem duplikálja.
+6. A legmagasabb prioritású egyező szabály adja a döntést és a determinisztikus indoklást. Az indoklás rögzíti a kiválasztott szabály azonosítóját és nevét, a teljesült kötelező és alternatív feltételeket, valamint a prioritás alapján történt kiválasztást; feltétel nélküli szabálynál ezt külön jelzi. Ha nincs egyező szabály, az indoklás rögzíti, hogy a vizsgált szabályok feltételei nem teljesültek, és megadja a vizsgált szabályok számát. Minden vizsgált szabály és feltétel kiértékelési nyomvonala, a döntés, indoklás, alkalmazott bank, valamint a választerv adatbázisba mentődik. A nyomvonal feltételenként rögzíti az elvárt értéket, a mező jelenlétét és az egyezés állapotát; a tényleges ügyadat-értékeket nem duplikálja.
 7. A `Template` generációs mód a `ResponseTemplates.JSON` fájlban keres pontos, kis-/nagybetű-érzékeny `templateVersion` egyezést, majd a döntéshez illő sablont vagy `default` sablont választ. A konfiguráció létrehozásakor a megadott verziónak léteznie kell a sablonkatalógusban. Az ügyfélnek szánt sablonok nem jelenítik meg a belső `decision`, `reason` és `action` mezőket; az OTP átutalásidíj-panasznál az `assessment` a közös, determinisztikus értékelés ügyfélnek szánt szövegét tartalmazza. A template renderelése nem jeleníti meg a szabály belső `responseInstructions` mezőjét és nyers `documents` struktúráját. A .NET a sablonban jelen lévő helyőrzőket helyettesíti, template módban nem hívja a `/models` vagy `/generate` végpontot. Hiányzó vagy többszörös verzió, illetve hibás sablon feldolgozási hibát okoz.
 8. Az `Llm` generációs mód csak a `ClaimValid`, `ClaimInvalid` és `BankTransferFeesGuidance` döntések esetén kéri le a `/models` végpontot, majd a konfiguráció modellnevét vagy az alapértelmezett/első elérhető modellt választja. Más vagy hiányzó döntésnél nem történik modelllista-lekérés, a `/generate` kérés modellmezői null értékűek lehetnek, hogy az AI-szolgáltatás semleges választ adhasson. Hiányzó modell a támogatott döntéseknél feldolgozási hibát okoz.
 9. Az LLM `/generate` kérés `rule_decision` mezője a kiválasztott szabály `result.decision` értékét változtatás nélkül adja át; szabálykiválasztás hiányában null. A .NET nem alakít tájékoztatási, ismeretlen vagy hiányzó döntést `ClaimValid`/`ClaimInvalid` értékké. Az `input_data` objektum tartalmazza a `case_state`, ugyanazt a döntést, `reason`, `rule_result`, `bank` és a teljes strukturált `response_plan` adatot. Az OTP átutalásidíj-kiértékelő csak `ClaimValid` szabálykimenet mellett fut, így a `BankTransferFeesGuidance` nem minősül automatikusan pozitív vagy negatív döntésnek. A kiválasztott szabály forrása LLM-módban is `Források:` megjelöléssel szerepel. Emellett átadja a tisztított üzenetet, tényeket, kategóriát, a konfigurált promptverziót, a feloldott modellnevet és a konfigurált modellparamétereket.
@@ -74,8 +74,8 @@ Más státuszátmenet tiltott. A kezdési és befejezési UTC időpontot az átm
 
 ### 4.3 RuleEngine és bankonkénti JSON-fájlok
 
-- A konfiguráció `bank` értéke választja ki a `OTP.JSON` vagy `Raiffeisen.JSON` fájlt; a `ruleSetVersion` ezután a kiválasztott fájlon belül azonosítja a használt szabálykészletet.
-- A `bank` csak `otp` vagy `raiffeisen` lehet. A kiválasztott bank és a ténylegesen alkalmazott `ruleSetVersion` a feldolgozás szabálydöntés-rekordjában tárolódik és a feldolgozási eredményben jelenik meg.
+- A konfiguráció `bank` értéke választja ki a `OTP.JSON` vagy `Raiffeisen.JSON` fájlt, amely pontosan egy szabálykészletet tartalmaz.
+- A `bank` csak `otp` vagy `raiffeisen` lehet. A kiválasztott bank a feldolgozás szabálydöntés-rekordjában tárolódik és a feldolgozási eredményben jelenik meg.
 - A szabály feltételei `all` és/vagy `any` listák. Mindkét lista esetén az `all` minden feltétele ÉS kapcsolatban áll az `any` legalább egy feltételével; csak `all` esetén minden feltételnek teljesülnie kell; csak `any` esetén legalább egynek. Üres `all` igaz, üres `any` hamis; mindkét lista hiánya feltétel nélküli szabályt jelent.
 - A támogatott operátorok: `equals`, `notequals`, `in`, `notin`, `greaterthan`, `greaterthanorequal`, `lessthan`, `lessthanorequal`. Az operátor neve trimmelődik és kis-/nagybetűtől független.
 - A `StructuredCaseState` kulcsai kis-/nagybetűtől függetlenül kereshetők; a mezőnév közvetlen kulcs, a pontozott/nested útvonal-felbontás nincs támogatva. Hiányzó mező nem egyező.
@@ -87,7 +87,7 @@ Más státuszátmenet tiltott. A kezdési és befejezési UTC időpontot az átm
 - Az OTP `HU-BANK-TRANSFER-FEES-001` szabály kiválasztása után a `TransferFeeComplaintEvaluator` a szabály strukturált díjmetaadata és az eredeti panasz alapján csak a forint megtakarítási számlára, eseti, OTP-n belüli, nem saját számlás, InternetBank/MobilBank átutalásra számol referencia-díjat. Hiányos vagy kétértelmű összegeknél nem hoz érdemi díjítéletet. Az értékelés a közölt tényeket és hirdetményi díjat hasonlítja össze; banki rendszerhibát vagy tényleges visszatérítési jogosultságot nem igazol. Tarifát meghaladó jelzett díj esetén a következő lépés kapcsolattartói elérhetőséget tartalmaz, egyértelműen jelezve, hogy az nem OTP hivatalos ügyfélszolgálati csatornája. Mindkét generációs mód ugyanazt az assessmentet, következő lépést és forrást mutatja.
 - Minden szabály `result` objektumában nem üres `decision`, `action` és `nextStep` mező kötelező. A `action` a rendszer által végrehajtandó válaszkezelést írja le; a `nextStep` a konkrét következő ügyfél- vagy operátori teendőt. Hiányzó/üres érték esetén a kiválasztott szabálykészlet validálása meghiúsul. `NoMatch` esetén a választerv rögzíti, hogy nincs szabály szerinti intézkedés, és további adat/pontosítás szükséges.
 - A `OTP.JSON` és `Raiffeisen.JSON` fájlok szabályai eltérő banki forrásokon alapulhatnak. A konfiguráció bankválasztása megakadályozza, hogy az egyik bank szabályai a másik bank feldolgozására alkalmazódjanak.
-- A szabálydöntés eredménye az alkalmazott bankot és szabálykészlet-verziót, a döntést és indoklást, valamint szabályonként a találat/kiválasztás állapotát és feltételenként a vizsgálat eredményét adja vissza. A feltételek tényleges ügyadat-értékei nem szerepelnek a nyomvonalban.
+- A szabálydöntés eredménye az alkalmazott bankot, a döntést és indoklást, valamint szabályonként a találat/kiválasztás állapotát és feltételenként a vizsgálat eredményét adja vissza. A feltételek tényleges ügyadat-értékei nem szerepelnek a nyomvonalban.
 - A `Rules.Reason` mezőben tárolt indoklás a `ruleDecision.reason` és `responsePlan.reason` mezőkben is visszatér. Az indoklás a szabály feltételeit és kiválasztási prioritását írja le; nem tartalmazza a feldolgozott ügyfélmezők tényleges értékeit.
 - A kiválasztott szabály `result` objektumának `requiredElements` tömbjét a választerv explicit adatként használja, ha jelen van. Ennek hiányában a válaszstruktúra levélmező-útvonalai adják a szükséges elemeket. A `source` és `effectiveFrom` bekerül a választerv forráslistájába.
 - A választerv az explicit `action` és `nextStep` értékeket külön mezőként tárolja és adja vissza; ezek a LLM kontextusba és template renderelésbe is bekerülnek.
@@ -98,7 +98,7 @@ Más státuszátmenet tiltott. A kezdési és befejezési UTC időpontot az átm
 
 ### 4.4 Választerv és eredmények lekérése
 
-A Processing eredmény-lekérdezése betölti a preprocessinget, az alkalmazott bankot és szabálykészlet-verziót tartalmazó szabálydöntést és kiértékelési nyomvonalat, a választervet, a generált választ és a metrikákat. `ResultsAvailable` igaz, ha legalább egy eredményrész létezik; ilyenkor az egyes hiányzó részek `null` értékűek lehetnek. Ha egyik sem létezik, `Results` `null`. A `Created`/`Processing` állapotú feldolgozás nem befejezett; a `Completed` és `Failed` befejezett. A `Failed` állapot részleges eredményt és hibaobjektumot is visszaadhat.
+A Processing eredmény-lekérdezése betölti a preprocessinget, az alkalmazott bankot tartalmazó szabálydöntést és kiértékelési nyomvonalat, a választervet, a generált választ és a metrikákat. `ResultsAvailable` igaz, ha legalább egy eredményrész létezik; ilyenkor az egyes hiányzó részek `null` értékűek lehetnek. Ha egyik sem létezik, `Results` `null`. A `Created`/`Processing` állapotú feldolgozás nem befejezett; a `Completed` és `Failed` befejezett. A `Failed` állapot részleges eredményt és hibaobjektumot is visszaadhat.
 
 A beszélgetés üzenet-előzménye Processingenként, létrehozási idő és azonosító szerint növekvően adja vissza a bemeneti kérést, az esetleg elkészült választ, státuszt és hibát. A válasz időbélyege a Processing befejezési ideje, nem külön válasz-létrehozási idő.
 
@@ -112,10 +112,10 @@ Az útvonalparaméterek egész számok. JSON-mezőnevek camelCase alakban szerep
 |---|---|---|
 | `GET /api/configurations` | Nincs body. | `200 OK`, lista csak `id` és `name` mezőkkel, legújabbtól a legrégebbi felé. |
 | `GET /api/configurations/{id}` | Nincs body. | `200 OK` részletes konfiguráció; hiányzó azonosító: `404`. |
-| `POST /api/configurations/template` | `name` (max. 100), `bank` (`otp` vagy `raiffeisen`), `ruleSetVersion` és `templateVersion` (max. 50); mind kötelező. | `201 Created`, részletes konfiguráció és `Location` fejléc. |
-| `POST /api/configurations/llm` | `name`/`modelName` (max. 100), `bank` (`otp` vagy `raiffeisen`), `ruleSetVersion`/`promptVersion` (max. 50), `modelParameters` objektum; mind kötelező. | `201 Created`, részletes konfiguráció és `Location` fejléc. |
+| `POST /api/configurations/template` | `name` (max. 100), `bank` (`otp` vagy `raiffeisen`), `templateVersion` (max. 50); mind kötelező. | `201 Created`, részletes konfiguráció és `Location` fejléc. |
+| `POST /api/configurations/llm` | `name`/`modelName` (max. 100), `bank` (`otp` vagy `raiffeisen`), `promptVersion` (max. 50), `modelParameters` objektum; mind kötelező. | `201 Created`, részletes konfiguráció és `Location` fejléc. |
 
-A részletes válasz az `id`, `name`, `bank`, `ruleSetVersion`, `generationMode` mezők mellett a nem null `templateVersion`, `promptVersion`, `modelName`, `modelParameters` értékeket tartalmazza. A listázás `CreatedAt`, majd `Id` szerint csökkenő.
+A részletes válasz az `id`, `name`, `bank`, `generationMode` mezők mellett a nem null `templateVersion`, `promptVersion`, `modelName`, `modelParameters` értékeket tartalmazza. A listázás `CreatedAt`, majd `Id` szerint csökkenő.
 
 ### 5.2 Beszélgetések és üzenetek
 
@@ -138,11 +138,11 @@ Mindkét útvonal ugyanazt a választ adja:
 
 Nincs request body. Nem létező azonosító: `404 Not Found`; még be nem fejezett feldolgozás: `202 Accepted`; befejezett (`Completed` vagy `Failed`) feldolgozás: `200 OK`.
 
-A válasz fő mezői: `id`, `status`, `createdAt`, `startedAt`, `finishedAt`, `isFinished`, `resultsAvailable`, `availabilityMessage`, `error` és `results`. Az eredményrészek: `preProcessing` (tisztított szöveg, kategória, strukturált állapot JSON-szöveg), `ruleDecision` (döntés, indoklás, alkalmazott bank és szabálykészlet-verzió), `responsePlan`, `response` (szöveg, mód, verziók, modell, feldolgozási idő), `evaluationResults`.
+A válasz fő mezői: `id`, `status`, `createdAt`, `startedAt`, `finishedAt`, `isFinished`, `resultsAvailable`, `availabilityMessage`, `error` és `results`. Az eredményrészek: `preProcessing` (tisztított szöveg, kategória, strukturált állapot JSON-szöveg), `ruleDecision` (döntés, indoklás, alkalmazott bank), `responsePlan`, `response` (szöveg, mód, verziók, modell, feldolgozási idő), `evaluationResults`.
 
 ## 6. Külső AI-szolgáltatás API
 
-Az útvonalak az `AiService:BaseUrl` abszolút HTTP(S) URL-hez fűződnek. A BaseUrl konfiguráció kötelező és induláskor validálódik. A `HttpClient` általános timeoutja végtelen; a hívások saját megszakítási ideje konfigurálható, 1–3600 másodperc közötti értékkel. Alapértelmezés: `/models` 10 mp, `/preprocessing` 60 mp, `/generate` 180 mp.
+Az útvonalak az `AiService:BaseUrl` abszolút HTTP(S) URL-hez fűződnek. A BaseUrl konfiguráció kötelező és induláskor validálódik. A `HttpClient` általános timeoutja végtelen; a hívások saját megszakítási ideje konfigurálható, 1–3600 másodperc közötti értékkel. Alapértelmezés: `/models`, `/preprocessing`, `/generate` és `/generate-rag` hívásonként 600 mp (10 perc). A Python-szolgáltatás vagy egy köztes rendszer ennél korábban is jelezhet időtúllépést.
 
 | Metódus és útvonal | Küldött adatok | Várt válasz és alkalmazáslogika |
 |---|---|---|
@@ -163,7 +163,7 @@ Az AI-hívások nem publikus, kliens által közvetlenül használandó API-vég
 | `Configuration` | Bank, szabálykészlet-/generálási mód és prompt-, sablon-, modellbeállítások. |
 | `Processing` | Bemeneti üzenet, beszélgetés, konfiguráció, státusz/idők és hiba. |
 | `PreProcessing` | Tisztított szöveg, kategória és strukturált állapot JSON-szövege. |
-| `Rules` | Döntés és indoklás, alkalmazott bank és kiválasztott szabálykészlet-verzió. |
+| `Rules` | Döntés és indoklás, alkalmazott bank. |
 | `ResponsePlan` | Döntés, indoklás, szükséges elemek, válaszstruktúra és források JSON-szövegként. |
 | `Response` | Generált szöveg, mód/verziók/modell, paraméterek, input kontextus és feldolgozási idő. |
 | `EvaluationResult` | Metrika, pontszám, mértékegység és opcionális megjegyzés. |
@@ -172,6 +172,7 @@ Kapcsolatok: Conversation 1:N Message és 1:N Processing; Configuration 1:N Proc
 
 ### 7.2 Mentés és lekérdezés
 
+- A `RemoveRuleSetVersion` migráció eltávolítja a `Configurations` és `Rules` táblák verzióoszlopát, a korábban tárolt verzióértékek elvesznek. Visszagörgetéskor az oszlopok üres alapértékkel jönnek létre.
 - A repository-k EF Core-on keresztül érik el az adatbázist; az egyszerű olvasások `AsNoTracking()` módúak.
 - A Conversation- és Configuration-listák időbélyeg, majd ID szerint csökkenően rendezettek. Nincs lapozás.
 - A Processing eredmény betöltése split query-val tölti be a kapcsolódó eredménytáblákat.

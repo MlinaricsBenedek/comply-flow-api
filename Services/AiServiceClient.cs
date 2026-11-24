@@ -17,6 +17,9 @@ public interface IAiServiceClient
     Task<AiGenerationResult> GenerateAsync(
         AiGenerationRequest request,
         CancellationToken cancellationToken);
+    Task<AiRagGenerationResult> GenerateRagAsync(
+        AiRagGenerationRequest request,
+        CancellationToken cancellationToken);
 }
 
 public sealed class AiServiceClient(
@@ -166,6 +169,37 @@ public sealed class AiServiceClient(
             payload.ModelParameters,
             payload.ReferenceSimilarity,
             payload.ReferenceSimilarityMetric);
+    }
+
+    public async Task<AiRagGenerationResult> GenerateRagAsync(
+        AiRagGenerationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var payload = await SendAsync<AiRagGenerationApiResponse>(
+            token => PostJsonAsync("generate-rag", request, token),
+            "generate-rag",
+            options.Value.GenerationTimeoutSeconds,
+            cancellationToken);
+        if (payload is null)
+            throw InvalidResponse("generate-rag", "The response body is empty.");
+        if (!payload.Success)
+            throw CreateServiceError("generate-rag", payload.Error);
+        if (string.IsNullOrWhiteSpace(payload.Response) ||
+            payload.PromptVersion is null ||
+            payload.ModelParameters is null ||
+            payload.ReferenceSimilarity.HasValue != !string.IsNullOrWhiteSpace(payload.ReferenceSimilarityMetric) ||
+            payload.ReferenceSimilarity is < 0 or > 1 ||
+            payload.ReferenceSimilarityMetric is not null && payload.ReferenceSimilarityMetric != "token_f1" ||
+            payload.Sources is null ||
+            payload.Sources.Any(source => source is null ||
+                source.SourceId is null || source.DocumentName is null || source.Text is null ||
+                source.ChunkIndex is null or < 0 || source.StartChar is null or < 0 ||
+                source.EndChar is null or < 0 || source.EndChar < source.StartChar ||
+                source.Similarity is null or < 0 or > 1))
+            throw InvalidResponse("generate-rag", "Required fields are missing or invalid.");
+
+        return new AiRagGenerationResult(payload.Response, payload.PromptVersion, payload.ModelName,
+            payload.ModelParameters, payload.ReferenceSimilarity, payload.ReferenceSimilarityMetric, payload.Sources);
     }
 
     private async Task<HttpResponseMessage> PostJsonAsync<T>(
@@ -452,6 +486,48 @@ public sealed record AiGenerationResult(
     Dictionary<string, JsonElement>? ModelParameters,
     decimal? ReferenceSimilarity,
     string? ReferenceSimilarityMetric);
+
+public sealed record AiRagGenerationRequest(
+    [property: JsonPropertyName("message")] string Message,
+    [property: JsonPropertyName("bank")] string Bank,
+    [property: JsonPropertyName("facts")] Dictionary<string, List<string>> Facts,
+    [property: JsonPropertyName("category")] string? Category,
+    [property: JsonPropertyName("retrieval_top_k")] int? RetrievalTopK,
+    [property: JsonPropertyName("retrieval_min_similarity")] double? RetrievalMinSimilarity,
+    [property: JsonPropertyName("model_name")] string? ModelName,
+    [property: JsonPropertyName("model_parameters")] Dictionary<string, JsonElement>? ModelParameters);
+
+public sealed record AiRagSource(
+    [property: JsonPropertyName("source_id")] string? SourceId,
+    [property: JsonPropertyName("document_name")] string? DocumentName,
+    [property: JsonPropertyName("chunk_index")] int? ChunkIndex,
+    [property: JsonPropertyName("text")] string? Text,
+    [property: JsonPropertyName("start_char")] int? StartChar,
+    [property: JsonPropertyName("end_char")] int? EndChar,
+    [property: JsonPropertyName("similarity")] decimal? Similarity);
+
+public sealed class AiRagGenerationApiResponse
+{
+    [JsonPropertyName("success")] public bool Success { get; init; } = true;
+    [JsonPropertyName("response")] public string? Response { get; init; }
+    [JsonPropertyName("prompt_version")] public string? PromptVersion { get; init; }
+    [JsonPropertyName("model_name")] public string? ModelName { get; init; }
+    [JsonPropertyName("model_id")] public string? ModelId { get; init; }
+    [JsonPropertyName("model_parameters")] public Dictionary<string, JsonElement>? ModelParameters { get; init; }
+    [JsonPropertyName("reference_similarity")] public decimal? ReferenceSimilarity { get; init; }
+    [JsonPropertyName("reference_similarity_metric")] public string? ReferenceSimilarityMetric { get; init; }
+    [JsonPropertyName("sources")] public List<AiRagSource>? Sources { get; init; } = [];
+    [JsonPropertyName("error")] public AiServiceError? Error { get; init; }
+}
+
+public sealed record AiRagGenerationResult(
+    string Response,
+    string PromptVersion,
+    string? ModelName,
+    Dictionary<string, JsonElement> ModelParameters,
+    decimal? ReferenceSimilarity,
+    string? ReferenceSimilarityMetric,
+    IReadOnlyList<AiRagSource> Sources);
 
 public sealed record AiServiceError(
     [property: JsonPropertyName("code")] string? Code,

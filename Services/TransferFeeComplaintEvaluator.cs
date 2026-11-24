@@ -33,18 +33,34 @@ public static partial class TransferFeeComplaintEvaluator
         Rule? selectedRule,
         bool requireTransactionDate = false)
     {
-        if (!string.Equals(bank, "otp", StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(selectedRule?.Id, RuleId, StringComparison.OrdinalIgnoreCase))
+        var isOtp = string.Equals(bank, "otp", StringComparison.OrdinalIgnoreCase);
+        var isRaiffeisen = string.Equals(bank, "raiffeisen", StringComparison.OrdinalIgnoreCase);
+        var isOtpRule = string.Equals(selectedRule?.Id, RuleId, StringComparison.OrdinalIgnoreCase);
+        var isRaiffeisenRule = string.Equals(selectedRule?.Id, "RB-BANK-TRANSFER-FEES-001", StringComparison.OrdinalIgnoreCase);
+        
+        if (!(isOtp && isOtpRule) && !(isRaiffeisen && isRaiffeisenRule))
         {
             return null;
         }
 
         var normalizedMessage = RemoveDiacritics(message).ToLowerInvariant();
         var missingInformation = new List<string>();
-        if (!normalizedMessage.Contains("forint megtakaritasi szamla", StringComparison.Ordinal) &&
-            !normalizedMessage.Contains("huf megtakaritasi szamla", StringComparison.Ordinal))
+        
+        if (isOtp)
         {
-            missingInformation.Add("a terhelt számla OTP forint megtakarítási számla-e");
+            if (!normalizedMessage.Contains("forint megtakaritasi szamla", StringComparison.Ordinal) &&
+                !normalizedMessage.Contains("huf megtakaritasi szamla", StringComparison.Ordinal))
+            {
+                missingInformation.Add("a terhelt számla OTP forint megtakarítási számla-e");
+            }
+        }
+        else if (isRaiffeisen)
+        {
+            if (!normalizedMessage.Contains("megtakaritasi szamla", StringComparison.Ordinal) &&
+                !normalizedMessage.Contains("reflex", StringComparison.Ordinal))
+            {
+                missingInformation.Add("a terhelt számla Raiffeisen Megtakarítási Számla-e");
+            }
         }
 
         if (!ContainsTransferChannel(normalizedMessage))
@@ -55,7 +71,8 @@ public static partial class TransferFeeComplaintEvaluator
         if (!normalizedMessage.Contains("eseti", StringComparison.Ordinal) ||
             !ContainsInternalNonOwnTransfer(normalizedMessage))
         {
-            missingInformation.Add("hogy eseti, OTP-n belüli, nem saját számlára indított utalásról van-e szó");
+            var bankName = isOtp ? "OTP-n" : "Raiffeisen-en";
+            missingInformation.Add($"hogy eseti, {bankName} belüli, nem saját számlára indított utalásról van-e szó");
         }
 
         if (requireTransactionDate)

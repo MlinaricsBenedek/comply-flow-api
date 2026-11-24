@@ -66,4 +66,13 @@ public class ConfigurationController : ControllerBase
             new { id = configuration.Id },
             configuration);
     }
+
+    [HttpPost("rag")]
+    public async Task<ActionResult<ConfigurationResponse>> CreateRagConfiguration(
+        RequestRagConfiguration request,
+        CancellationToken cancellationToken)
+    {
+        var configuration = await _configurationService.CreateRagAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetConfigurationById), new { id = configuration.Id }, configuration);
+    }
 }

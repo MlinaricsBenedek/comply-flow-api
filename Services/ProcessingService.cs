@@ -78,248 +78,235 @@ public class ProcessingService : IProcessingService
             processing.TransitionTo(ProcessingStatus.Processing);
             await _processingRepository.SaveChangesAsync(cancellationToken);
 
-            var ruleSetJson = await _textFileService.GetBusinessRulesAsync(
-                configuration.Bank,
-                cancellationToken);
-            var ruleSets = JsonSerializer.Deserialize<List<RuleSetDocument>>(ruleSetJson)
-                ?? throw new InvalidOperationException("The business rules file is empty or invalid.");
-            if (ruleSets.Count == 0 || ruleSets.Any(ruleSet => ruleSet is null))
+            if (string.Equals(configuration.GenerationMode, "Rag", StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidDataException("The business rules file contains no valid rule sets.");
-            }
-
-            var matchingRuleSets = ruleSets
-                .Where(ruleSet => string.Equals(
-                    ruleSet.RuleSetVersion,
-                    configuration.RuleSetVersion,
-                    StringComparison.Ordinal))
-                .ToList();
-            if (matchingRuleSets.Count != 1)
-            {
-                throw new InvalidOperationException(
-                    matchingRuleSets.Count == 0
-                        ? $"No business rule set was found for configured version '{configuration.RuleSetVersion}'."
-                        : $"Multiple business rule sets were found for configured version '{configuration.RuleSetVersion}'.");
-            }
-            var ruleSet = matchingRuleSets[0];
-            ValidateRuleSet(ruleSet);
-
-            var preprocessing = await _aiServiceClient.PreprocessAsync(
-                message.Content,
-                configuration.Bank,
-                cancellationToken);
-            if (preprocessing.PartialSuccess)
-            {
-                _logger.LogWarning(
-                    "Preprocessing for processing {ProcessingId} partially succeeded. Warnings: {Warnings}; details: {WarningDetails}",
-                    processing.Id,
-                    string.Join(", ", preprocessing.Warnings),
-                    JsonSerializer.Serialize(preprocessing.WarningDetails));
-            }
-
-            var caseState = preprocessing.CaseState;
-            var category = preprocessing.Category;
-            if (string.Equals(configuration.Bank, "otp", StringComparison.OrdinalIgnoreCase) &&
-                IsCardDeliveryRequest(message.Content))
-            {
-                category = "CARD_DELIVERY";
-                caseState["category"] = category;
-            }
-
-            var evaluation = RuleEngine.Evaluate(caseState, ruleSet.Rules);
-            var selectedRule = evaluation.SelectedRule?.Rule;
-            var decision = selectedRule?.Result.Decision ?? "NoMatch";
-            var reason = evaluation.Reason;
-            var feeAssessment = string.Equals(
-                    selectedRule?.Result.Decision,
-                    "ClaimValid",
-                    StringComparison.Ordinal)
-                ? TransferFeeComplaintEvaluator.Evaluate(
-                    configuration.Bank,
-                    message.Content,
-                    selectedRule)
-                : null;
-
-            processing.PreProcessing = new PreProcessing
-            {
-                CleanedText = preprocessing.Message,
-                CaseType = category ?? "Unknown",
-                StructuredCaseStateJson = JsonSerializer.Serialize(caseState)
-            };
-            processing.Rules = new Rules
-            {
-                Decision = decision,
-                Reason = reason,
-                Bank = configuration.Bank,
-                RuleSetVersion = ruleSet.RuleSetVersion,
-                EvaluationTraceJson = JsonSerializer.Serialize(evaluation.EvaluationTrace)
-            };
-            processing.ResponsePlan = CreateResponsePlan(
-                selectedRule,
-                decision,
-                reason,
-                feeAssessment);
-            await _processingRepository.SaveChangesAsync(cancellationToken);
-
-            var responseValidationRequirements = ResponseContentValidator.GetRequirements(selectedRule);
-            var ruleDecision = selectedRule?.Result.Decision;
-            var inputContext = new Dictionary<string, object?>
-            {
-                ["case_state"] = caseState,
-                ["decision"] = ruleDecision,
-                ["reason"] = reason,
-                ["rule_result"] = selectedRule?.Result,
-                ["bank"] = configuration.Bank,
-                ["complaint_assessment"] = feeAssessment,
-                ["response_plan"] = new
-                {
-                    decision = ruleDecision,
-                    reason = processing.ResponsePlan.Reason,
-                    action = processing.ResponsePlan.Action,
-                    next_step = processing.ResponsePlan.NextStep,
-                    required_elements = JsonSerializer.Deserialize<JsonElement>(
-                        processing.ResponsePlan.RequiredElementsJson),
-                    response_structure = JsonSerializer.Deserialize<JsonElement>(
-                        processing.ResponsePlan.ResponseStructureJson),
-                    sources = JsonSerializer.Deserialize<JsonElement>(
-                        processing.ResponsePlan.SourcesJson),
-                    validation_requirements = responseValidationRequirements
-                }
-            };
-            if (feeAssessment is not null)
-            {
-                inputContext["customer_response_instruction"] =
-                    "Use the deterministic complaint_assessment as the sole source of the fee conclusion. Include its CustomerMessage verbatim. Do not claim a bank-system fault or apologize for one unless independently verified.";
-            }
-
-            AiGenerationResult? generation = null;
-            string responseText;
-            if (string.Equals(configuration.GenerationMode, "Template", StringComparison.OrdinalIgnoreCase))
-            {
-                responseText = TemplateResponseRenderer.Render(
-                    await _textFileService.GetResponseTemplateSetAsync(
-                        configuration.TemplateVersion!,
-                        cancellationToken),
-                    decision,
-                    reason,
-                    processing.ResponsePlan.Action,
-                    processing.ResponsePlan.NextStep,
-                    feeAssessment?.CustomerMessage ?? string.Empty,
-                    processing.ResponsePlan.RequiredElementsJson,
-                    processing.ResponsePlan.ResponseStructureJson,
-                    processing.ResponsePlan.SourcesJson);
-            }
-            else if (string.Equals(configuration.GenerationMode, "Llm", StringComparison.OrdinalIgnoreCase))
-            {
-                if (selectedRule is null ||
-                    string.IsNullOrWhiteSpace(selectedRule.Id) ||
-                    string.IsNullOrWhiteSpace(selectedRule.Result.CustomerDecision) ||
-                    string.IsNullOrWhiteSpace(selectedRule.Result.CustomerReason))
-                {
-                    throw new InvalidDataException(
-                        "The selected rule must provide an ID, customer decision and customer reason for AI generation.");
-                }
-
-                var customerDecision = selectedRule.Result.CustomerDecision;
-                var customerReason = selectedRule.Result.CustomerReason;
-                if (string.Equals(ruleDecision, "BankTransferFeesGuidance", StringComparison.Ordinal))
-                {
-                    var assessment = TransferFeeComplaintEvaluator.Evaluate(
-                        configuration.Bank, message.Content, selectedRule, requireTransactionDate: true)
-                        ?? throw new InvalidDataException(
-                            "No transfer fee evaluator is available for the selected guidance rule.");
-                    (customerDecision, customerReason) = GetTransferFeeFacts(assessment);
-                }
-
-                string? modelName = null;
-                Dictionary<string, JsonElement>? modelParameters = null;
-                if (RequiresLlmModel(ruleDecision))
-                {
-                    if (!string.IsNullOrWhiteSpace(configuration.ModelName))
-                    {
-                        var availableModels = await _aiServiceClient.GetModelsAsync(cancellationToken);
-                        modelName = ResolveModelName(configuration.ModelName, availableModels);
-                    }
-                    modelParameters = configuration.ModelParametersJson is null
-                        ? null
-                        : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
-                            configuration.ModelParametersJson);
-                }
-
-                generation = await _aiServiceClient.GenerateAsync(
-                    new AiGenerationRequest(
-                        inputContext,
-                        preprocessing.Message,
-                        preprocessing.Facts,
-                        category,
-                        customerDecision,
-                        customerReason,
-                        [selectedRule.Id],
-                        configuration.PromptVersion,
-                        modelName,
-                        modelParameters),
-                    cancellationToken);
-                var llmResponse = feeAssessment is not null
-                    ? $"Tisztelt Ügyfelünk!{Environment.NewLine}{Environment.NewLine}{feeAssessment.CustomerMessage}{Environment.NewLine}{Environment.NewLine}Következő lépés: {processing.ResponsePlan.NextStep}"
-                    : IsCardDeliveryRule(selectedRule)
-                        ? $"Tisztelt Ügyfelünk!{Environment.NewLine}{Environment.NewLine}{processing.ResponsePlan.NextStep}"
-                        : generation.Response;
-                responseText = AppendSourceCitations(
-                    llmResponse,
-                    processing.ResponsePlan.SourcesJson);
+                await ProcessRagAsync(processing, message, configuration, stopwatch, cancellationToken);
             }
             else
             {
-                throw new InvalidDataException(
-                    $"Unsupported response generation mode '{configuration.GenerationMode}'.");
-            }
-
-            var validationResult = ResponseContentValidator.Validate(
-                responseText,
-                responseValidationRequirements,
-                caseState);
-            if (validationResult.CheckedCount > 0)
-            {
-                processing.EvaluationResults.Add(new EvaluationResult
+                var ruleSetJson = await _textFileService.GetBusinessRulesAsync(
+                    configuration.Bank,
+                    cancellationToken);
+                var ruleSets = JsonSerializer.Deserialize<List<RuleSetDocument>>(ruleSetJson)
+                    ?? throw new InvalidOperationException("The business rules file is empty or invalid.");
+                if (ruleSets.Count != 1 || ruleSets[0] is null)
                 {
-                    Metric = "required_content_coverage",
-                    Score = validationResult.Coverage,
-                    Unit = "0-1",
-                    Comment = JsonSerializer.Serialize(new
+                    throw new InvalidDataException("The business rules file must contain exactly one valid rule set.");
+                }
+                var ruleSet = ruleSets[0];
+                ValidateRuleSet(ruleSet);
+
+                var preprocessing = await _aiServiceClient.PreprocessAsync(
+                    message.Content,
+                    configuration.Bank,
+                    cancellationToken);
+                if (preprocessing.PartialSuccess)
+                {
+                    _logger.LogWarning(
+                        "Preprocessing for processing {ProcessingId} partially succeeded. Warnings: {Warnings}; details: {WarningDetails}",
+                        processing.Id,
+                        string.Join(", ", preprocessing.Warnings),
+                        JsonSerializer.Serialize(preprocessing.WarningDetails));
+                }
+
+                var caseState = preprocessing.CaseState;
+                var category = preprocessing.Category;
+                if (string.Equals(configuration.Bank, "otp", StringComparison.OrdinalIgnoreCase) &&
+                    IsCardDeliveryRequest(message.Content))
+                {
+                    category = "CARD_DELIVERY";
+                    caseState["category"] = category;
+                }
+
+                var evaluation = RuleEngine.Evaluate(caseState, ruleSet.Rules);
+                var selectedRule = evaluation.SelectedRule?.Rule;
+                var decision = selectedRule?.Result.Decision ?? "NoMatch";
+                var reason = evaluation.Reason;
+                var feeAssessment = string.Equals(
+                        selectedRule?.Result.Decision,
+                        "ClaimValid",
+                        StringComparison.Ordinal)
+                    ? TransferFeeComplaintEvaluator.Evaluate(
+                        configuration.Bank,
+                        message.Content,
+                        selectedRule)
+                    : null;
+
+                processing.PreProcessing = new PreProcessing
+                {
+                    CleanedText = preprocessing.Message,
+                    CaseType = category ?? "Unknown",
+                    StructuredCaseStateJson = JsonSerializer.Serialize(caseState)
+                };
+                processing.Rules = new Rules
+                {
+                    Decision = decision,
+                    Reason = reason,
+                    Bank = configuration.Bank,
+                    EvaluationTraceJson = JsonSerializer.Serialize(evaluation.EvaluationTrace)
+                };
+                processing.ResponsePlan = CreateResponsePlan(
+                    selectedRule,
+                    decision,
+                    reason);
+                await _processingRepository.SaveChangesAsync(cancellationToken);
+
+                var responseValidationRequirements = ResponseContentValidator.GetRequirements(selectedRule);
+                var ruleDecision = selectedRule?.Result.Decision;
+                var inputContext = new Dictionary<string, object?>
+                {
+                    ["case_state"] = caseState,
+                    ["decision"] = ruleDecision,
+                    ["reason"] = reason,
+                    ["rule_result"] = selectedRule?.Result,
+                    ["bank"] = configuration.Bank,
+                    ["complaint_assessment"] = feeAssessment,
+                    ["response_plan"] = new
                     {
-                        status = validationResult.IsComplete ? "complete" : "incomplete",
-                        checkedCount = validationResult.CheckedCount,
-                        missingRequirements = validationResult.MissingRequirements
-                    })
-                });
-            }
-
-            if (generation?.ReferenceSimilarity is decimal referenceSimilarity &&
-                generation.ReferenceSimilarityMetric is string referenceSimilarityMetric)
-            {
-                processing.EvaluationResults.Add(new EvaluationResult
+                        decision = ruleDecision,
+                        reason = processing.ResponsePlan.Reason,
+                        required_elements = JsonSerializer.Deserialize<JsonElement>(
+                            processing.ResponsePlan.RequiredElementsJson),
+                        response_structure = JsonSerializer.Deserialize<JsonElement>(
+                            processing.ResponsePlan.ResponseStructureJson),
+                        sources = JsonSerializer.Deserialize<JsonElement>(
+                            processing.ResponsePlan.SourcesJson),
+                        validation_requirements = responseValidationRequirements
+                    }
+                };
+                if (feeAssessment is not null)
                 {
-                    Metric = "reference_similarity",
-                    Score = referenceSimilarity,
-                    Unit = "0-1",
-                    Comment = referenceSimilarityMetric
-                });
-            }
+                    inputContext["customer_response_instruction"] =
+                        "Use the deterministic complaint_assessment as the sole source of the fee conclusion. Include its CustomerMessage verbatim. Do not claim a bank-system fault or apologize for one unless independently verified.";
+                }
 
-            processing.Response = new Response
-            {
-                GenerationMode = configuration.GenerationMode,
-                ResponseText = responseText,
-                TemplateVersion = configuration.TemplateVersion,
-                PromptVersion = generation?.PromptVersion,
-                ModelName = generation?.ModelName,
-                ModelParametersJson = generation?.ModelParameters is null
-                    ? null
-                    : JsonSerializer.Serialize(generation.ModelParameters),
-                InputContextJson = JsonSerializer.Serialize(inputContext),
-                ProcessingTimeMs = (int)Math.Min(stopwatch.ElapsedMilliseconds, int.MaxValue)
-            };
-            await _processingRepository.SaveChangesAsync(cancellationToken);
+                AiGenerationResult? generation = null;
+                string responseText;
+                if (string.Equals(configuration.GenerationMode, "Template", StringComparison.OrdinalIgnoreCase))
+                {
+                    responseText = TemplateResponseRenderer.Render(
+                        await _textFileService.GetResponseTemplateSetAsync(
+                            configuration.TemplateVersion!,
+                            cancellationToken),
+                        decision,
+                        reason,
+                        feeAssessment?.CustomerMessage ?? string.Empty,
+                        processing.ResponsePlan.RequiredElementsJson,
+                        processing.ResponsePlan.ResponseStructureJson,
+                        processing.ResponsePlan.SourcesJson);
+                }
+                else if (string.Equals(configuration.GenerationMode, "Llm", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (selectedRule is null ||
+                        string.IsNullOrWhiteSpace(selectedRule.Id) ||
+                        string.IsNullOrWhiteSpace(selectedRule.Result.CustomerDecision) ||
+                        string.IsNullOrWhiteSpace(selectedRule.Result.CustomerReason))
+                    {
+                        throw new InvalidDataException(
+                            "The selected rule must provide an ID, customer decision and customer reason for AI generation.");
+                    }
+
+                    var customerDecision = selectedRule.Result.CustomerDecision;
+                    var customerReason = selectedRule.Result.CustomerReason;
+                    if (string.Equals(ruleDecision, "BankTransferFeesGuidance", StringComparison.Ordinal) ||
+                        string.Equals(ruleDecision, "RaiffeisenSavingsTransferFeeClarification", StringComparison.Ordinal))
+                    {
+                        var requireDate = string.Equals(configuration.Bank, "otp", StringComparison.OrdinalIgnoreCase);
+                        var assessment = TransferFeeComplaintEvaluator.Evaluate(
+                            configuration.Bank, message.Content, selectedRule, requireTransactionDate: requireDate)
+                            ?? throw new InvalidDataException(
+                                "No transfer fee evaluator is available for the selected guidance rule.");
+                        (customerDecision, customerReason) = GetTransferFeeFacts(assessment);
+                    }
+
+                    string? modelName = null;
+                    Dictionary<string, JsonElement>? modelParameters = null;
+                    if (RequiresLlmModel(ruleDecision))
+                    {
+                        if (!string.IsNullOrWhiteSpace(configuration.ModelName))
+                        {
+                            var availableModels = await _aiServiceClient.GetModelsAsync(cancellationToken);
+                            modelName = ResolveModelName(configuration.ModelName, availableModels);
+                        }
+                        modelParameters = configuration.ModelParametersJson is null
+                            ? null
+                            : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
+                                configuration.ModelParametersJson);
+                    }
+
+                    generation = await _aiServiceClient.GenerateAsync(
+                        new AiGenerationRequest(
+                            inputContext,
+                            preprocessing.Message,
+                            preprocessing.Facts,
+                            category,
+                            customerDecision,
+                            customerReason,
+                            [selectedRule.Id],
+                            configuration.PromptVersion,
+                            modelName,
+                            modelParameters),
+                        cancellationToken);
+                    var llmResponse = feeAssessment is not null
+                        ? $"Tisztelt Ügyfelünk!{Environment.NewLine}{Environment.NewLine}{feeAssessment.CustomerMessage}"
+                        : generation.Response;
+                    responseText = AppendSourceCitations(
+                        llmResponse,
+                        processing.ResponsePlan.SourcesJson);
+                }
+                else
+                {
+                    throw new InvalidDataException(
+                        $"Unsupported response generation mode '{configuration.GenerationMode}'.");
+                }
+
+                var validationResult = ResponseContentValidator.Validate(
+                    responseText,
+                    responseValidationRequirements,
+                    caseState);
+                if (validationResult.CheckedCount > 0)
+                {
+                    processing.EvaluationResults.Add(new EvaluationResult
+                    {
+                        Metric = "required_content_coverage",
+                        Score = validationResult.Coverage,
+                        Unit = "0-1",
+                        Comment = JsonSerializer.Serialize(new
+                        {
+                            status = validationResult.IsComplete ? "complete" : "incomplete",
+                            checkedCount = validationResult.CheckedCount,
+                            missingRequirements = validationResult.MissingRequirements
+                        })
+                    });
+                }
+
+                if (generation?.ReferenceSimilarity is decimal referenceSimilarity &&
+                    generation.ReferenceSimilarityMetric is string referenceSimilarityMetric)
+                {
+                    processing.EvaluationResults.Add(new EvaluationResult
+                    {
+                        Metric = "reference_similarity",
+                        Score = referenceSimilarity,
+                        Unit = "0-1",
+                        Comment = referenceSimilarityMetric
+                    });
+                }
+
+                processing.Response = new Response
+                {
+                    GenerationMode = configuration.GenerationMode,
+                    ResponseText = responseText,
+                    TemplateVersion = configuration.TemplateVersion,
+                    PromptVersion = generation?.PromptVersion,
+                    ModelName = generation?.ModelName,
+                    ModelParametersJson = generation?.ModelParameters is null
+                        ? null
+                        : JsonSerializer.Serialize(generation.ModelParameters),
+                    InputContextJson = JsonSerializer.Serialize(inputContext),
+                    ProcessingTimeMs = (int)Math.Min(stopwatch.ElapsedMilliseconds, int.MaxValue)
+                };
+                await _processingRepository.SaveChangesAsync(cancellationToken);
+            }
 
             processing.TransitionTo(ProcessingStatus.Completed);
             await _processingRepository.SaveChangesAsync(cancellationToken);
@@ -370,6 +357,76 @@ public class ProcessingService : IProcessingService
         return new ProcessingCreationResult(ProcessingCreationStatus.Created, processing);
     }
 
+    private async Task ProcessRagAsync(
+        Processing processing,
+        Message message,
+        Configuration configuration,
+        Stopwatch stopwatch,
+        CancellationToken cancellationToken)
+    {
+        var preprocessing = await _aiServiceClient.PreprocessAsync(message.Content, configuration.Bank, cancellationToken);
+        if (preprocessing.PartialSuccess)
+        {
+            _logger.LogWarning(
+                "Preprocessing for processing {ProcessingId} partially succeeded. Warnings: {Warnings}; details: {WarningDetails}",
+                processing.Id, string.Join(", ", preprocessing.Warnings), JsonSerializer.Serialize(preprocessing.WarningDetails));
+        }
+
+        processing.PreProcessing = new PreProcessing
+        {
+            CleanedText = preprocessing.Message,
+            CaseType = preprocessing.Category ?? "Unknown",
+            StructuredCaseStateJson = JsonSerializer.Serialize(preprocessing.CaseState)
+        };
+        await _processingRepository.SaveChangesAsync(cancellationToken);
+
+        var bank = configuration.Bank.ToLowerInvariant() switch
+        {
+            "otp" => "OTP",
+            "raiffeisen" => "Raiffeisen",
+            _ => throw new InvalidDataException($"Unsupported bank '{configuration.Bank}'.")
+        };
+        var modelName = configuration.ModelName;
+        if (!string.IsNullOrWhiteSpace(modelName))
+            modelName = ResolveModelName(modelName, await _aiServiceClient.GetModelsAsync(cancellationToken));
+
+        var request = new AiRagGenerationRequest(
+            preprocessing.Message,
+            bank,
+            preprocessing.Facts,
+            preprocessing.Category,
+            configuration.RetrievalTopK,
+            configuration.RetrievalMinSimilarity,
+            modelName,
+            configuration.ModelParametersJson is null
+                ? null
+                : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(configuration.ModelParametersJson));
+        var generation = await _aiServiceClient.GenerateRagAsync(request, cancellationToken);
+        if (generation.ReferenceSimilarity is decimal similarity && generation.ReferenceSimilarityMetric is string metric)
+        {
+            processing.EvaluationResults.Add(new EvaluationResult
+            {
+                Metric = "reference_similarity",
+                Score = similarity,
+                Unit = "0-1",
+                Comment = metric
+            });
+        }
+
+        processing.Response = new Response
+        {
+            GenerationMode = configuration.GenerationMode,
+            ResponseText = generation.Response,
+            PromptVersion = generation.PromptVersion,
+            ModelName = generation.ModelName,
+            ModelParametersJson = JsonSerializer.Serialize(generation.ModelParameters),
+            InputContextJson = JsonSerializer.Serialize(request),
+            RagSourcesJson = JsonSerializer.Serialize(generation.Sources),
+            ProcessingTimeMs = (int)Math.Min(stopwatch.ElapsedMilliseconds, int.MaxValue)
+        };
+        await _processingRepository.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<ProcessingResultResponse?> GetResultAsync(
         int processingId,
         CancellationToken cancellationToken)
@@ -411,7 +468,6 @@ public class ProcessingService : IProcessingService
                         processing.Rules.Decision,
                         processing.Rules.Reason,
                         processing.Rules.Bank,
-                        processing.Rules.RuleSetVersion,
                         JsonSerializer.Deserialize<IReadOnlyList<RuleEvaluationTrace>>(
                             processing.Rules.EvaluationTraceJson) ?? []),
                 processing.ResponsePlan is null
@@ -419,8 +475,6 @@ public class ProcessingService : IProcessingService
                     : new ResponsePlanResultResponse(
                         processing.ResponsePlan.Decision,
                         processing.ResponsePlan.Reason,
-                        processing.ResponsePlan.Action,
-                        processing.ResponsePlan.NextStep,
                         processing.ResponsePlan.RequiredElementsJson,
                         processing.ResponsePlan.ResponseStructureJson,
                         processing.ResponsePlan.SourcesJson),
@@ -432,7 +486,14 @@ public class ProcessingService : IProcessingService
                         processing.Response.TemplateVersion,
                         processing.Response.PromptVersion,
                         processing.Response.ModelName,
-                        processing.Response.ProcessingTimeMs),
+                        processing.Response.ProcessingTimeMs,
+                        processing.Response.RagSourcesJson is null
+                            ? null
+                            : (JsonSerializer.Deserialize<List<AiRagSource>>(processing.Response.RagSourcesJson)
+                                ?? throw new InvalidDataException("The stored RAG sources are invalid."))
+                                .Select(source => new RagSourceResponse(source.SourceId, source.DocumentName,
+                                    source.ChunkIndex, source.Text, source.StartChar, source.EndChar, source.Similarity))
+                                .ToList()),
                 evaluationResults)
             : null;
 
@@ -468,11 +529,9 @@ public class ProcessingService : IProcessingService
 
     private static void ValidateRuleSet(RuleSetDocument ruleSet)
     {
-        if (string.IsNullOrWhiteSpace(ruleSet.RuleSetVersion) ||
-            ruleSet.Rules is null ||
-            ruleSet.Rules.Count == 0)
+        if (ruleSet.Rules is null || ruleSet.Rules.Count == 0)
         {
-            throw new InvalidDataException("The selected business rule set is missing its version or rules.");
+            throw new InvalidDataException("The business rule set contains no rules.");
         }
 
         foreach (var rule in ruleSet.Rules)
@@ -482,12 +541,10 @@ public class ProcessingService : IProcessingService
                 string.IsNullOrWhiteSpace(rule.Name) ||
                 rule.Conditions is null ||
                 rule.Result is null ||
-                string.IsNullOrWhiteSpace(rule.Result.Decision) ||
-                string.IsNullOrWhiteSpace(rule.Result.Action) ||
-                string.IsNullOrWhiteSpace(rule.Result.NextStep))
+                string.IsNullOrWhiteSpace(rule.Result.Decision))
             {
                 throw new InvalidDataException(
-                    $"The business rule set '{ruleSet.RuleSetVersion}' contains a rule with missing decision, action, or nextStep.");
+                    "The business rule set contains a rule with missing decision.");
             }
 
             ValidateConditions(rule, rule.Conditions.All);
@@ -557,8 +614,7 @@ public class ProcessingService : IProcessingService
     private static ResponsePlan CreateResponsePlan(
         Rule? selectedRule,
         string decision,
-        string reason,
-        TransferFeeComplaintAssessment? feeAssessment)
+        string reason)
     {
         var resultData = selectedRule?.Result.AdditionalData
             ?? new Dictionary<string, JsonElement>();
@@ -582,21 +638,6 @@ public class ProcessingService : IProcessingService
         {
             Decision = decision,
             Reason = reason,
-            Action = feeAssessment is null
-                ? selectedRule?.Result.Action ?? "Nincs alkalmazható szabály szerinti intézkedés."
-                : "Az átutalási díj összevetése a megadott hirdetményi díjtétellel.",
-            NextStep = feeAssessment?.Status switch
-            {
-                TransferFeeAssessmentStatus.InsufficientData =>
-                    $"Kérjük, pontosítsa: {string.Join(", ", feeAssessment.MissingInformation)}.",
-                TransferFeeAssessmentStatus.TariffMismatchReported =>
-                    "A díjeltérés kivizsgálásához az ügyintézőt a +36302526016 telefonszámon vagy az example@gmail.com e-mail-címen érheti el. Ezek személyes kapcsolattartói elérhetőségek, nem az OTP hivatalos ügyfélszolgálati elérhetőségei.",
-                TransferFeeAssessmentStatus.TariffBelowPublished =>
-                    "Ha más terhelési tételre vonatkozik a panasz, kérjük, küldje el a tételes számlakivonatot.",
-                TransferFeeAssessmentStatus.TariffMatches =>
-                    "Ha a terhelés más díjtételt is tartalmaz, annak tételes ellenőrzése szükséges.",
-                _ => selectedRule?.Result.NextStep ?? "Kérj pontosítást vagy további adatot az ügy megítéléséhez."
-            },
             RequiredElementsJson = JsonSerializer.Serialize(requiredElements),
             ResponseStructureJson = JsonSerializer.Serialize(responseStructure),
             SourcesJson = JsonSerializer.Serialize(sources)
@@ -718,7 +759,8 @@ public class ProcessingService : IProcessingService
     private static bool RequiresLlmModel(string? ruleDecision) =>
         string.Equals(ruleDecision, "ClaimValid", StringComparison.Ordinal) ||
         string.Equals(ruleDecision, "ClaimInvalid", StringComparison.Ordinal) ||
-        string.Equals(ruleDecision, "BankTransferFeesGuidance", StringComparison.Ordinal);
+        string.Equals(ruleDecision, "BankTransferFeesGuidance", StringComparison.Ordinal) ||
+        string.Equals(ruleDecision, "RaiffeisenSavingsTransferFeeClarification", StringComparison.Ordinal);
 
     private static IReadOnlyList<string> GetRequiredElements(
         IReadOnlyDictionary<string, JsonElement> resultData,

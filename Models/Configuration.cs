@@ -19,11 +19,6 @@ public class Configuration
     public string Bank { get; set; } = string.Empty;
 
     [Required]
-    [StringLength(50)]
-    [Column(TypeName = "varchar(50)")]
-    public string RuleSetVersion { get; set; } = string.Empty;
-
-    [Required]
     [StringLength(30)]
     [Column(TypeName = "varchar(30)")]
     public string GenerationMode { get; set; } = string.Empty;
@@ -42,6 +37,10 @@ public class Configuration
 
     [Column(TypeName = "varchar(max)")]
     public string? ModelParametersJson { get; set; }
+
+    public int? RetrievalTopK { get; set; }
+
+    public double? RetrievalMinSimilarity { get; set; }
 
     [Required]
     [Column(TypeName = "datetime")]
