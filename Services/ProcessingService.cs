@@ -4,7 +4,6 @@ using System.Text.Json;
 using comply_flow_api.Models;
 using comply_flow_api.Models.dtos.ProcessDtos;
 using comply_flow_api.Repositories;
-
 namespace comply_flow_api.Services;
 
 public interface IProcessingService
@@ -14,6 +13,7 @@ public interface IProcessingService
         int configurationId,
         CancellationToken cancellationToken);
     Task<ProcessingResultResponse?> GetResultAsync(int processingId, CancellationToken cancellationToken);
+    Task<ProcessingDetailsDto> GetProcessingDetailsAsync(int processingId, CancellationToken cancellationToken);
 }
 
 public enum ProcessingCreationStatus
@@ -25,6 +25,7 @@ public enum ProcessingCreationStatus
 public sealed record ProcessingCreationResult(
     ProcessingCreationStatus Status,
     Processing? Processing = null);
+
 
 public class ProcessingService : IProcessingService
 {
@@ -786,5 +787,21 @@ public class ProcessingService : IProcessingService
         return model?.Name
             ?? throw new InvalidOperationException(
                 $"Configured model '{configuredModelName}' is not available from the AI service.");
+    }
+    public async Task<ProcessingDetailsDto> GetProcessingDetailsAsync(int processingId, CancellationToken cancellationToken)
+    {
+        var processingDetails = new ProcessingDetailsDto();
+        processingDetails.Processing = await _processingRepository.GetResultByIdAsync(processingId, cancellationToken);
+        if (processingDetails.Processing is null)
+            throw new InvalidOperationException($"Processing with ID {processingId} not found.");
+
+        processingDetails.Configuration = processingDetails.Processing.Configuration;
+        processingDetails.Preprocessing = processingDetails.Processing.PreProcessing;
+        processingDetails.Message = processingDetails.Processing.InputMessage;
+        processingDetails.Response = processingDetails.Processing.Response;
+        if (processingDetails.Processing.Rules is null)
+            throw new InvalidOperationException($"Rules for processing with ID {processingId} not found.");
+        processingDetails.Rule = processingDetails.Processing.Rules;
+        return processingDetails;
     }
 }

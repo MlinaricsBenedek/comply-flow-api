@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using comply_flow_api.Middleware;
 using comply_flow_api.Models.dtos.ProcessDtos;
+using System.Threading;
 using comply_flow_api.Services;
-
 namespace comply_flow_api.Controllers
 {
     [Route("api")]
@@ -16,8 +16,26 @@ namespace comply_flow_api.Controllers
         {
             _processingService = processingService;
         }
+       
 
-        [HttpGet("processings/{processingId:int}")]
+    [HttpGet("processings/{processingId:int}/details")]
+    public async Task<ActionResult<Models.ProcessingDetailsDto>> GetProcessingDetails(int processingId,
+            CancellationToken cancellationToken)    
+    {
+        var processingDetails = await _processingService.GetProcessingDetailsAsync(processingId, cancellationToken);
+        if (processingDetails is null)
+        {
+            return NotFound(ApiProblemDetails.Create(
+                HttpContext,
+                StatusCodes.Status404NotFound,
+                "Processing details not found.",
+                "processing_details_not_found"));
+        }
+
+        return Ok(processingDetails);
+    }
+
+     [HttpGet("processings/{processingId:int}")]
         [HttpGet("processing/GetProcessingResult/{processingId:int}")]
         public async Task<ActionResult<ProcessingResultResponse>> GetProcessingResult(
             int processingId,
