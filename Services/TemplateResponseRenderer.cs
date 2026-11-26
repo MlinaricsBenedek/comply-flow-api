@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using comply_flow_api.Models;
 
 namespace comply_flow_api.Services;
@@ -12,7 +14,13 @@ public static class TemplateResponseRenderer
         string assessment,
         string requiredElementsJson,
         string responseStructureJson,
-        string sourcesJson)
+        string sourcesJson,
+        string ruleId,
+        string ruleName,
+        string customerDecision,
+        string customerReason,
+        TransferFeeComplaintAssessment? transferAssessment,
+        string transferFeeAssessmentJson)
     {
         ArgumentNullException.ThrowIfNull(templateSet);
 
@@ -49,6 +57,13 @@ public static class TemplateResponseRenderer
             ["{{decision}}"] = decision,
             ["{{reason}}"] = reason,
             ["{{assessment}}"] = assessment,
+            ["{{appliedRule}}"] = FormatAppliedRule(ruleId, ruleName),
+            ["{{customerDecision}}"] = customerDecision,
+            ["{{customerReason}}"] = customerReason,
+            ["{{transactionSummary}}"] = FormatTransactionSummary(transferAssessment),
+            ["{{transferFeeTerms}}"] = template.Contains("{{transferFeeTerms}}", StringComparison.Ordinal)
+                ? FormatTransferFeeTerms(transferFeeAssessmentJson)
+                : string.Empty,
             ["{{requiredElements}}"] = FormatStringArray(requiredElementsJson),
             ["{{responseStructure}}"] = FormatJsonObject(responseStructureJson),
             ["{{sources}}"] = FormatSources(sourcesJson)
@@ -68,6 +83,10 @@ public static class TemplateResponseRenderer
         }
 
         response = response.Trim();
+        if (string.Equals(templateSet.TemplateVersion, "template-v4", StringComparison.Ordinal))
+        {
+            response = Regex.Replace(response, @"(\r?\n){3,}", "\n\n");
+        }
         if (string.IsNullOrWhiteSpace(response))
         {
             throw new InvalidDataException("The selected template produced an empty response.");
@@ -75,6 +94,90 @@ public static class TemplateResponseRenderer
 
         return response;
     }
+
+    private static string FormatAppliedRule(string ruleId, string ruleName) =>
+        string.IsNullOrWhiteSpace(ruleId) && string.IsNullOrWhiteSpace(ruleName)
+            ? string.Empty
+            : $"A megadott adatok alapján a rendszer a **{ruleId} ({ruleName})** szabályt alkalmazta.";
+
+    private static string FormatTransactionSummary(TransferFeeComplaintAssessment? assessment)
+    {
+        if (assessment is null || assessment.Status == TransferFeeAssessmentStatus.InsufficientData)
+        {
+            return string.Empty;
+        }
+
+        var culture = CultureInfo.GetCultureInfo("hu-HU");
+        var details = new List<string>();
+        if (assessment.TransferAmountHuf is decimal transferAmount)
+        {
+            details.Add($"az átutalás összege {FormatHuf(transferAmount, culture)} Ft");
+        }
+
+        if (assessment.ChargedFeeHuf is decimal chargedFee)
+        {
+            details.Add($"a közölt díj {FormatHuf(chargedFee, culture)} Ft");
+        }
+
+        return details.Count == 0
+            ? string.Empty
+            : $"Az Ön által közölt adatok szerint {string.Join(", ", details)}.";
+    }
+
+    private static string FormatTransferFeeTerms(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var tariff = document.RootElement;
+        if (tariff.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidDataException("A transfer fee assessment must be a JSON object.");
+        }
+
+        if (!tariff.EnumerateObject().MoveNext())
+        {
+            return string.Empty;
+        }
+
+        if (!tariff.TryGetProperty("ratePercent", out var rate) ||
+            !rate.TryGetDecimal(out var ratePercent) ||
+            !tariff.TryGetProperty("minimumFeeHuf", out var minimum) ||
+            !minimum.TryGetDecimal(out var minimumFeeHuf) ||
+            !tariff.TryGetProperty("maximumFeeHuf", out var maximum) ||
+            !maximum.TryGetDecimal(out var maximumFeeHuf) ||
+            ratePercent <= 0 ||
+            minimumFeeHuf < 0 ||
+            maximumFeeHuf < minimumFeeHuf)
+        {
+            throw new InvalidDataException("A transfer fee assessment contains an invalid tariff.");
+        }
+
+        var culture = CultureInfo.GetCultureInfo("hu-HU");
+        var terms = $"A szabályban szereplő díjtétel az átutalt összeg {ratePercent.ToString("0.##", culture)}%-a, " +
+            $"minimum {FormatHuf(minimumFeeHuf, culture)} Ft, " +
+            $"maximum {FormatHuf(maximumFeeHuf, culture)} Ft.";
+        if (tariff.TryGetProperty("effectiveFrom", out var effectiveFrom))
+        {
+            if (effectiveFrom.ValueKind != JsonValueKind.String ||
+                !DateOnly.TryParseExact(
+                    effectiveFrom.GetString(),
+                    "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var effectiveDate))
+            {
+                throw new InvalidDataException("A transfer fee assessment contains an invalid effective date.");
+            }
+
+            terms += $" Ez a díjtétel {effectiveDate.ToString("yyyy.MM.dd.", culture)} napjától hatályos.";
+        }
+
+        return terms;
+    }
+
+    private static string FormatHuf(decimal amount, CultureInfo culture) =>
+        amount.ToString("#,##0.##", culture)
+            .Replace('\u00a0', ' ')
+            .Replace('\u202f', ' ');
 
     private static string FormatStringArray(string json)
     {

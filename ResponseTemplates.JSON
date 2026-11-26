@@ -20,7 +20,7 @@
   {
   "templateVersion": "template-v4",
   "templates": {
-    "default": "\n\n{{responseStructure}}\n{{sources}}"
+    "default": "Tisztelt Ügyfelünk!\n\n{{appliedRule}}\n\n{{transactionSummary}}\n\n{{transferFeeTerms}}\n\n**Döntés:**\n\n{{customerDecision}}\n\n**Indoklás:**\n\n{{customerReason}}\n\nA vizsgálat alapjául az alábbi források szolgáltak:\n{{sources}}"
   }
   }
 ]
