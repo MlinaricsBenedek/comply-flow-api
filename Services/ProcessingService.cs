@@ -121,8 +121,10 @@ public class ProcessingService : IProcessingService
                 var selectedRule = evaluation.SelectedRule?.Rule;
                 var decision = selectedRule?.Result.Decision ?? "NoMatch";
                 var reason = evaluation.Reason;
+                var ruleDecision = selectedRule?.Result.Decision;
+                var isTransferFeeGuidance = IsTransferFeeGuidance(ruleDecision);
                 var feeAssessment = string.Equals(
-                        selectedRule?.Result.Decision,
+                        ruleDecision,
                         "ClaimValid",
                         StringComparison.Ordinal)
                     ? TransferFeeComplaintEvaluator.Evaluate(
@@ -130,7 +132,6 @@ public class ProcessingService : IProcessingService
                         message.Content,
                         selectedRule)
                     : null;
-
                 processing.PreProcessing = new PreProcessing
                 {
                     CleanedText = preprocessing.Message,
@@ -151,7 +152,6 @@ public class ProcessingService : IProcessingService
                 await _processingRepository.SaveChangesAsync(cancellationToken);
 
                 var responseValidationRequirements = ResponseContentValidator.GetRequirements(selectedRule);
-                var ruleDecision = selectedRule?.Result.Decision;
                 var inputContext = new Dictionary<string, object?>
                 {
                     ["case_state"] = caseState,
@@ -183,16 +183,47 @@ public class ProcessingService : IProcessingService
                 string responseText;
                 if (string.Equals(configuration.GenerationMode, "Template", StringComparison.OrdinalIgnoreCase))
                 {
+                    var templateSet = await _textFileService.GetResponseTemplateSetAsync(
+                        configuration.TemplateVersion!,
+                        cancellationToken);
+                    var useCustomerTemplate = string.Equals(
+                        configuration.TemplateVersion, "template-v4", StringComparison.Ordinal);
+                    var customerDecision = selectedRule?.Result.CustomerDecision ??
+                        "A megkeresés pontosítása szükséges.";
+                    var customerReason = selectedRule?.Result.CustomerReason ??
+                        "A megadott adatok alapján nem található alkalmazható szabály.";
+                    var assessment = feeAssessment;
+                    if (useCustomerTemplate && isTransferFeeGuidance)
+                    {
+                        assessment = TransferFeeComplaintEvaluator.Evaluate(
+                            configuration.Bank,
+                            message.Content,
+                            selectedRule,
+                            requireTransactionDate: string.Equals(
+                                configuration.Bank, "otp", StringComparison.OrdinalIgnoreCase),
+                            validateTransferDetails: true)
+                            ?? throw new InvalidDataException(
+                                "No transfer fee evaluator is available for the selected guidance rule.");
+                        (customerDecision, customerReason) = GetTransferFeeFacts(assessment);
+                    }
+
                     responseText = TemplateResponseRenderer.Render(
-                        await _textFileService.GetResponseTemplateSetAsync(
-                            configuration.TemplateVersion!,
-                            cancellationToken),
+                        templateSet,
                         decision,
                         reason,
-                        feeAssessment?.CustomerMessage ?? string.Empty,
+                        assessment?.CustomerMessage ?? string.Empty,
                         processing.ResponsePlan.RequiredElementsJson,
                         processing.ResponsePlan.ResponseStructureJson,
-                        processing.ResponsePlan.SourcesJson);
+                        processing.ResponsePlan.SourcesJson,
+                        selectedRule?.Id ?? string.Empty,
+                        selectedRule?.Name ?? string.Empty,
+                        customerDecision,
+                        customerReason,
+                        assessment,
+                        selectedRule is not null &&
+                            selectedRule.Result.AdditionalData.TryGetValue("transferFeeAssessment", out var tariff)
+                                ? tariff.GetRawText()
+                                : "{}");
                 }
                 else if (string.Equals(configuration.GenerationMode, "Llm", StringComparison.OrdinalIgnoreCase))
                 {
@@ -207,12 +238,16 @@ public class ProcessingService : IProcessingService
 
                     var customerDecision = selectedRule.Result.CustomerDecision;
                     var customerReason = selectedRule.Result.CustomerReason;
-                    if (string.Equals(ruleDecision, "BankTransferFeesGuidance", StringComparison.Ordinal) ||
-                        string.Equals(ruleDecision, "RaiffeisenSavingsTransferFeeClarification", StringComparison.Ordinal))
+                    if (isTransferFeeGuidance)
                     {
-                        var requireDate = string.Equals(configuration.Bank, "otp", StringComparison.OrdinalIgnoreCase);
                         var assessment = TransferFeeComplaintEvaluator.Evaluate(
-                            configuration.Bank, message.Content, selectedRule, requireTransactionDate: requireDate)
+                            configuration.Bank,
+                            message.Content,
+                            selectedRule,
+                            requireTransactionDate: string.Equals(
+                                configuration.Bank,
+                                "otp",
+                                StringComparison.OrdinalIgnoreCase))
                             ?? throw new InvalidDataException(
                                 "No transfer fee evaluator is available for the selected guidance rule.");
                         (customerDecision, customerReason) = GetTransferFeeFacts(assessment);
@@ -679,6 +714,10 @@ public class ProcessingService : IProcessingService
             $"A megadott adatok alapján a szabály szerinti díj {expected.ToString("0.##", culture)} Ft, " +
             $"a közölt terhelés {charged.ToString("0.##", culture)} Ft.");
     }
+
+    private static bool IsTransferFeeGuidance(string? ruleDecision) =>
+        string.Equals(ruleDecision, "BankTransferFeesGuidance", StringComparison.Ordinal) ||
+        string.Equals(ruleDecision, "RaiffeisenSavingsTransferFeeClarification", StringComparison.Ordinal);
 
     private static string AppendSourceCitations(string response, string sourcesJson)
     {

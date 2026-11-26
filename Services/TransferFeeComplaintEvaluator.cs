@@ -31,7 +31,8 @@ public static partial class TransferFeeComplaintEvaluator
         string bank,
         string message,
         Rule? selectedRule,
-        bool requireTransactionDate = false)
+        bool requireTransactionDate = false,
+        bool validateTransferDetails = false)
     {
         var isOtp = string.Equals(bank, "otp", StringComparison.OrdinalIgnoreCase);
         var isRaiffeisen = string.Equals(bank, "raiffeisen", StringComparison.OrdinalIgnoreCase);
@@ -75,14 +76,17 @@ public static partial class TransferFeeComplaintEvaluator
             missingInformation.Add($"hogy eseti, {bankName} belüli, nem saját számlára indított utalásról van-e szó");
         }
 
-        if (requireTransactionDate)
+        if (requireTransactionDate || validateTransferDetails)
         {
             if (ConflictingTransferDetails().IsMatch(normalizedMessage) ||
                 NegativeMoney().IsMatch(normalizedMessage))
             {
                 missingInformation.Add("az ellentmondásos számla- és átutalási adatok pontosítása");
             }
+        }
 
+        if (requireTransactionDate)
+        {
             var tariffEffectiveFrom = GetTariffEffectiveFrom(selectedRule!);
             var dates = TransferDate().Matches(normalizedMessage);
             if (dates.Count != 1 ||
@@ -133,7 +137,7 @@ public static partial class TransferFeeComplaintEvaluator
             missingInformation.Add("a ténylegesen levont átutalási díj");
         }
 
-        if (requireTransactionDate && (transferAmount <= 0 || chargedFee < 0))
+        if ((requireTransactionDate || validateTransferDetails) && (transferAmount <= 0 || chargedFee < 0))
         {
             missingInformation.Add("az átutalás és a terhelés érvényes összege");
         }

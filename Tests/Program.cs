@@ -16,6 +16,7 @@ var tests = new (string Name, Func<Task> Run)[]
 {
     ("Generation payload and guidance", GenerationPayload),
     ("Transfer fee facts", TransferFeeFacts),
+    ("Template transfer fee response", TemplateTransferFeeResponse),
     ("Customer texts use valid Hungarian", CustomerTexts),
     ("Actual rule values are used", DifferentRule),
     ("Explicit model selection", ExplicitModel),
@@ -128,6 +129,48 @@ static async Task TransferFeeFacts()
     Check(expectedReason.Contains("900 Ft"), $"customer expectation replaced rule tariff: {expectedReason}");
 }
 
+static async Task TemplateTransferFeeResponse()
+{
+    var documents = JsonNode.Parse(File.ReadAllText("Raiffeisen.JSON"))!.AsArray();
+    var rule = documents[0]!["rules"]!.AsArray()
+        .Select(node => node!.AsObject())
+        .Single(item => (string?)item["id"] == "RB-BANK-TRANSFER-FEES-001")
+        .DeepClone().AsObject();
+    using var fixture = new Fixture(
+        RuleSet(rule),
+        "BANK_TRANSFER_FEES",
+        mode: "Template",
+        bank: "raiffeisen");
+    var processing = await fixture.Run(
+        "A Raiffeisen Megtakarítási Számláról MobilBankon eseti, bankon belüli, nem saját számlára " +
+        "100 000 Ft-ot utaltam. Az Elszámolási Számláról 798 Ft díjat vontak le.");
+    var response = processing.Response!.ResponseText;
+    Check(response.StartsWith("Tisztelt Ügyfelünk!"), "template salutation");
+    Check(response.Contains("RB-BANK-TRANSFER-FEES-001") &&
+        response.Contains("Raiffeisen savings account transfer fee clarification"), "applied rule");
+    Check(response.Contains("0,5%") && response.Contains("minimum 798 Ft") &&
+        response.Contains("maximum 20 250 Ft"), $"tariff terms: {response}");
+    Check(response.Contains("100 000 Ft") && response.Contains("798 Ft"), "calculated fee comparison");
+    Check(response.Contains("terhelés megegyezik") && response.Contains("2026.07.01."), "decision and tariff date");
+    Check(response.Contains("Lakossági Kondíciós Lista"), "source citation");
+    Check(fixture.Handler.GenerationBody is null, "template mode must not call generation");
+
+    foreach (var (message, expected) in new[]
+    {
+        ("A Raiffeisen Megtakarítási Számláról MobilBankon eseti, bankon belüli, nem saját számlára 100 000 Ft-ot utaltam. 900 Ft díjat vontak le.", "magasabb"),
+        ("A Raiffeisen Megtakarítási Számláról utaltam 100 000 Ft-ot.", "nem áll rendelkezésre elegendő adat"),
+        ("A Raiffeisen Megtakarítási Számláról MobilBankon nem eseti, bankon belüli, nem saját számlára 100 000 Ft-ot utaltam. 798 Ft díjat vontak le.", "nem áll rendelkezésre elegendő adat")
+    })
+    {
+        using var caseFixture = new Fixture(RuleSet(rule.DeepClone().AsObject()), "BANK_TRANSFER_FEES",
+            mode: "Template", bank: "raiffeisen");
+        var caseResponse = (await caseFixture.Run(message)).Response!.ResponseText;
+        Check(caseResponse.Contains(expected), $"unexpected template decision: {caseResponse}");
+        if (expected.Contains("nem áll"))
+            Check(!caseResponse.Contains("terhelés megegyezik"), "insufficient data produced a fee conclusion");
+    }
+}
+
 static Task CustomerTexts()
 {
     foreach (var file in new[] { "OTP.JSON", "Raiffeisen.JSON" })
@@ -205,7 +248,8 @@ static async Task DuplicateSources()
     Check(processing.Response!.ResponseText.Split("Ellenőrzött hivatkozás").Length == 2, "duplicate LLM citations");
 
     var templates = new ResponseTemplateSet { TemplateVersion = "test", Templates = new() { ["default"] = "{{sources}}" } };
-    var rendered = TemplateResponseRenderer.Render(templates, "x", "x", "x", "[]", "{}", "[\"Forrás\", \" forrás \"]");
+    var rendered = TemplateResponseRenderer.Render(
+        templates, "x", "x", "x", "[]", "{}", "[\"Forrás\", \" forrás \"]", "", "", "", "", null, "{}");
     Check(rendered.Split(Environment.NewLine).Length == 1, "duplicate template citations");
 }
 
@@ -281,7 +325,12 @@ sealed class Fixture : IDisposable
     public FakeHandler Handler { get; }
     public FakeProcessingRepository Repository { get; } = new();
 
-    public Fixture(string rules, string category, string? modelName = null, string mode = "Llm")
+    public Fixture(
+        string rules,
+        string category,
+        string? modelName = null,
+        string mode = "Llm",
+        string bank = "otp")
     {
         Handler = new FakeHandler(category);
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
@@ -291,7 +340,7 @@ sealed class Fixture : IDisposable
         var logger = new PayloadFileLogger(new TestEnvironment(), config, NullLogger<PayloadFileLogger>.Instance);
         var client = new AiServiceClient(new HttpClient(Handler) { BaseAddress = new Uri("http://localhost/") },
             Options.Create(new AiServiceOptions()), logger, new HttpContextAccessor());
-        _service = new ProcessingService(new FakeConfigurationRepository(modelName, mode), Repository, client,
+        _service = new ProcessingService(new FakeConfigurationRepository(modelName, mode, bank), Repository, client,
             new FakeTextFileService(rules), NullLogger<ProcessingService>.Instance);
     }
 
@@ -339,11 +388,12 @@ sealed class FakeHandler(string category) : HttpMessageHandler
         new(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
 }
 
-sealed class FakeConfigurationRepository(string? modelName, string mode) : IConfigurationRepository
+sealed class FakeConfigurationRepository(string? modelName, string mode, string bank) : IConfigurationRepository
 {
     public Task<comply_flow_api.Models.Configuration?> GetByIdAsync(int id, CancellationToken token) =>
         Task.FromResult<comply_flow_api.Models.Configuration?>(new() {
-            Bank = "otp", GenerationMode = mode,
+            Bank = bank, GenerationMode = mode,
+            TemplateVersion = mode == "Template" ? "template-v4" : null,
             ModelName = modelName,
             RetrievalTopK = mode == "Rag" ? 3 : null,
             RetrievalMinSimilarity = mode == "Rag" ? 0.4 : null,
@@ -372,7 +422,9 @@ sealed class FakeTextFileService(string rules) : ITextFileService
 {
     public Task<string> GetBusinessRulesAsync(string bank, CancellationToken token = default) => Task.FromResult(rules);
     public Task<string> GetPromptAsync(CancellationToken token = default) => throw new NotSupportedException();
-    public Task<ResponseTemplateSet> GetResponseTemplateSetAsync(string version, CancellationToken token = default) => throw new NotSupportedException();
+    public Task<ResponseTemplateSet> GetResponseTemplateSetAsync(string version, CancellationToken token = default) =>
+        Task.FromResult(JsonSerializer.Deserialize<List<ResponseTemplateSet>>(
+            File.ReadAllText("ResponseTemplates.JSON"))!.Single(item => item.TemplateVersion == version));
 }
 
 sealed class TestEnvironment : IWebHostEnvironment
