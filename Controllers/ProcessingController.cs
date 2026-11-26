@@ -18,23 +18,6 @@ namespace comply_flow_api.Controllers
         }
        
 
-    [HttpGet("processings/{processingId:int}/details")]
-    public async Task<ActionResult<Models.ProcessingDetailsDto>> GetProcessingDetails(int processingId,
-            CancellationToken cancellationToken)    
-    {
-        var processingDetails = await _processingService.GetProcessingDetailsAsync(processingId, cancellationToken);
-        if (processingDetails is null)
-        {
-            return NotFound(ApiProblemDetails.Create(
-                HttpContext,
-                StatusCodes.Status404NotFound,
-                "Processing details not found.",
-                "processing_details_not_found"));
-        }
-
-        return Ok(processingDetails);
-    }
-
      [HttpGet("processings/{processingId:int}")]
         [HttpGet("processing/GetProcessingResult/{processingId:int}")]
         public async Task<ActionResult<ProcessingResultResponse>> GetProcessingResult(
