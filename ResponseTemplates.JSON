@@ -2,13 +2,25 @@
   {
     "templateVersion": "template-v1",
     "templates": {
-      "default": "Tisztelt Ügyfelünk!\n\nKövetkező lépés: {{nextStep}}\n\n{{assessment}}\n\n{{responseStructure}}\n\nForrások:\n{{sources}}"
+      "default": "Tisztelt Ügyfelünk!\n\n{{responseStructure}}\n\nForrások:\n{{sources}}"
     }
   },
   {
     "templateVersion": "template-v2",
     "templates": {
-      "default": "Tisztelt Ügyfelünk!\n\nKövetkező lépés: {{nextStep}}\n\n{{assessment}}\n\n{{responseStructure}}\n\nForrások:\n{{sources}}"
+      "default": "Tisztelt Ügyfelünk!\n\n{{responseStructure}}\n\nForrások:\n{{sources}}"
     }
+  },
+  {
+  "templateVersion": "template-v3",
+  "templates": {
+    "default": "Tisztelt Ügyfelünk!\n\nKöszönjük, hogy megosztotta velünk észrevételét.\n\nAz ügyével kapcsolatban az alábbi tájékoztatást adjuk:\n{{responseStructure}}\n\nMit kell tennie a továbbiakban?\n\nA válasz elkészítéséhez az alábbi forrásokat vettük figyelembe:\n{{sources}}"
+  }
+  },
+  {
+  "templateVersion": "template-v4",
+  "templates": {
+    "default": "\n\n{{responseStructure}}\n{{sources}}"
+  }
   }
 ]
